@@ -14,14 +14,11 @@ function App() {
     }, []);
 
     return (
-        <div className="app">
-            <video src="/entur.mp4" autoPlay loop muted style={{ width: '100%', height: 'auto', display: 'block' }} />
-
-            <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
-                <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90vh', maxWidth: '90vw', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <video src="/entur.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
+            <div style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
+                <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '90%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
             </div>
-
-
             <Weather location={LOCATION} />
         </div>
     );
