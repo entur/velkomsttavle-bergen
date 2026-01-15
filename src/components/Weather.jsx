@@ -62,41 +62,43 @@ export default function Weather({ location }) {
                 const temperature = weather.data.instant.details.air_temperature;
                 const symbolCode = weather.data.next_1_hours.summary.symbol_code;
                 return (
-                    <GridContainer key={weather.time} spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
-                        <GridItem small={6} medium={6} large={6}>
-                            <Heading as="h1" variant="title-1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading>
-                            <img
-                                src={`/yrSymbols/${symbolCode}.svg`}
-                                alt={symbolCode}
-                                style={{ width: '100%', maxWidth: '120px', height: 'auto', aspectRatio: '1 / 1', display: 'block', margin: '0 auto' }}
-                            />
-                            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
-                                <GridItem small={2} medium={2} large={2}>
-                                    <ThermometerIcon size={ 20 }/>
-                                </GridItem>
-                                <GridItem small={2} medium={2} large={2}>
-                                    <Text variant="label" spacing="none">{formatNumber(temperature, 'celsius')}</Text>
-                                </GridItem>
-                            </GridContainer>
-                            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
-                                <GridItem small={2} medium={2} large={2}>
-                                    <UmbrellaIcon size={ 20 } />
-                                </GridItem>
-                                <GridItem small={2} medium={2} large={2}>
-                                    <Text variant="label" spacing="none">{formatNumber(weather.data.next_1_hours.details.precipitation_amount, 'millimeter')}</Text>
-                                </GridItem>
-                            </GridContainer>
-                            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
-                                <GridItem small={2} medium={2} large={2}>
-                                    <WindIcon size={ 20 } />
-                                </GridItem>
-                                <GridItem small={2} medium={2} large={2}>
-                                    <Text variant="label" spacing="none">{formatNumber(weather.data.instant.details.wind_speed, 'meter-per-second')}</Text>
-                                </GridItem>
-                            </GridContainer>
+                    <div key={weather.time} style={{ padding: '20px' }}>
+                        <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
+                            <GridItem small={6} medium={6} large={6}>
+                                <Heading as="h1" variant="title-1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading>
+                                <img
+                                    src={`/yrSymbols/${symbolCode}.svg`}
+                                    alt={symbolCode}
+                                    style={{ width: '100%', maxWidth: '120px', height: 'auto', aspectRatio: '1 / 1', display: 'block', margin: '0 auto' }}
+                                />
+                                <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
+                                    <GridItem small={2} medium={2} large={2}>
+                                        <ThermometerIcon size={ 20 }/>
+                                    </GridItem>
+                                    <GridItem small={2} medium={2} large={2}>
+                                        <Text variant="label" spacing="none">{formatNumber(temperature, 'celsius')}</Text>
+                                    </GridItem>
+                                </GridContainer>
+                                <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
+                                    <GridItem small={2} medium={2} large={2}>
+                                        <UmbrellaIcon size={ 20 } />
+                                    </GridItem>
+                                    <GridItem small={2} medium={2} large={2}>
+                                        <Text variant="label" spacing="none">{formatNumber(weather.data.next_1_hours.details.precipitation_amount, 'millimeter')}</Text>
+                                    </GridItem>
+                                </GridContainer>
+                                <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
+                                    <GridItem small={2} medium={2} large={2}>
+                                        <WindIcon size={ 20 } />
+                                    </GridItem>
+                                    <GridItem small={2} medium={2} large={2}>
+                                        <Text variant="label" spacing="none">{formatNumber(weather.data.instant.details.wind_speed, 'meter-per-second')}</Text>
+                                    </GridItem>
+                                </GridContainer>
 
-                        </GridItem>
-                    </GridContainer>
+                            </GridItem>
+                        </GridContainer>
+                    </div>
                 );
             })}
         </div>
