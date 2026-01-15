@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Weather from './components/Weather';
-import {Blockquote, BlockquoteFooter, Heading} from "@entur/typography/beta";
+import {Heading} from "@entur/typography/beta";
 import {Contrast} from "@entur/layout";
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
 
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <video src="/entur.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
+            <video src="https://ru9vhcohjmbwwqoc.public.blob.vercel-storage.com/entur.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
             <Contrast style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
                 <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '90%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
                 <div>
