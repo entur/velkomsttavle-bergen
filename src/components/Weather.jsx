@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { formatNumber, convertSymbolKeyToId } from '../ts/main';
+import { formatNumber } from '../ts/main';
 import {ThermometerIcon, UmbrellaIcon, WindIcon} from "@entur/icons";
-import {Heading, Text} from "@entur/typography/beta";
+import {Heading} from "@entur/typography/beta";
 import {GridContainer, GridItem} from "@entur/grid";
 
 async function _fetch(url) {
@@ -51,16 +51,15 @@ export default function Weather({ location }) {
 
     return (
         <div style={{ display: 'flex', justifyContent: 'center',  width: '100%', backgroundColor: '#aeb7e2' }}>
-            {timeSeries.map((weather, idx) => {
+            {timeSeries.map((weather) => {
                 const temperature = weather.data.instant.details.air_temperature;
-                const isPositive = temperature > 0;
                 const symbolCode = weather.data.next_1_hours.summary.symbol_code;
                 return (
                     <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
                         <GridItem small={6} medium={6} large={6}>
                             <Heading as="h1" variant="title-1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading>
                             <img
-                                src={`/static/yrSymbols/${symbolCode}.svg`}
+                                src={`/yrSymbols/${symbolCode}.svg`}
                                 alt={symbolCode}
                                 style={{ width: '100%', maxWidth: '120px', height: 'auto', aspectRatio: '1 / 1', display: 'block', margin: '0 auto' }}
                             />

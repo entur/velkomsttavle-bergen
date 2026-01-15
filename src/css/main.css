@@ -4,24 +4,3 @@
 @import '@entur/loader/dist/styles.css';
 @import '@entur/typography/dist/styles.css';
 @import '@entur/grid/dist/styles.css';
-
-.centered-container {
-  display: flex;          /* Enables flexbox */
-  width: 100%;            /* Full width */
-  justify-content: center; /* Centers content horizontally */
-  align-items: center;    /* Centers content vertically */
-}
-
-.icon {
-  height: 25px;
-}
-.weather-icon {
-  height: 70px;
-}
-
-.box {
-  display: grid;
-  place-items: center;
-  width: 200px;
-  padding: 10px;
-}
