@@ -1,12 +1,9 @@
-@import "tailwindcss";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  background-color: white;
-}
+@import '@entur/tooltip/dist/styles.css';
+@import '@entur/button/dist/styles.css';
+@import '@entur/layout/dist/styles.css';
+@import '@entur/loader/dist/styles.css';
+@import '@entur/typography/dist/styles.css';
+@import '@entur/grid/dist/styles.css';
 
 .centered-container {
   display: flex;          /* Enables flexbox */
@@ -15,37 +12,11 @@ body {
   align-items: center;    /* Centers content vertically */
 }
 
-.padded-image {
-  padding: 20px; /* Adjust the padding as needed */
-}
-
-.blue {
-  color: blue;
-  font-size: 20px;
-  font-weight: bold;
-}
-.red {
-  color: red;
-  font-size: 20px;
-  font-weight: bold;
-}
-.black {
-  color: black;
-  font-size: 20px;
-}
-
-.header {
-  color: black;
-  font-size: 25px;
-  font-weight: bold;
-}
-
 .icon {
   height: 25px;
 }
 .weather-icon {
   height: 70px;
-  padding-left: 10px;
 }
 
 .box {
@@ -53,10 +24,4 @@ body {
   place-items: center;
   width: 200px;
   padding: 10px;
-}
-
-.video-blur {
-  width:  90%; /* Smaller frame - adjust as needed */
-  height: auto;
-  border-radius: 30px; /* Rounded corners */
 }

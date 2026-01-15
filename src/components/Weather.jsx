@@ -1,39 +1,98 @@
+import { useState, useEffect } from 'react';
 import { formatNumber, convertSymbolKeyToId } from '../ts/main';
+import {ThermometerIcon, UmbrellaIcon, WindIcon} from "@entur/icons";
+import {Heading, Text} from "@entur/typography/beta";
+import {GridContainer, GridItem} from "@entur/grid";
 
-export default function Weather({ weather }) {
-  const temperature = weather.data.instant.details.air_temperature;
-  const isPositive = temperature > 0;
-  const symbolCode = weather.data.next_1_hours.summary.symbol_code;
-  const weatherIconId = convertSymbolKeyToId(symbolCode);
+async function _fetch(url) {
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' }
+    });
+    return await response.json();
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
 
-  return (
-    <div className="box">
-      <div className="header">
-        {weather.time.substring(11, 16)}
-      </div>
-      <div>
-        <img
-          src={`/weathericons/${weatherIconId}.svg`}
-          alt=""
-          className="weather-icon"
-        />
-        <div className="black">
-          <div className="flex">
-            <img src="/thermometer.svg" className="icon" />
-            <div className={isPositive ? "red" : "blue"}>
-              {formatNumber(temperature, 'celsius')}
-            </div>
-          </div>
-          <div className="flex black">
-            <img src="/umbrella.svg" className="icon" />
-            {formatNumber(weather.data.next_1_hours.details.precipitation_amount, 'millimeter')}
-          </div>
-          <div className="flex black">
-            <img src="/wind.svg" className="icon" />
-            {formatNumber(weather.data.instant.details.wind_speed, 'meter-per-second')}
-          </div>
+async function getYr(lat, lng) {
+  const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lng}`;
+  return await _fetch(url);
+}
+
+export default function Weather({ location }) {
+    const [weatherData, setWeatherData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        async function fetchWeather() {
+            if (!location) return;
+            setIsLoading(true);
+            const data = await getYr(location.lat, location.lng);
+            setWeatherData(data);
+            setIsLoading(false);
+        }
+
+        fetchWeather();
+    }, [location]);
+
+    if (isLoading) {
+        return <div className="w-full">laster inn...</div>;
+    }
+
+    if (!weatherData || !weatherData.properties || !weatherData.properties.timeseries) {
+        return null;
+    }
+
+    // Show next 6 hours (3-8)
+    const timeSeries = weatherData.properties.timeseries.slice(3, 9);
+
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center',  width: '100%', backgroundColor: '#aeb7e2' }}>
+            {timeSeries.map((weather, idx) => {
+                const temperature = weather.data.instant.details.air_temperature;
+                const isPositive = temperature > 0;
+                const symbolCode = weather.data.next_1_hours.summary.symbol_code;
+                return (
+                    <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
+                        <GridItem small={6} medium={6} large={6}>
+                            <Heading as="h1" variant="title-1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading>
+                            <img
+                                src={`/static/yrSymbols/${symbolCode}.svg`}
+                                alt={symbolCode}
+                                style={{ width: '100%', maxWidth: '120px', height: 'auto', aspectRatio: '1 / 1', display: 'block', margin: '0 auto' }}
+                            />
+                            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
+                                <GridItem small={2} medium={2} large={2}>
+                                    <ThermometerIcon size={ 50 }/>
+                                </GridItem>
+                                <GridItem small={2} medium={2} large={2}>
+                                    <Heading as="h2" variant="title-2" spacing="none">{formatNumber(temperature, 'celsius')}</Heading>
+                                </GridItem>
+                            </GridContainer>
+                            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
+                                <GridItem small={2} medium={2} large={2}>
+                                    <UmbrellaIcon size={ 50 } />
+                                </GridItem>
+                                <GridItem small={2} medium={2} large={2}>
+                                    <Heading as="h2" variant="title-2" spacing="none">{formatNumber(weather.data.next_1_hours.details.precipitation_amount, 'millimeter')}</Heading>
+                                </GridItem>
+                            </GridContainer>
+                            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
+                                <GridItem small={2} medium={2} large={2}>
+                                    <WindIcon size={ 50 } />
+                                </GridItem>
+                                <GridItem small={2} medium={2} large={2}>
+                                    <Heading as="h2" variant="title-2" spacing="none">{formatNumber(weather.data.instant.details.wind_speed, 'meter-per-second')}</Heading>
+                                </GridItem>
+                            </GridContainer>
+
+                        </GridItem>
+                    </GridContainer>
+                );
+            })}
         </div>
-      </div>
-    </div>
-  );
+    );
 }
