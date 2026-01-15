@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Weather from './components/Weather';
+import {Blockquote, BlockquoteFooter, Heading} from "@entur/typography/beta";
+import {Contrast} from "@entur/layout";
 
 function App() {
     // Hardcoded location for Bergen
@@ -16,9 +18,14 @@ function App() {
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <video src="/entur.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
-            <div style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
+            <Contrast style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
                 <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '90%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
-            </div>
+                <div>
+                    <Heading as="h1" variant="title-1">Velkommen til Entur Bergen</Heading>
+                    <Heading as="h2" variant="title-2">Vi ønsker deg en fin dag på kontoret!</Heading>
+                </div>
+
+            </Contrast>
             <Weather location={LOCATION} />
         </div>
     );
