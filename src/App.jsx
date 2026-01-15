@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 import './App.css';
-import logo from '../static/logo.svg';
-import staffWoman from '../static/staff_woman.svg';
-import staffMan from '../static/staff_man.svg';
+import staffWoman from '../public/staff_woman.svg';
+import staffMan from '../public/staff_man.svg';
 import { Tooltip } from '@entur/tooltip';
 import Weather from './components/Weather';
 
@@ -62,7 +61,7 @@ function App() {
 
     return (
         <div className="app">
-            <video src="/static/entur.mp4" autoPlay loop muted style={{ width: '100%', height: 'auto', display: 'block' }} />
+            <video src="/public/entur.mp4" autoPlay loop muted style={{ width: '100%', height: 'auto', display: 'block' }} />
 
             <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
                 <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90vh', maxWidth: '90vw', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
