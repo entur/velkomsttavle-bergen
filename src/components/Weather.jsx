@@ -55,7 +55,7 @@ export default function Weather({ location }) {
                 const temperature = weather.data.instant.details.air_temperature;
                 const symbolCode = weather.data.next_1_hours.summary.symbol_code;
                 return (
-                    <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
+                    <GridContainer key={weather.time} spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
                         <GridItem small={6} medium={6} large={6}>
                             <Heading as="h1" variant="title-1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading>
                             <img

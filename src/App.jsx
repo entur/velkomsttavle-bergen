@@ -11,14 +11,6 @@ function App() {
         const staffImages = ['/staff_woman.svg', '/staff_man.svg'];
         const randomImage = staffImages[Math.floor(Math.random() * staffImages.length)];
         setRandomStaffImage(randomImage);
-        const checkTime = () => {
-            const now = new Date();
-            const hours = now.getHours();
-            setShowStaff(hours >= 6 && hours < 10);
-        };
-        checkTime();
-        const interval = setInterval(checkTime, 60000);
-        return () => clearInterval(interval);
     }, []);
 
     return (
