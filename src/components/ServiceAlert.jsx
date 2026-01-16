@@ -59,7 +59,8 @@ export default function ServiceAlert() {
         }
     }, [alerts]);
 
-    const alert = alerts[current];
+    if (alerts.length === 0) return null;
+    const alert = alerts[current] || { title: '', pubDate: '', description: '' };
     // Sanitize description to allow basic formatting (bold, italic, links)
     function sanitizeHtml(html) {
         // Only allow <b>, <strong>, <i>, <em>, <a> tags, strip others
