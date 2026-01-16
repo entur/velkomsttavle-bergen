@@ -17,7 +17,8 @@ function App() {
 
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <video src="https://ru9vhcohjmbwwqoc.public.blob.vercel-storage.com/entur.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
+
+            <video src="https://image2url.com/r2/default/videos/1768552271901-e3f8da21-1c51-4edb-ba4f-b18fa5ee5237.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
             <Contrast style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#181C56' }}>
                 <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '90%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
                 <div>
