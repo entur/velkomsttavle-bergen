@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { formatNumber } from '../ts/main';
-import {ThermometerIcon, UmbrellaIcon, WindIcon} from "@entur/icons";
+import {ThermometerIcon, UmbrellaIcon, WindIcon, CalendarIcon} from "@entur/icons";
 import {GridContainer, GridItem} from "@entur/grid";
-import {semantic} from "@entur/tokens";
-import {Heading3, Label} from "@entur/typography";
+import {base, semantic} from "@entur/tokens";
+import {Heading3, Label, LeadParagraph} from "@entur/typography";
 
 async function _fetch(url) {
   try {
@@ -23,7 +23,7 @@ async function getYr(lat, lng) {
   return await _fetch(url);
 }
 
-export default function Weather({ location }) {
+export default function Weather({ location, date }) {
     const [weatherData, setWeatherData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -57,13 +57,34 @@ export default function Weather({ location }) {
     // Show next 6 hours (3-8)
     const timeSeries = weatherData.properties.timeseries.slice(3, 9);
 
+    // Date display at the top
+    const DateDisplay = ({ date }) => (
+        <LeadParagraph>
+            {date.toLocaleDateString('nb-NO', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })}
+        </LeadParagraph>
+    );
+
     return (
-        <div style={{ display: 'flex', justifyContent: 'center',  width: '100%', backgroundColor: semantic.fill.background.subdued.light }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', backgroundColor: semantic.fill.background.subdued.light }}>
+            <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', paddingTop: '10px' }}>
+                <GridItem small={3} medium={3} large={3}>
+                    <CalendarIcon size={50} color={base.light.baseColors.shape.highlight}/>
+                </GridItem>
+                <GridItem small={9} medium={9} large={9}>
+                    <DateDisplay date={date} />
+                </GridItem>
+            </GridContainer>
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
             {timeSeries.map((weather) => {
                 const temperature = weather.data.instant.details.air_temperature;
                 const symbolCode = weather.data.next_1_hours.summary.symbol_code;
                 return (
-                    <div key={weather.time} style={{ padding: '20px' }}>
+                    <div key={weather.time} style={{ padding: '10px' }}>
                         <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
                             <GridItem small={6} medium={6} large={6}>
                                 <Heading3>{weather.time.substring(11, 16)}</Heading3>
@@ -102,6 +123,7 @@ export default function Weather({ location }) {
                     </div>
                 );
             })}
+            </div>
         </div>
     );
 }

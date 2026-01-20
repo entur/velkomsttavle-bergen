@@ -3,9 +3,6 @@ import Weather from './components/Weather';
 import {Heading2, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
 import {base} from "@entur/tokens";
-import {GridContainer, GridItem} from "@entur/grid";
-import {ClockIcon} from "@entur/icons";
-import {Heading} from "@entur/typography/beta";
 
 // Memoized component for staff image and headings
 const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, greeting }) {
@@ -16,7 +13,7 @@ const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, gree
             )}
             <div style={{ marginLeft: '2rem' }}>
                 <Heading2>Velkommen til Entur Bergen</Heading2>
-                <Heading>{greeting}</Heading>
+                <LeadParagraph>{greeting}</LeadParagraph>
             </div>
         </div>
     );
@@ -26,30 +23,25 @@ function App() {
     // Hardcoded location for Bergen
     const LOCATION = { name: 'Bergen', lat: 60.39299, lng: 5.32415 };
     const [randomStaffImage, setRandomStaffImage] = useState(null);
-    const [currentDateTime, setCurrentDateTime] = useState(new Date());
     const [greeting, setGreeting] = useState(() => getGreetingText(new Date()));
+    const [date, setDate] = useState(new Date());
 
 
-    // Greeting and staff image logic (set on mount and every 15 minutes)
+    // Greeting, staff image, and date logic (set on mount and every 15 minutes)
     useEffect(() => {
-        function updateGreetingAndStaff() {
+        function updateAll() {
             const staffImages = ['/staff_woman.svg', '/staff_man.svg'];
             const randomImage = staffImages[Math.floor(Math.random() * staffImages.length)];
             setRandomStaffImage(randomImage);
-            setGreeting(getGreetingText(new Date()));
+            const now = new Date();
+            setGreeting(getGreetingText(now));
+            setDate(now);
         }
-        updateGreetingAndStaff(); // set immediately on mount
-        const interval = setInterval(updateGreetingAndStaff, 15 * 60 * 1000); // every 15 minutes
+        updateAll(); // set immediately on mount
+        const interval = setInterval(updateAll, 15 * 60 * 1000); // every 15 minutes
         return () => clearInterval(interval);
     }, []);
 
-    // Clock logic (update every second)
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentDateTime(new Date());
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     // Helper to get greeting text based on time and day
     function getGreetingText(date) {
@@ -83,25 +75,9 @@ function App() {
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <video src="https://image2url.com/r2/default/videos/1768552271901-e3f8da21-1c51-4edb-ba4f-b18fa5ee5237.mp4" autoPlay loop muted style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
             <Contrast style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: base.light.baseColors.frame.contrast, flexDirection: 'column' }}>
-                <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', padding: '2rem 0' }}>
-                    <GridItem small={3} medium={3} large={3}>
-                        <ClockIcon size={50} color={base.light.baseColors.shape.highlight}/>
-                    </GridItem>
-                    <GridItem small={9} medium={9} large={9}>
-                            <LeadParagraph color={base.light.baseColors.text.highlight}>{currentDateTime.toLocaleString('nb-NO', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit'
-                            })}</LeadParagraph>
-                    </GridItem>
-                </GridContainer>
                 <StaffAndHeadings randomStaffImage={randomStaffImage} greeting={greeting} />
             </Contrast>
-            <Weather location={LOCATION} />
+            <Weather location={LOCATION} date={date} />
         </div>
     );
 }
