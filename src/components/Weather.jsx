@@ -42,7 +42,7 @@ export default function Weather({ location }) {
     useEffect(() => {
         const interval = setInterval(() => {
             window.location.reload();
-        }, 60 * 60 * 1000); // 1 hour in milliseconds
+        }, 15 * 60 * 1000); // 1 hour in milliseconds
         return () => clearInterval(interval);
     }, []);
 

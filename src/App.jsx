@@ -1,10 +1,11 @@
 import React, { useState, useEffect, memo } from 'react';
 import Weather from './components/Weather';
-import {Heading1, Heading3, LeadParagraph} from "@entur/typography";
+import {Heading2, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
 import {base} from "@entur/tokens";
 import {GridContainer, GridItem} from "@entur/grid";
 import {ClockIcon} from "@entur/icons";
+import {Heading} from "@entur/typography/beta";
 
 // Memoized component for staff image and headings
 const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, greeting }) {
@@ -14,8 +15,8 @@ const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, gree
                 <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '40%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
             )}
             <div style={{ marginLeft: '2rem' }}>
-                <Heading1>Velkommen til Entur Bergen</Heading1>
-                <Heading3>{greeting}</Heading3>
+                <Heading2>Velkommen til Entur Bergen</Heading2>
+                <Heading>{greeting}</Heading>
             </div>
         </div>
     );
@@ -26,13 +27,20 @@ function App() {
     const LOCATION = { name: 'Bergen', lat: 60.39299, lng: 5.32415 };
     const [randomStaffImage, setRandomStaffImage] = useState(null);
     const [currentDateTime, setCurrentDateTime] = useState(new Date());
+    const [greeting, setGreeting] = useState(() => getGreetingText(new Date()));
 
 
-    // Staff image logic (set only once on mount)
+    // Greeting and staff image logic (set on mount and every 15 minutes)
     useEffect(() => {
-        const staffImages = ['/staff_woman.svg', '/staff_man.svg'];
-        const randomImage = staffImages[Math.floor(Math.random() * staffImages.length)];
-        setRandomStaffImage(randomImage);
+        function updateGreetingAndStaff() {
+            const staffImages = ['/staff_woman.svg', '/staff_man.svg'];
+            const randomImage = staffImages[Math.floor(Math.random() * staffImages.length)];
+            setRandomStaffImage(randomImage);
+            setGreeting(getGreetingText(new Date()));
+        }
+        updateGreetingAndStaff(); // set immediately on mount
+        const interval = setInterval(updateGreetingAndStaff, 15 * 60 * 1000); // every 15 minutes
+        return () => clearInterval(interval);
     }, []);
 
     // Clock logic (update every second)
@@ -61,7 +69,7 @@ function App() {
         }
         // Day
         if (hour >= 10 && hour < 14) {
-            return "Entur gjør det enklere å reise sømløst i hele Norge!";
+            return "Entur gjør det enklere å reise kollektivt i hele Norge!";
         }
         // Afternoon/evening
         if (hour >= 14) {
@@ -80,7 +88,6 @@ function App() {
                         <ClockIcon size={50} color={base.light.baseColors.shape.highlight}/>
                     </GridItem>
                     <GridItem small={9} medium={9} large={9}>
-                        <div>
                             <LeadParagraph color={base.light.baseColors.text.highlight}>{currentDateTime.toLocaleString('nb-NO', {
                                 weekday: 'long',
                                 year: 'numeric',
@@ -90,10 +97,9 @@ function App() {
                                 minute: '2-digit',
                                 second: '2-digit'
                             })}</LeadParagraph>
-                        </div>
                     </GridItem>
                 </GridContainer>
-                <StaffAndHeadings randomStaffImage={randomStaffImage} greeting={getGreetingText(currentDateTime)} />
+                <StaffAndHeadings randomStaffImage={randomStaffImage} greeting={greeting} />
             </Contrast>
             <Weather location={LOCATION} />
         </div>
