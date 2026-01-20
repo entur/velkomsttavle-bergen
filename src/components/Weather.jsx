@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { formatNumber } from '../ts/main';
 import {ThermometerIcon, UmbrellaIcon, WindIcon} from "@entur/icons";
-import {Heading, Text} from "@entur/typography/beta";
 import {GridContainer, GridItem} from "@entur/grid";
+import {semantic} from "@entur/tokens";
+import {Heading1, Label} from "@entur/typography";
 
 async function _fetch(url) {
   try {
@@ -57,7 +58,7 @@ export default function Weather({ location }) {
     const timeSeries = weatherData.properties.timeseries.slice(3, 9);
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center',  width: '100%', backgroundColor: '#aeb7e2' }}>
+        <div style={{ display: 'flex', justifyContent: 'center',  width: '100%', backgroundColor: semantic.fill.background.subdued.light }}>
             {timeSeries.map((weather) => {
                 const temperature = weather.data.instant.details.air_temperature;
                 const symbolCode = weather.data.next_1_hours.summary.symbol_code;
@@ -65,7 +66,7 @@ export default function Weather({ location }) {
                     <div key={weather.time} style={{ padding: '20px' }}>
                         <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
                             <GridItem small={6} medium={6} large={6}>
-                                <Heading as="h1" variant="title-1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading>
+                                <Heading1 as="h1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading1>
                                 <img
                                     src={`/yrSymbols/${symbolCode}.svg`}
                                     alt={symbolCode}
@@ -76,7 +77,7 @@ export default function Weather({ location }) {
                                         <ThermometerIcon size={ 20 }/>
                                     </GridItem>
                                     <GridItem small={2} medium={2} large={2}>
-                                        <Text variant="label" spacing="none">{formatNumber(temperature, 'celsius')}</Text>
+                                        <Label>{formatNumber(temperature, 'celsius')}</Label>
                                     </GridItem>
                                 </GridContainer>
                                 <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
@@ -84,7 +85,7 @@ export default function Weather({ location }) {
                                         <UmbrellaIcon size={ 20 } />
                                     </GridItem>
                                     <GridItem small={2} medium={2} large={2}>
-                                        <Text variant="label" spacing="none">{formatNumber(weather.data.next_1_hours.details.precipitation_amount, 'millimeter')}</Text>
+                                        <Label>{formatNumber(weather.data.next_1_hours.details.precipitation_amount, 'millimeter')}</Label>
                                     </GridItem>
                                 </GridContainer>
                                 <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'left' }}>
@@ -92,7 +93,7 @@ export default function Weather({ location }) {
                                         <WindIcon size={ 20 } />
                                     </GridItem>
                                     <GridItem small={2} medium={2} large={2}>
-                                        <Text variant="label" spacing="none">{formatNumber(weather.data.instant.details.wind_speed, 'meter-per-second')}</Text>
+                                        <Label>{formatNumber(weather.data.instant.details.wind_speed, 'meter-per-second')}</Label>
                                     </GridItem>
                                 </GridContainer>
 
