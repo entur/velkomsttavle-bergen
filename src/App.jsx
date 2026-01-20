@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Weather from './components/Weather';
 import {Heading} from "@entur/typography/beta";
 import {Contrast} from "@entur/layout";
-import ServiceAlert from './components/ServiceAlert';
 
 function App() {
     // Hardcoded location for Bergen
@@ -27,7 +26,6 @@ function App() {
                 </div>
             </Contrast>
             <Weather location={LOCATION} />
-            <ServiceAlert />
         </div>
     );
 }
