@@ -1,10 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import Weather from './components/Weather';
 import {Heading1, Heading3, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
 import {base} from "@entur/tokens";
 import {GridContainer, GridItem} from "@entur/grid";
 import {ClockIcon} from "@entur/icons";
+
+// Memoized component for staff image and headings
+const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, greeting }) {
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+            {randomStaffImage && (
+                <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '40%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
+            )}
+            <div style={{ marginLeft: '2rem' }}>
+                <Heading1>Velkommen til Entur Bergen</Heading1>
+                <Heading3>{greeting}</Heading3>
+            </div>
+        </div>
+    );
+});
 
 function App() {
     // Hardcoded location for Bergen
@@ -13,11 +28,15 @@ function App() {
     const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
 
-    // Staff image logic
+    // Staff image logic (set only once on mount)
     useEffect(() => {
         const staffImages = ['/staff_woman.svg', '/staff_man.svg'];
         const randomImage = staffImages[Math.floor(Math.random() * staffImages.length)];
         setRandomStaffImage(randomImage);
+    }, []);
+
+    // Clock logic (update every second)
+    useEffect(() => {
         const timer = setInterval(() => {
             setCurrentDateTime(new Date());
         }, 1000);
@@ -71,18 +90,10 @@ function App() {
                                 minute: '2-digit',
                                 second: '2-digit'
                             })}</LeadParagraph>
-
-
                         </div>
                     </GridItem>
                 </GridContainer>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                    <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '40%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
-                    <div style={{ marginLeft: '2rem' }}>
-                        <Heading1>Velkommen til Entur Bergen</Heading1>
-                        <Heading3>{getGreetingText(currentDateTime)}</Heading3>
-                    </div>
-                </div>
+                <StaffAndHeadings randomStaffImage={randomStaffImage} greeting={getGreetingText(currentDateTime)} />
             </Contrast>
             <Weather location={LOCATION} />
         </div>

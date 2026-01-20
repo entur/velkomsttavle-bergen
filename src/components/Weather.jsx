@@ -3,7 +3,7 @@ import { formatNumber } from '../ts/main';
 import {ThermometerIcon, UmbrellaIcon, WindIcon} from "@entur/icons";
 import {GridContainer, GridItem} from "@entur/grid";
 import {semantic} from "@entur/tokens";
-import {Heading1, Label} from "@entur/typography";
+import {Heading3, Label} from "@entur/typography";
 
 async function _fetch(url) {
   try {
@@ -66,7 +66,7 @@ export default function Weather({ location }) {
                     <div key={weather.time} style={{ padding: '20px' }}>
                         <GridContainer spacing={"medium"} style={{ display: 'flex', justifyContent: 'center' }}>
                             <GridItem small={6} medium={6} large={6}>
-                                <Heading1 as="h1" style={{ display: 'flex', justifyContent: 'center'}}>{weather.time.substring(11, 16)}</Heading1>
+                                <Heading3>{weather.time.substring(11, 16)}</Heading3>
                                 <img
                                     src={`/yrSymbols/${symbolCode}.svg`}
                                     alt={symbolCode}
