@@ -16,7 +16,7 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
-		"@entur/grid": "^0.3.70",
+		"@entur/grid": "^0.3.72",
 		"@entur/icons": "^8.4.0",
 		"@entur/layout": "^3.3.1",
 		"@entur/tokens": "^3.21.1",
