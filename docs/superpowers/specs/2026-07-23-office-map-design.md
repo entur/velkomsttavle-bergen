@@ -153,7 +153,9 @@ Værmelding og kart vises ikke lenger samtidig, men veksler i en karusell:
   bakgrunnen).
 - **`App.jsx`**: video + krympet blå velkomstseksjon beholdes; `OfficeMap` og
   `Weather` rendres ikke lenger direkte, men som de to slidene i `<Carousel>`.
-- **Romnavn-fiks:** den kopierte SVG-en bruker CSS-klassene `.room-label` /
-  `.room-label-fixed` for `text-anchor: middle`, men den CSS-en følger ikke med
-  i synken. Regelen legges i `src/css/main.css` slik at romnavn sentreres og
-  ikke overskrives ved neste sync.
+- **Romnavn-plassering:** `entur/plantegning` setter *ingen* `text-anchor` på
+  `.room-label` — labelene bruker default `text-anchor: start`, og
+  label-koordinatene er laget for det. En tidlig antatt «fiks» med
+  `text-anchor: middle` skjøv teksten et halvt tekstbredde mot venstre og ble
+  fjernet. Vi legger derfor ingen ekstra CSS på romnavn; den kopierte SVG-en
+  gjengis som i originalen.
