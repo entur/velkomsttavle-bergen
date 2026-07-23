@@ -1,5 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
 import Weather from './components/Weather';
+import OfficeMap from './floorplan/OfficeMap';
 import {Heading2, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
 import {base} from "@entur/tokens";
@@ -9,7 +10,7 @@ const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, gree
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
             {randomStaffImage && (
-                <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '90%', maxWidth: '40%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
+                <img src={randomStaffImage} alt="Staff" style={{ maxHeight: '18vh', maxWidth: '40%', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
             )}
             <div style={{ marginLeft: '2rem' }}>
                 <Heading2>Velkommen til Entur Bergen</Heading2>
@@ -74,9 +75,10 @@ function App() {
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <video src="/entur.mp4" autoPlay loop muted playsInline preload="auto" style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
-            <Contrast style={{ flex: 1, width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: base.light.baseColors.frame.contrast, flexDirection: 'column' }}>
+            <Contrast style={{ width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: base.light.baseColors.frame.contrast, flexDirection: 'column', padding: '1.5rem 0' }}>
                 <StaffAndHeadings randomStaffImage={randomStaffImage} greeting={greeting} />
             </Contrast>
+            <OfficeMap />
             <Weather location={LOCATION} date={date} />
         </div>
     );
