@@ -27,7 +27,6 @@ function App() {
     const LOCATION = { name: 'Bergen', lat: 60.39299, lng: 5.32415 };
     const [randomStaffImage, setRandomStaffImage] = useState(null);
     const [greeting, setGreeting] = useState(() => getGreetingText(new Date()));
-    const [date, setDate] = useState(new Date());
 
 
     // Greeting, staff image, and date logic (set on mount and every 15 minutes)
@@ -36,9 +35,7 @@ function App() {
             const staffImages = ['/staff_woman.svg', '/staff_man.svg'];
             const randomImage = staffImages[Math.floor(Math.random() * staffImages.length)];
             setRandomStaffImage(randomImage);
-            const now = new Date();
-            setGreeting(getGreetingText(now));
-            setDate(now);
+            setGreeting(getGreetingText(new Date()));
         }
         updateAll(); // set immediately on mount
         const interval = setInterval(updateAll, 15 * 60 * 1000); // every 15 minutes
@@ -82,7 +79,7 @@ function App() {
             </Contrast>
             <Carousel
                 slides={[
-                    { key: 'weather', Icon: SunCloudIcon, node: <Weather location={LOCATION} date={date} /> },
+                    { key: 'weather', Icon: SunCloudIcon, node: <Weather location={LOCATION} /> },
                     { key: 'map', Icon: MapIcon, node: <OfficeMap /> },
                 ]}
             />
