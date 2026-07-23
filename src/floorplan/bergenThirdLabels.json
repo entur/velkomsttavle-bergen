@@ -1,0 +1,160 @@
+[
+  {
+    "id": "spise-moterom",
+    "name": "EnUlrikenTur",
+    "x": 590,
+    "y": 419
+  },
+  {
+    "id": "mote",
+    "name": "EnFløyenTur",
+    "x": 40,
+    "y": 510
+  },
+  {
+    "id": "stotterom",
+    "name": "EnStoltzenTur",
+    "x": 40,
+    "y": 620
+  },
+  {
+    "id": "stillerom-5",
+    "name": "EnLøvstakkenTur",
+    "x": 820,
+    "y": 700,
+    "lines": [
+      "En",
+      "Løvstakken",
+      "Tur"
+    ]
+  },
+  {
+    "id": "stillerom-6",
+    "name": "EnLyderhornTur",
+    "x": 820,
+    "y": 815,
+    "lines": [
+      "En",
+      "Lyderhorn",
+      "Tur"
+    ]
+  },
+  {
+    "id": "wc-nw",
+    "name": "WC",
+    "x": 45,
+    "y": 30
+  },
+  {
+    "id": "hc-wc",
+    "name": "HC-WC",
+    "x": 35,
+    "y": 105
+  },
+  {
+    "id": "datasentral-banenor",
+    "name": "Datasentral BaneNOR",
+    "x": 35,
+    "y": 210,
+    "lines": [
+      "Datasentral",
+      "BaneNOR"
+    ]
+  },
+  {
+    "id": "romningstrapp",
+    "name": "Rømningstrapp",
+    "x": 253,
+    "y": 90
+  },
+  {
+    "id": "el",
+    "name": "EL",
+    "x": 185,
+    "y": 258
+  },
+  {
+    "id": "kjokken",
+    "name": "Kjøkken",
+    "x": 433,
+    "y": 419
+  },
+  {
+    "id": "landskap-24",
+    "name": "Landskap",
+    "x": 780,
+    "y": 419
+  },
+  {
+    "id": "hovedtrapp",
+    "name": "Hovedtrapp",
+    "x": 65,
+    "y": 371,
+    "rotation": 0
+  },
+  {
+    "id": "heis",
+    "name": "Heis",
+    "x": 311,
+    "y": 362
+  },
+  {
+    "id": "gang-26",
+    "name": "Gang",
+    "x": 250,
+    "y": 200
+  },
+  {
+    "id": "vestibyle",
+    "name": "Vestibyle",
+    "x": 230,
+    "y": 615
+  },
+  {
+    "id": "skap",
+    "name": "Skap",
+    "x": 358,
+    "y": 485,
+    "rotation": -90
+  },
+  {
+    "id": "gang-21",
+    "name": "Gang",
+    "x": 440,
+    "y": 615
+  },
+  {
+    "id": "wc-a",
+    "name": "WC",
+    "x": 578,
+    "y": 562
+  },
+  {
+    "id": "wc-b",
+    "name": "WC",
+    "x": 650,
+    "y": 562
+  },
+  {
+    "id": "trapp-loft",
+    "name": "Trapp til loft",
+    "x": 810,
+    "y": 610,
+    "lines": [
+      "Trapp til",
+      "loft"
+    ]
+  },
+  {
+    "id": "landskap-43",
+    "name": "Landskap",
+    "x": 153,
+    "y": 782
+  },
+  {
+    "id": "landskap-49",
+    "name": "Landskap",
+    "x": 554,
+    "y": 782
+  }
+]
