@@ -35,3 +35,18 @@ You can preview the production build with `npm run preview`.
 ## Online
 
 go to https://stunor92.github.io/entur-tavla/ or https://entur.sturle.dev/
+
+## Deploy til Firebase Hosting
+
+Forutsetning: fyll inn faktisk Entur-prosjekt-ID i `.firebaserc`
+(erstatt `<ENTUR_FIREBASE_PROJECT_ID>`), og logg inn:
+
+    yarn firebase login
+
+Deploy:
+
+    yarn deploy:firebase
+
+Intro-videoen ligger i `public/entur.mp4` og serveres same-origin med
+`immutable`-cache (se `firebase.json`), slik at den looper fra nettleser-cache
+uten flaky nettverkskall.
