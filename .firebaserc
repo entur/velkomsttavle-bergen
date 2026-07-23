@@ -1,5 +1,5 @@
 {
   "projects": {
-    "default": "<ENTUR_FIREBASE_PROJECT_ID>"
+    "default": "ent-tavleber-prd"
   }
 }
