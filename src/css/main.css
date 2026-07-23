@@ -5,3 +5,10 @@
 @import '@entur/typography/dist/styles.css';
 @import '@entur/grid/dist/styles.css';
 @import "@entur/tokens/dist/base.css";
+
+/* Sentrer romnavn i plantegningen. Den kopierte SVG-en fra entur/plantegning
+   bruker disse klassene for tekstjustering, men CSS-en følger ikke med i synken. */
+.room-label,
+.room-label-fixed {
+    text-anchor: middle;
+}

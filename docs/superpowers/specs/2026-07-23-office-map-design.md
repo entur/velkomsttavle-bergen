@@ -132,3 +132,28 @@ Kjøretid i appen:
 - Kun Bergen 3. etasje — ingen etasjevelger eller andre kontorer.
 - Ingen interaktivitet (søk, romhøydepunkt, klikk) fra plantegning-appen.
 - Ingen delt npm-pakke mellom repoene.
+
+## Addendum 2026-07-23: Karusell (vær + kart)
+
+Erstatter den opprinnelige «kart i egen hvit seksjon mellom velkomst og vær».
+Værmelding og kart vises ikke lenger samtidig, men veksler i en karusell:
+
+- **`src/components/Carousel.jsx`** — generisk karusell som tar
+  `slides: Array<{ key, Icon, node }>`, bytter slide hvert **30. sekund**, og
+  viser en indikator-rad **øverst**: to Entur-ikoner (`SunCloudIcon` = vær,
+  `MapIcon` = kart) med aktivt ikon i **koral**
+  (`base.light.baseColors.shape.highlight`, `#ff5959`) og inaktive i **hvitt**,
+  og en **lineær progress-bar** under ikonene som fylles 0→100 % fram til neste
+  bytte (nullstilles ved slide-bytte). Én `setInterval` (100 ms tick) driver
+  både progress og bytte.
+- **Felles lavendel bakgrunn** på hele karusell-området:
+  `semantic.fill.background.subdued.light` (`#d9dae8`) — samme farge
+  værmeldingen allerede brukte.
+- **`OfficeMap`** gjøres gjennomsiktig (fyller sin slide; karusellen gir
+  bakgrunnen).
+- **`App.jsx`**: video + krympet blå velkomstseksjon beholdes; `OfficeMap` og
+  `Weather` rendres ikke lenger direkte, men som de to slidene i `<Carousel>`.
+- **Romnavn-fiks:** den kopierte SVG-en bruker CSS-klassene `.room-label` /
+  `.room-label-fixed` for `text-anchor: middle`, men den CSS-en følger ikke med
+  i synken. Regelen legges i `src/css/main.css` slik at romnavn sentreres og
+  ikke overskrives ved neste sync.

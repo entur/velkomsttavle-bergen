@@ -1,9 +1,11 @@
 import React, { useState, useEffect, memo } from 'react';
 import Weather from './components/Weather';
 import OfficeMap from './floorplan/OfficeMap';
+import Carousel from './components/Carousel';
 import {Heading2, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
 import {base} from "@entur/tokens";
+import {SunCloudIcon, MapIcon} from "@entur/icons";
 
 // Memoized component for staff image and headings
 const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, greeting }) {
@@ -78,8 +80,12 @@ function App() {
             <Contrast style={{ width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: base.light.baseColors.frame.contrast, flexDirection: 'column', padding: '1.5rem 0' }}>
                 <StaffAndHeadings randomStaffImage={randomStaffImage} greeting={greeting} />
             </Contrast>
-            <OfficeMap />
-            <Weather location={LOCATION} date={date} />
+            <Carousel
+                slides={[
+                    { key: 'weather', Icon: SunCloudIcon, node: <Weather location={LOCATION} date={date} /> },
+                    { key: 'map', Icon: MapIcon, node: <OfficeMap /> },
+                ]}
+            />
         </div>
     );
 }
