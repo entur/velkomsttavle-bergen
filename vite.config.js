@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     plugins: [react()],
-    // Base path for GitHub Pages deployment
+    // Serveres fra rot på Firebase Hosting
     base: '/',
     server: {
         port: 3000

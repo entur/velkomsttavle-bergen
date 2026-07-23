@@ -1,52 +1,97 @@
-# Tavla
-This is just a simple Github Page project to host a single web-page that shows a combination of [Entur tavla](https://tavla.entur.no) and [Yr widget](https://developer.yr.no/doc/guides/available-widgets/).
-The purpose of the project is just to have a screen at our office to show busses and trams and a weather-forecast so we can plan when its the best time to leave office.
+# Velkomsttavle Bergen
 
-## Tech Stack
+Fullskjerms informasjonstavle for Entur-kontoret i Bergen. Kjører på en skjerm i
+resepsjonen/kontoret og viser en velkomsthilsen, værmelding og et kart over
+kontoret.
 
-This project is built with:
-- **React** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling
+## Hva tavla viser
 
-## Developing
+Skjermen er delt i tre, ovenfra og ned:
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+1. **Intro-video** – `public/entur.mp4` spilles av i loop øverst (lyd av, autoplay).
+   Videoen serveres same-origin med `immutable`-cache (se `firebase.json`) slik at
+   den looper fra nettleser-cache uten flaky nettverkskall.
+2. **Velkomsthilsen** – et tilfeldig ansatt-illustrasjon (`staff_man.svg` /
+   `staff_woman.svg`) ved siden av «Velkommen til Entur Bergen» og en hilsen som
+   varierer med klokkeslett og ukedag (god morgen, vel hjem, god helg osv.).
+   Oppdateres hvert 15. minutt.
+3. **Karusell** – veksler mellom to slides hvert 30. sekund, med en progress-bar
+   og en ikon-rad som viser hvilken slide som er aktiv:
+   - **Vær** – værmelding for Bergen hentet direkte fra MET Norway / Yr sitt
+     [locationforecast-API](https://api.met.no/weatherapi/locationforecast/2.0/).
+     Viser et «Nå»-kort (temperatur, vind, nedbør), en stripe med de neste 6
+     timene, og en rad med de 4 neste dagene. Værsymbolene ligger lokalt i
+     `public/yrSymbols/`. Værsiden laster siden på nytt hvert 15. minutt for
+     ferske data.
+   - **Kontorkart** – SVG-plantegning av 3. etasje i Bergen med romnavn som
+     etiketter. Plantegningen synkes automatisk fra `entur/plantegning` (se
+     [Synk av plantegning](#synk-av-plantegning)).
+
+## Teknologi
+
+- **React 19** – UI
+- **Vite 7** – bygg og dev-server
+- **Entur designsystem** (`@entur/typography`, `@entur/layout`, `@entur/icons`,
+  `@entur/tokens` m.fl.) – komponenter, ikoner og fargetokens
+- Styling gjøres med inline-styles og Entur-tokens (ikke Tailwind-klasser).
+  Koden er skrevet i JSX (ren JavaScript), med noen få `.js`/`.d.ts`-hjelpere.
+
+## Utvikling
+
+Installer avhengigheter og start dev-server:
 
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+yarn install
+yarn dev
 ```
 
-## Building
+Dev-serveren kjører på http://localhost:3000.
 
-To create a production version of your app:
+## Bygging
+
+Lag en produksjonsversjon:
 
 ```bash
-npm run build
+yarn build
 ```
 
-You can preview the production build with `npm run preview`.
-
-
-## Online
-
-go to https://stunor92.github.io/entur-tavla/ or https://entur.sturle.dev/
+Du kan forhåndsvise produksjonsbygget med `yarn preview`.
 
 ## Deploy til Firebase Hosting
 
-Forutsetning: fyll inn faktisk Entur-prosjekt-ID i `.firebaserc`
-(erstatt `<ENTUR_FIREBASE_PROJECT_ID>`), og logg inn:
+Tavla hostes på Firebase Hosting i Entur-prosjektet `ent-tavleber-prd`
+(konfigurert i `.firebaserc`).
 
-    yarn firebase login
+Deploy skjer **automatisk** via GitHub Actions (`.github/workflows/deploy.yml`)
+ved push til `main` som endrer kildekode, `public/`, `index.html` eller
+bygg-/hosting-config. Autentisering mot Google Cloud er nøkkelløs via Workload
+Identity.
 
-Deploy:
+Manuell deploy fra egen maskin (krever `yarn firebase login`):
 
-    yarn deploy:firebase
+```bash
+yarn deploy:firebase
+```
 
-Intro-videoen ligger i `public/entur.mp4` og serveres same-origin med
-`immutable`-cache (se `firebase.json`), slik at den looper fra nettleser-cache
-uten flaky nettverkskall.
+## Synk av plantegning
+
+Kontorkartet holdes oppdatert ved en ukentlig GitHub Action
+(`.github/workflows/sync-floorplan.yml`, mandager kl. 06:00 UTC). Den kjører
+`scripts/sync-floorplan.mjs`, som henter SVG-en og romnavnene fra
+`entur/plantegning`, transformerer TSX til JSX og skriver
+`src/floorplan/BergenThird.jsx` og `src/floorplan/bergenThirdLabels.json`.
+Actionen oppretter en pull request kun når kilden faktisk har endret seg.
+
+Kjøre synken lokalt (krever et GitHub-token med lesetilgang til
+`entur/plantegning`):
+
+```bash
+FLOORPLAN_SYNC_TOKEN=<token> node scripts/sync-floorplan.mjs
+```
+
+Transform-logikken er dekket av tester i `scripts/floorplan-transform.test.mjs`,
+som kjøres med Node sin innebygde test-runner:
+
+```bash
+node --test scripts/floorplan-transform.test.mjs
+```
