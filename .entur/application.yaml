@@ -1,0 +1,10 @@
+apiVersion: orchestrator.entur.io/apps/v1
+kind: GoogleCloudFirebaseApplication
+metadata:
+  id: tavleber
+  displayName: Velkomsttavle Bergen
+  name: velkomsttavle-bergen
+  owner: team-produkt
+spec:
+  environments: [prd]
+  repositories: [velkomsttavle-bergen]
