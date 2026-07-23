@@ -1,0 +1,38 @@
+name: Sync floorplan
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # mandager 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync floorplan from entur/plantegning
+        env:
+          FLOORPLAN_SYNC_TOKEN: ${{ secrets.FLOORPLAN_SYNC_TOKEN }}
+        run: node scripts/sync-floorplan.mjs
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: sync Bergen floorplan from entur/plantegning"
+          branch: sync/floorplan
+          delete-branch: true
+          title: "chore: sync Bergen floorplan"
+          body: |
+            Automatisk ukentlig sync av plantegningen fra `entur/plantegning`.
+            Opprettes kun når kilde-SVG eller romnavn har endret seg.
+          add-paths: |
+            src/floorplan/BergenThird.jsx
+            src/floorplan/bergenThirdLabels.json
