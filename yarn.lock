@@ -4389,10 +4389,10 @@ pkg-dir@^4.1.0:
   dependencies:
     find-up "^4.0.0"
 
-pnpm@^11.16.0:
-  version "11.16.0"
-  resolved "https://registry.yarnpkg.com/pnpm/-/pnpm-11.16.0.tgz#fc0b55d90c04ed8a7c3e37659cc72c188028f6f1"
-  integrity sha512-t2fpqY/IeuwPQtrvzQ6ElBws20XXPE4eaIYPsr39vgMqtZIQVHnl4Fwjf3QMil/9u7UjhXl93CKWdFobu4g+jQ==
+pnpm@^11.17.0:
+  version "11.17.0"
+  resolved "https://registry.yarnpkg.com/pnpm/-/pnpm-11.17.0.tgz#fc1294348ce0f22a29133abd662561bfac01c448"
+  integrity sha512-zKPOozKtJUu4QUX5ZtGfSHlhUhA0b8kseaBH8joNezzKPDeS8AdrofGDHSd++88KkRmzGppg7Kf7PWIx8zHvcg==
 
 portfinder@^1.0.32:
   version "1.0.38"
