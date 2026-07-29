@@ -2,25 +2,35 @@
   {
     "id": "spise-moterom",
     "name": "EnUlrikenTur",
-    "x": 590,
+    "x": 578,
     "y": 419
   },
   {
     "id": "mote",
     "name": "EnFløyenTur",
-    "x": 40,
-    "y": 510
+    "x": 75,
+    "y": 490,
+    "lines": [
+      "En",
+      "Fløyen",
+      "Tur"
+    ]
   },
   {
     "id": "stotterom",
     "name": "EnStoltzenTur",
-    "x": 40,
-    "y": 620
+    "x": 75,
+    "y": 600,
+    "lines": [
+      "En",
+      "Stoltzen",
+      "Tur"
+    ]
   },
   {
     "id": "stillerom-5",
     "name": "EnLøvstakkenTur",
-    "x": 820,
+    "x": 856,
     "y": 700,
     "lines": [
       "En",
@@ -31,7 +41,7 @@
   {
     "id": "stillerom-6",
     "name": "EnLyderhornTur",
-    "x": 820,
+    "x": 856,
     "y": 815,
     "lines": [
       "En",
@@ -42,19 +52,19 @@
   {
     "id": "wc-nw",
     "name": "WC",
-    "x": 45,
+    "x": 33,
     "y": 30
   },
   {
     "id": "hc-wc",
     "name": "HC-WC",
-    "x": 35,
+    "x": 23,
     "y": 105
   },
   {
     "id": "datasentral-banenor",
     "name": "Datasentral BaneNOR",
-    "x": 35,
+    "x": 75,
     "y": 210,
     "lines": [
       "Datasentral",
@@ -64,81 +74,74 @@
   {
     "id": "romningstrapp",
     "name": "Rømningstrapp",
-    "x": 253,
+    "x": 250,
     "y": 90
   },
   {
     "id": "el",
     "name": "EL",
-    "x": 185,
+    "x": 180,
     "y": 258
   },
   {
     "id": "kjokken",
     "name": "Kjøkken",
-    "x": 433,
+    "x": 421,
     "y": 419
   },
   {
     "id": "landskap-24",
-    "name": "Landskap",
-    "x": 780,
+    "name": "Teamrom Kundeservice",
+    "x": 718,
     "y": 419
   },
   {
     "id": "hovedtrapp",
     "name": "Hovedtrapp",
-    "x": 65,
+    "x": 62,
     "y": 371,
     "rotation": 0
   },
   {
     "id": "heis",
     "name": "Heis",
-    "x": 311,
+    "x": 299,
     "y": 362
   },
   {
     "id": "gang-26",
     "name": "Gang",
-    "x": 250,
+    "x": 238,
     "y": 200
   },
   {
     "id": "vestibyle",
     "name": "Vestibyle",
-    "x": 230,
+    "x": 218,
     "y": 615
-  },
-  {
-    "id": "skap",
-    "name": "Skap",
-    "x": 358,
-    "y": 485,
-    "rotation": -90
   },
   {
     "id": "gang-21",
     "name": "Gang",
-    "x": 440,
+    "x": 428,
     "y": 615
   },
   {
     "id": "wc-a",
     "name": "WC",
-    "x": 578,
+    "x": 566,
     "y": 562
   },
   {
     "id": "wc-b",
     "name": "WC",
-    "x": 650,
+    "x": 638,
     "y": 562
   },
   {
     "id": "trapp-loft",
     "name": "Trapp til loft",
-    "x": 810,
+    "x": 850,
     "y": 610,
     "lines": [
       "Trapp til",
@@ -147,14 +150,14 @@
   },
   {
     "id": "landskap-43",
-    "name": "Landskap",
-    "x": 153,
+    "name": "Teamrom Internasjonalt Salg",
+    "x": 88,
     "y": 782
   },
   {
     "id": "landskap-49",
-    "name": "Landskap",
-    "x": 554,
+    "name": "Teamrom Produkt",
+    "x": 518,
     "y": 782
   }
 ]
