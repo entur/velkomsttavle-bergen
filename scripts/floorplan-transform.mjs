@@ -10,12 +10,6 @@ export function transformTsxToJsx(source) {
     .replace(/^import type \{[^}]*\} from ['"][^'"]*FloorplanView['"];?\r?\n/m, '')
     // fjern type-annotasjonen på props
     .replace(/:\s*FloorplanSVGProps/, '')
-    // Kildekatalogen er src/assets/floorplans/ (dybde 3), men utfilen plasseres i
-    // src/floorplan/ (dybde 2), så den relative stien til utils må justeres.
-    .replace(
-      /from (['"])\.\.\/\.\.\/utils\/labelOrigin\1/g,
-      "from '../utils/labelOrigin'"
-    )
 }
 
 export function flattenLabels(config) {

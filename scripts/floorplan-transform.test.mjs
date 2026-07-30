@@ -19,23 +19,6 @@ test('transformTsxToJsx removes the type import line', () => {
   assert.ok(out.includes('export default BergenThird'))
 })
 
-test('transformTsxToJsx rewrites the labelOrigin import path', () => {
-  const src = [
-    "import { measureLabelOrigin } from '../../utils/labelOrigin'",
-    "import type { FloorplanSVGProps } from '../../components/FloorplanView'",
-    '',
-    'const BergenThird = ({ labels }: FloorplanSVGProps) => {',
-    '  return null',
-    '}',
-    '',
-    'export default BergenThird',
-  ].join('\n')
-  const out = transformTsxToJsx(src)
-  assert.ok(!out.includes("'../../utils/labelOrigin'"), 'old deep path should be gone')
-  assert.ok(out.includes("from '../utils/labelOrigin'"), 'path should be rewritten one level up')
-})
-
-
 test('transformTsxToJsx throws when the expected type is missing', () => {
   assert.throws(() => transformTsxToJsx('const x = 1\n'), /FloorplanSVGProps/)
 })

@@ -1,4 +1,4 @@
-import { measureLabelOrigin } from '../utils/labelOrigin'
+import { measureLabelOrigin } from '../../utils/labelOrigin'
 
 const BergenThird = ({ labels }) => {
   return (
