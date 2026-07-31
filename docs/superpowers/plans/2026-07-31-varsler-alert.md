@@ -86,7 +86,7 @@ Filer som opprettes eller endres, og hva hver av dem har ansvar for.
 |---|---|
 | `src/alerts/firebaseConfig.js` | Web-konfigen for `ent-tavleber-prd` |
 | `src/alerts/firebase.js` | Initialiserer appen én gang, eksporterer `app` og `db`, kobler til emulator |
-| `src/alerts/alertsRepository.js` | Eneste fil som importerer `firebase/firestore` |
+| `src/alerts/alertsRepository.js` | Eneste fil utenom `firebase.js` som importerer `firebase/firestore` |
 | `src/admin/adminAuth.js` | Eneste fil som importerer `firebase/auth` |
 
 ### Komponenter
