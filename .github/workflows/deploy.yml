@@ -11,6 +11,7 @@ on:
       - yarn.lock
       - vite.config.js
       - firebase.json
+      - firestore.rules
       - .firebaserc
       - .github/workflows/deploy.yml
   workflow_dispatch:
@@ -37,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Test
+        run: yarn test
+
       - name: Build
         run: yarn build
 
@@ -48,5 +52,5 @@ jobs:
           gcp_workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
           gcp_service_account: ${{ vars.SERVICE_ACCOUNT }}
 
-      - name: Deploy to Firebase Hosting
-        run: yarn firebase deploy --only hosting --project ent-tavleber-prd --non-interactive
+      - name: Deploy to Firebase Hosting and Firestore rules
+        run: yarn firebase deploy --only hosting,firestore:rules --project ent-tavleber-prd --non-interactive
