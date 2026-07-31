@@ -78,7 +78,7 @@ Filer som opprettes eller endres, og hva hver av dem har ansvar for.
 | `src/alerts/alertSchedule.js` | `alertStatus`, `selectVisibleAlerts`, `groupAlertsByStatus` |
 | `src/alerts/alertValidation.js` | `validateAlertInput`, `hasErrors`, maks-lengder |
 | `src/alerts/alertMapper.js` | `toAlert` (Firestore-dokument → plain objekt med `Date`), `toFirestoreData` |
-| `src/admin/enturAccount.js` | `isEnturUser` — domenesjekken |
+| `src/admin/enturAccount.js` | `isEnturUser`, `isVerifiedEnturUser`, `normalizeEmail` |
 
 ### Firebase-lag
 
@@ -88,6 +88,7 @@ Filer som opprettes eller endres, og hva hver av dem har ansvar for.
 | `src/alerts/firebase.js` | Initialiserer appen én gang, eksporterer `app` og `db`, kobler til emulator |
 | `src/alerts/alertsRepository.js` | Eneste fil utenom `firebase.js` som importerer `firebase/firestore` |
 | `src/admin/adminAuth.js` | Eneste fil som importerer `firebase/auth` |
+| `src/admin/adminAccess.js` | Slår opp om innlogget bruker står i `admins`-allowlisten (Task 6b) |
 
 ### Komponenter
 
@@ -246,6 +247,10 @@ Modify `src/css/main.css` — legg til denne linja blant de andre importene:
 Kun alert-stilene hører hjemme her. `form`, `datepicker` og `table` brukes bare av admin og importeres i `src/admin/admin.css` (Task 6), slik at kiosken ikke laster CSS den ikke bruker.
 
 - [ ] **Step 9: Skriv Firestore-reglene**
+
+> **Erstattet av Task 6b.** Reglene under er dem Task 1 faktisk skrev. Tilgangs­modellen
+> ble senere endret til en eksplisitt allowlist, og hele filen byttes ut i Task 6b.
+> Beholdt her fordi planen også er en utførelseslogg.
 
 Create `firestore.rules`:
 
@@ -1737,6 +1742,372 @@ git commit -m "feat: legg til admin-rute med Entur-pålogging"
 
 ---
 
+## Task 6b: Allowlist for admin-tilgang
+
+**Endring bestilt under gjennomføring.** Opprinnelig ga enhver `@entur.org`-konto
+tilgang til å legge inn meldinger. Ny beslutning: tilgang gis per person via en
+eksplisitt allowlist i Firestore, styrt som click-ops i Firebase-konsollet. Se
+speccens «Tilgangsstyring». Denne oppgaven erstatter reglene fra Task 1 og utvider
+påloggingen fra Task 6.
+
+Reviewen av Task 6 fant i tillegg at klient-sjekken var mer tillatende enn reglene
+(manglet `email_verified`, og lowercaset der reglene var case-sensitive). Begge
+lukkes her.
+
+**Designet er verifisert mot Firestore-emulatoren** før det ble valgt:
+`String.lower()` finnes i regelspråket, `exists()` mot
+`admins/{lowercased e-post}` treffer også når tokenet har store bokstaver,
+ikke-allowlistede kontoer avvises med 403, og `admins` er verken klient-skrivbar
+eller lesbar for andre enn eieren.
+
+**Files:**
+- Modify: `firestore.rules`
+- Modify: `src/admin/enturAccount.js`
+- Test: `src/admin/enturAccount.test.mjs`
+- Create: `src/admin/adminAccess.js`
+- Modify: `src/admin/adminAuth.js`
+- Modify: `src/admin/Admin.jsx`
+
+**Interfaces:**
+- Consumes: `db` fra `src/alerts/firebase.js`, `auth` fra `adminAuth.js`
+- Produces:
+  - `normalizeEmail(email): string` — trimmet og lowercased, `''` for ugyldig input
+  - `isVerifiedEnturUser(user): boolean` — domene **og** `emailVerified === true`
+  - `hasAdminAccess(user): Promise<boolean>` — slår opp `admins/{normalizeEmail(email)}`
+  - `<Admin />` med tre tilstander: uinnlogget, innlogget uten tilgang, innlogget med tilgang
+
+- [ ] **Step 1: Skriv de failende testene for normalisering og verifisert bruker**
+
+Modify `src/admin/enturAccount.test.mjs` — behold alle de åtte eksisterende
+`isEnturUser`-testene uendret, og legg til nederst:
+
+```js
+import { isVerifiedEnturUser, normalizeEmail } from './enturAccount.js';
+
+describe('normalizeEmail', () => {
+    it('lowercaser adressen', () => {
+        assert.equal(normalizeEmail('Sturle@Entur.Org'), 'sturle@entur.org');
+    });
+
+    it('trimmer whitespace', () => {
+        assert.equal(normalizeEmail('  sturle@entur.org  '), 'sturle@entur.org');
+    });
+
+    it('gir tom streng for manglende adresse', () => {
+        assert.equal(normalizeEmail(undefined), '');
+        assert.equal(normalizeEmail(null), '');
+        assert.equal(normalizeEmail(42), '');
+    });
+});
+
+describe('isVerifiedEnturUser', () => {
+    it('godtar verifisert entur-konto', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'sturle@entur.org', emailVerified: true }), true);
+    });
+
+    it('avviser uverifisert entur-konto', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'sturle@entur.org', emailVerified: false }), false);
+    });
+
+    it('avviser konto uten emailVerified-felt', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'sturle@entur.org' }), false);
+    });
+
+    it('avviser verifisert ikke-entur-konto', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'noen@gmail.com', emailVerified: true }), false);
+    });
+
+    it('avviser null', () => {
+        assert.equal(isVerifiedEnturUser(null), false);
+    });
+});
+```
+
+- [ ] **Step 2: Kjør testene for å se at de feiler**
+
+Run: `yarn test`
+Expected: FAIL — `isVerifiedEnturUser` og `normalizeEmail` er ikke eksportert ennå.
+
+- [ ] **Step 3: Utvid enturAccount.js**
+
+Modify `src/admin/enturAccount.js` — behold `ENTUR_DOMAIN` og `isEnturUser`
+uendret, og legg til:
+
+```js
+/**
+ * E-post på oppslagsform: trimmet og i små bokstaver.
+ *
+ * Dokument-ID-ene i `admins` er lowercased, og firestore.rules slår opp med
+ * `request.auth.token.email.lower()`. Klienten må normalisere likt, ellers
+ * spriker klientens tilgangssjekk og reglenes.
+ */
+export function normalizeEmail(email) {
+    return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
+/**
+ * Om brukeren har en verifisert Entur-konto.
+ *
+ * `emailVerified` kreves fordi firestore.rules krever `email_verified == true`.
+ * Uten den her ville klienten sluppet inn brukere som reglene avviser, og
+ * feilen ville dukket opp først når man trykket lagre.
+ */
+export function isVerifiedEnturUser(user) {
+    return isEnturUser(user) && user?.emailVerified === true;
+}
+```
+
+- [ ] **Step 4: Kjør testene for å se at de passerer**
+
+Run: `yarn test`
+Expected: PASS — 57 gamle + 8 nye = 65.
+
+- [ ] **Step 5: Erstatt Firestore-reglene**
+
+Modify `firestore.rules` — hele filen:
+
+```
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function callerEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isEnturUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && callerEmail().matches('.*@entur[.]org$');
+    }
+
+    // Tilgang til å legge inn meldinger krever en oppføring i allowlisten.
+    // Å ha en Entur-konto er ikke nok.
+    function isAdmin() {
+      return isEnturUser()
+        && exists(/databases/$(database)/documents/admins/$(callerEmail()));
+    }
+
+    function isValidAlert(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.body is string && d.body.size() > 0 && d.body.size() <= 400
+        && d.level in ['information', 'success', 'warning', 'negative']
+        && d.startsAt is timestamp
+        && (d.endsAt == null || (d.endsAt is timestamp && d.endsAt > d.startsAt))
+        && d.enabled is bool;
+    }
+
+    match /alerts/{alertId} {
+      // Tavla er en kiosk uten pålogging og må kunne lese uautentisert.
+      // Konsekvens: meldingene er offentlig lesbare. Se speccen.
+      allow read: if true;
+
+      allow create: if isAdmin()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.createdBy == callerEmail()
+        && request.resource.data.updatedBy == callerEmail();
+
+      allow update: if isAdmin()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.updatedBy == callerEmail()
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminEmail} {
+      // Man leser kun sitt eget dokument: klienten kan sjekke egen tilgang
+      // uten å kunne liste ut hvem andre som har den.
+      allow read: if isEnturUser() && adminEmail == callerEmail();
+      // Tilgang gis og fjernes i Firebase-konsollet, aldri fra klienten.
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+- [ ] **Step 6: Skriv allowlist-oppslaget**
+
+Create `src/admin/adminAccess.js`:
+
+```js
+import { doc, getDoc } from 'firebase/firestore';
+
+import { db } from '../alerts/firebase.js';
+import { isVerifiedEnturUser, normalizeEmail } from './enturAccount.js';
+
+const COLLECTION = 'admins';
+
+/**
+ * Om brukeren står i `admins`-allowlisten.
+ *
+ * Dokument-ID-en er e-posten i små bokstaver; innholdet spiller ingen rolle, det
+ * er eksistensen som gir tilgang. Reglene tillater bare å lese sitt eget
+ * dokument, så et negativt svar kan like gjerne være «finnes ikke» som
+ * «ikke lov å lese» — begge betyr ingen tilgang, og vi behandler dem likt.
+ *
+ * Dette er kun for å gi en tydelig skjerm tidlig. Håndhevingen ligger i
+ * firestore.rules.
+ */
+export async function hasAdminAccess(user) {
+    if (!isVerifiedEnturUser(user)) {
+        return false;
+    }
+    try {
+        const snapshot = await getDoc(doc(db, COLLECTION, normalizeEmail(user.email)));
+        return snapshot.exists();
+    } catch (error) {
+        console.error('Kunne ikke sjekke admin-tilgang', error);
+        return false;
+    }
+}
+```
+
+- [ ] **Step 7: Stram domenesjekken i adminAuth.js**
+
+Modify `src/admin/adminAuth.js` — bytt begge bruksstedene av `isEnturUser` til
+`isVerifiedEnturUser`, slik at klienten krever det samme som reglene:
+
+```js
+import { ENTUR_DOMAIN, isVerifiedEnturUser } from './enturAccount.js';
+```
+
+I `signIn`:
+
+```js
+    const result = await signInWithPopup(auth, provider);
+    if (!isVerifiedEnturUser(result.user)) {
+        await signOut(auth);
+        throw new Error(`Du må logge inn med en verifisert @${ENTUR_DOMAIN}-konto.`);
+    }
+    return result.user;
+```
+
+I `subscribeToUser`:
+
+```js
+export function subscribeToUser(onUser) {
+    return onAuthStateChanged(auth, (user) => onUser(isVerifiedEnturUser(user) ? user : null));
+}
+```
+
+- [ ] **Step 8: Legg til tilstanden «innlogget uten tilgang» i Admin.jsx**
+
+Modify `src/admin/Admin.jsx`.
+
+Ny import:
+
+```jsx
+import { hasAdminAccess } from './adminAccess';
+```
+
+Ny state sammen med de andre:
+
+```jsx
+    const [access, setAccess] = useState('ukjent');
+```
+
+Ny effekt, etter den som abonnerer på brukeren:
+
+```jsx
+    useEffect(() => {
+        if (!user) {
+            setAccess('ukjent');
+            return;
+        }
+        let current = true;
+        setAccess('sjekker');
+        hasAdminAccess(user).then((allowed) => {
+            if (current) {
+                setAccess(allowed ? 'ja' : 'nei');
+            }
+        });
+        // Flagget hindrer at et svar for en utlogget bruker overskriver
+        // tilstanden for den neste.
+        return () => {
+            current = false;
+        };
+    }, [user]);
+```
+
+Rett etter `if (!user) { ... }`-blokka, før den innloggede skjermen:
+
+```jsx
+    if (access === 'ukjent' || access === 'sjekker') {
+        return null;
+    }
+
+    if (access === 'nei') {
+        return (
+            <main style={{ maxWidth: '32rem', margin: '4rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
+                <img src="/logo.svg" alt="Entur" style={{ height: '2.5rem', marginBottom: '2rem' }} />
+                <Heading1>Ingen tilgang</Heading1>
+                <Paragraph>
+                    Du er innlogget som {user.email}, men kontoen har ikke tilgang til å legge
+                    inn meldinger på velkomsttavla.
+                </Paragraph>
+                <Paragraph>
+                    Tilgang gis per person. Ta kontakt med noen som allerede har tilgang, så
+                    kan de legge deg inn.
+                </Paragraph>
+                <SecondaryButton onClick={signOutUser}>Logg ut</SecondaryButton>
+            </main>
+        );
+    }
+```
+
+`Heading1`, `Paragraph`, `SecondaryButton` og `signOutUser` er allerede importert.
+
+- [ ] **Step 9: Verifiser reglene mot emulatoren**
+
+Bruk `.superpowers/sdd/2026-07-31-varsler-alert/seed-alert.mjs`, som skriver over
+REST med et usignert JWT slik at reglene faktisk håndheves. Skriptet bruker
+`seed@entur.org`.
+
+Emulatoren starter tom, så `admins` er tom, og da skal **alt** skriv til `alerts`
+avvises:
+
+```bash
+node .superpowers/sdd/2026-07-31-varsler-alert/seed-alert.mjs --title "Skal feile" --body "Ingen allowlist ennå." --level warning
+```
+
+Expected: `FEIL 403`.
+
+Legg så `seed@entur.org` i allowlisten. Reglene tillater ikke klient-skriving, så
+bruk emulatorens owner-bypass:
+
+```bash
+curl -s -X POST -H 'Authorization: Bearer owner' -H 'Content-Type: application/json' \
+  'http://127.0.0.1:8080/v1/projects/ent-tavleber-prd/databases/(default)/documents/admins?documentId=seed@entur.org' \
+  -d '{"fields":{"addedBy":{"stringValue":"oppsett"}}}'
+```
+
+Kjør seed-kommandoen på nytt. Expected: `opprettet <id>`.
+
+- [ ] **Step 10: Verifiser de tre tilstandene i admin**
+
+Med emulator og `yarn dev` (`VITE_USE_EMULATOR=true` i `.env.local`):
+
+1. Uinnlogget på `/admin` → påloggingsskjerm
+2. Innlogget som en Entur-bruker som **ikke** er i allowlisten → «Ingen tilgang»
+   med e-posten sin og en logg ut-knapp
+3. Legg brukeren i allowlisten med owner-bypass, last siden på nytt → admin-skallet
+4. `/` viser tavla som før
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add firestore.rules src/admin/enturAccount.js src/admin/enturAccount.test.mjs src/admin/adminAccess.js src/admin/adminAuth.js src/admin/Admin.jsx
+git commit -m "feat: styr admin-tilgang med allowlist i Firestore"
+```
+
+---
+
 ## Task 7: Nivåvelger
 
 Fire fargeprøver man velger mellom, framfor en nedtrekksliste med enum-verdier.
@@ -2423,12 +2794,25 @@ Tavla abonnerer på Firestore med `onSnapshot`, så en ny melding er på skjerme
 i resepsjonen innen sekunder — uten at noen må laste siden på nytt. Tidsvinduet
 reevalueres hvert 30. sekund.
 
-### Pålogging
+### Pålogging og tilgang
 
 `/admin` krever innlogging med Google. Siden Entur bruker Google Workspace er
 det Entur-kontoen din. Både admin-siden og Firestore-reglene krever en
 verifisert `@entur.org`-adresse. Hvem som opprettet og sist endret en melding
 lagres og vises i listen.
+
+**En Entur-konto er ikke nok.** Tilgang gis per person via en allowlist:
+collectionen `admins` i Firestore, med ett dokument per person der dokument-ID-en
+er e-postadressen i små bokstaver. Innholdet i dokumentet spiller ingen rolle —
+det er eksistensen som gir tilgang.
+
+Å gi eller fjerne tilgang gjøres i Firebase-konsollet: legg til eller slett et
+dokument i `admins`. Ingen deploy, ingen kode. Reglene tillater ikke at klienten
+skriver til collectionen, og en innlogget bruker kan bare lese sitt **eget**
+dokument — så ingen kan liste ut hvem som har tilgang, eller gi seg selv tilgang.
+
+Logger noen inn med en Entur-konto som ikke står i allowlisten, får de en
+«Ingen tilgang»-skjerm framfor å oppdage det først når de trykker lagre.
 
 ### Meldingene er offentlig lesbare
 
@@ -2511,6 +2895,9 @@ Kjør dette til slutt, mot emulatoren, som en samlet gjennomgang:
 - [ ] Et varsel dukker opp og forsvinner av seg selv når tidsvinduet åpner og lukker
 - [ ] Karusellen med vær og kart fungerer fortsatt, også med varsler oppe
 - [ ] `/admin` krever innlogging, og en ikke-`@entur.org`-konto avvises
+- [ ] En Entur-konto som ikke er i `admins` får «Ingen tilgang», ikke admin-skallet
+- [ ] Reglene avviser skriving fra en Entur-konto som ikke er i `admins`
+- [ ] Reglene avviser at klienten skriver til `admins`, og at man leser andres oppføring
 - [ ] Skjemaet validerer og forhåndsvisningen stemmer med det tavla viser
 - [ ] Listen grupperer riktig og viser hvem som la inn meldingen
 - [ ] Sletting krever bekreftelse

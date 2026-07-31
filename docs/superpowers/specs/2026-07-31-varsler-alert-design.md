@@ -70,6 +70,7 @@ Alle punktene under er avklart med bruker.
 | **Rekkefølge** | Alvorligste nivå øverst, deretter nyeste `startsAt` først |
 | **Tidsstyring** | Fra- og til-tidspunkt, pluss en av/på-bryter. Åpen slutt tillatt |
 | **Pålogging** | Firebase Auth med Google-provider, låst til `@entur.org` |
+| **Tilgang** | Eksplisitt allowlist i Firestore (`admins`-collection), styrt som click-ops i konsollet. Se «Tilgangsstyring» |
 | **Lesetilgang** | Offentlig lesing aksepteres. Se «Sikkerhet og personvern» |
 | **Sporing** | `createdBy` / `updatedBy` lagres og vises i admin-listen. Ingen egen endringshistorikk |
 | **Nivåvelger** | Fargeprøve-kort med norske etiketter, ikke rå enum-verdier |
@@ -100,6 +101,7 @@ ruter er ikke verdt vekten.
 | `src/components/AlertBanner.jsx` | Tavle-visningen | repository, schedule, `@entur/alert` |
 | `src/admin/Admin.jsx` | Rot for admin: pålogging eller innhold | `adminAuth.js` |
 | `src/admin/adminAuth.js` | `signIn`, `signOut`, `subscribeToUser`, domenesjekk | `firebase/auth` |
+| `src/admin/adminAccess.js` | Slår opp om innlogget bruker står i `admins`-allowlisten | `firebase/firestore` |
 | `src/admin/AlertList.jsx` | Tabell over meldinger, gruppert på status | repository, `@entur/table` |
 | `src/admin/AlertForm.jsx` | Skjema for ny/endret melding + forhåndsvisning | validation, `@entur/form`, `@entur/datepicker` |
 | `src/admin/LevelPicker.jsx` | Fargeprøve-kortene for nivå | `alertLevels.js` |
@@ -159,6 +161,44 @@ Definert i `alertLevels.js`, brukt både i nivåvelgeren og i valideringen:
 Sorteringsvekt for stabling: `negative` (0) → `warning` (1) → `information` (2)
 → `success` (3).
 
+## Tilgangsstyring
+
+Å ha en `@entur.org`-konto er **ikke** nok til å legge inn meldinger. Tilgang gis
+per person via en eksplisitt allowlist i Firestore.
+
+**Collection `admins`**, ett dokument per person, der **dokument-ID-en er
+e-postadressen i små bokstaver**. Innholdet i dokumentet spiller ingen rolle —
+det er eksistensen som gir tilgang. I praksis lagres `addedBy` og `addedAt` som
+dokumentasjon.
+
+Å gi eller fjerne tilgang er å legge til eller slette et dokument i
+Firebase-konsollet. Ingen deploy, ingen kode, ingen Terraform. Klienten kan
+**ikke** skrive til collectionen i det hele tatt, og kan bare lese sitt **eget**
+dokument — så en innlogget bruker kan sjekke om hen selv har tilgang, uten å
+kunne liste ut hvem andre som har det.
+
+Denne modellen ble verifisert mot Firestore-emulatoren før den ble valgt:
+
+| Prøve | Resultat |
+|---|---|
+| `String.lower()` finnes i regelspråket | Virker |
+| `exists()` mot `admins/{lowercased e-post}` | Virker |
+| Samme oppslag med `Sturle@Entur.Org` i tokenet | Virker — normaliseringen treffer |
+| Ikke-allowlistet konto skriver `alerts` | Avvist 403 |
+| Lese en annens `admins`-dokument | Avvist 403 |
+| Klient skriver til `admins` | Avvist 403 |
+
+Domenesjekken på `@entur.org` beholdes i tillegg til allowlisten. Den er
+strengt tatt overflødig når allowlisten bare inneholder Entur-adresser, men den
+gjør at en feilskrevet oppføring — en privat Gmail-adresse, for eksempel — ikke
+gir tilgang.
+
+**Ikke valgt:** å skru av *Enable create (sign-up)* i Identity Platform. Det ville
+hindret ukjente Google-kontoer fra å autentisere seg i det hele tatt, men
+samspillet mellom forhåndsopprettede konsoll-brukere og føderert Google-innlogging
+(kontokobling på e-post) er uforutsigbart, og allowlisten løser tilgangsspørsmålet
+alene. Kan legges på senere som et ekstra forsvarslag.
+
 ## Firestore-regler
 
 `firestore.rules`, deployes sammen med hosting:
@@ -167,10 +207,19 @@ Sorteringsvekt for stabling: `negative` (0) → `warning` (1) → `information` 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function callerEmail() {
+      return request.auth.token.email.lower();
+    }
+
     function isEnturUser() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.matches('.*@entur[.]org$');
+        && callerEmail().matches('.*@entur[.]org$');
+    }
+
+    function isAdmin() {
+      return isEnturUser()
+        && exists(/databases/$(database)/documents/admins/$(callerEmail()));
     }
 
     function isValidAlert(d) {
@@ -184,10 +233,23 @@ service cloud.firestore {
 
     match /alerts/{alertId} {
       allow read: if true;
-      allow create, update: if isEnturUser()
+      allow create: if isAdmin()
         && isValidAlert(request.resource.data)
-        && request.resource.data.updatedBy == request.auth.token.email;
-      allow delete: if isEnturUser();
+        && request.resource.data.createdBy == callerEmail()
+        && request.resource.data.updatedBy == callerEmail();
+      allow update: if isAdmin()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.updatedBy == callerEmail()
+        && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminEmail} {
+      // Man leser kun sitt eget dokument: klienten kan sjekke egen tilgang
+      // uten å kunne liste ut hvem andre som har den.
+      allow read: if isEnturUser() && adminEmail == callerEmail();
+      // Tilgang gis og fjernes i Firebase-konsollet, aldri fra klienten.
+      allow write: if false;
     }
 
     match /{document=**} {
@@ -197,13 +259,14 @@ service cloud.firestore {
 }
 ```
 
-Tre ting reglene gjør, i tillegg til å låse skriving til `@entur.org`:
+Fire ting reglene gjør:
 
-1. **Feltvalidering**, slik at et ugyldig dokument ikke kan velte tavla.
-2. **`updatedBy` må være den innloggedes e-post**, så sporet av hvem som endret
-   hva ikke kan forfalskes.
-3. **Alt utenfor `alerts` er stengt**, så en framtidig collection ikke blir åpen
-   ved uhell.
+1. **Skriving krever allowlist-oppføring**, ikke bare en Entur-konto.
+2. **Feltvalidering**, slik at et ugyldig dokument ikke kan velte tavla.
+3. **`createdBy`/`updatedBy` må være den innloggedes e-post**, og `createdBy` kan
+   ikke endres, så sporet av hvem som la inn hva ikke kan forfalskes.
+4. **Alt utenfor `alerts` og `admins` er stengt**, så en framtidig collection ikke
+   blir åpen ved uhell.
 
 Valideringen finnes både i reglene og i `alertValidation.js`. Det er bevisst
 duplisering: skjemaet gir god feilmelding før lagring, reglene er det som faktisk
@@ -285,7 +348,18 @@ Logger noen inn med en ikke-Entur-konto, logges de ut umiddelbart med en
 forklarende feilmelding. Reglene ville avvist skrivingen uansett, men det er dårlig
 UX å oppdage det først når man trykker lagre.
 
-### Innlogget
+### Innlogget uten tilgang
+
+En gyldig Entur-konto som ikke står i `admins`-allowlisten får en egen skjerm:
+hvem man er innlogget som, en forklaring på at kontoen ikke har tilgang til å
+legge inn meldinger, og hvem man kan kontakte for å få det. Pluss en logg
+ut-knapp.
+
+Dette er en egen tilstand, ikke en feilmelding. Reglene ville avvist skrivingen,
+men å oppdage det først når man trykker lagre — etter å ha fylt ut et helt skjema
+— er unødvendig frustrerende.
+
+### Innlogget med tilgang
 
 **Liste** over alle meldinger i `@entur/table`, gruppert som Aktive / Planlagte /
 Utløpte. Kolonner: nivå (fargeprikk), tittel, tidsrom, status, lagt inn av.
@@ -339,8 +413,9 @@ resepsjonen. Konsekvenser som må følges opp:
   eller intern-klassifisert informasjon.
 - Samme merknad i README.
 
-Skrivetilgang er låst til verifiserte `@entur.org`-kontoer i reglene, og
-`createdBy` / `updatedBy` gir sporbarhet på hvem som la inn hva.
+Skrivetilgang krever både en verifisert `@entur.org`-konto og en oppføring i
+`admins`-allowlisten, og `createdBy` / `updatedBy` gir sporbarhet på hvem som la
+inn hva.
 
 ## Oppsett utenfor koden
 
@@ -358,7 +433,14 @@ Disse tas med som eksplisitte steg i implementasjonsplanen.
    `ent-tavleber-prd`, med Google som provider, og hosting-domenet lagt inn under
    «Authorized domains». Manuelt engangssteg.
 
-3. **Deploy av reglene.** `firebase.json` utvides med
+3. **Første allowlist-oppføring.** `admins`-collectionen er tom til noen legger inn
+   det første dokumentet. Siden reglene ikke tillater klient-skriving, må dette
+   gjøres i Firebase-konsollet: opprett collection `admins`, og et dokument med
+   ID-en lik e-postadressen i **små bokstaver** (f.eks.
+   `sturle.tolo.nordeide@entur.org`). Feltene `addedBy` og `addedAt` er ren
+   dokumentasjon. Uten dette steget kommer ingen inn i admin.
+
+4. **Deploy av reglene.** `firebase.json` utvides med
    `"firestore": { "rules": "firestore.rules" }`, og `.github/workflows/deploy.yml`
    endres til `--only hosting,firestore:rules`.
 
@@ -407,4 +489,9 @@ lener seg på, bør de testes automatisk. Notert som teknisk gjeld.
 - Endringshistorikk utover `createdBy` / `updatedBy`.
 - Bilder eller lenker i meldingene.
 - Oppgradering av Entur-designsystemet til ny major.
-- Egen tilgangsstyring utover «alle med `@entur.org`».
+- Roller eller nivåer innenfor admin — allowlisten er binær, du har tilgang eller
+  ikke.
+- Å administrere allowlisten fra appen. Den styres i Firebase-konsollet med vilje,
+  slik at retten til å gi andre tilgang ikke ligger i en klient-app.
+- Å skru av *Enable create (sign-up)* i Identity Platform. Vurdert, ikke valgt —
+  se «Tilgangsstyring».
