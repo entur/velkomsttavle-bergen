@@ -19,3 +19,25 @@ export function isEnturUser(user) {
     }
     return email.toLowerCase().endsWith(ENTUR_SUFFIX);
 }
+
+/**
+ * E-post på oppslagsform: trimmet og i små bokstaver.
+ *
+ * Dokument-ID-ene i `admins` er lowercased, og firestore.rules slår opp med
+ * `request.auth.token.email.lower()`. Klienten må normalisere likt, ellers
+ * spriker klientens tilgangssjekk og reglenes.
+ */
+export function normalizeEmail(email) {
+    return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
+
+/**
+ * Om brukeren har en verifisert Entur-konto.
+ *
+ * `emailVerified` kreves fordi firestore.rules krever `email_verified == true`.
+ * Uten den her ville klienten sluppet inn brukere som reglene avviser, og
+ * feilen ville dukket opp først når man trykket lagre.
+ */
+export function isVerifiedEnturUser(user) {
+    return isEnturUser(user) && user?.emailVerified === true;
+}

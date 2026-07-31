@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 
 import { app } from '../alerts/firebase.js';
-import { ENTUR_DOMAIN, isEnturUser } from './enturAccount.js';
+import { ENTUR_DOMAIN, isVerifiedEnturUser } from './enturAccount.js';
 
 export const auth = getAuth(app);
 
@@ -29,9 +29,9 @@ export async function signIn() {
     provider.setCustomParameters({ hd: ENTUR_DOMAIN });
 
     const result = await signInWithPopup(auth, provider);
-    if (!isEnturUser(result.user)) {
+    if (!isVerifiedEnturUser(result.user)) {
         await signOut(auth);
-        throw new Error(`Du må logge inn med en @${ENTUR_DOMAIN}-konto.`);
+        throw new Error(`Du må logge inn med en verifisert @${ENTUR_DOMAIN}-konto.`);
     }
     return result.user;
 }
@@ -42,5 +42,5 @@ export function signOutUser() {
 
 /** Kaller onUser med brukeren, eller null hvis ingen gyldig Entur-bruker. */
 export function subscribeToUser(onUser) {
-    return onAuthStateChanged(auth, (user) => onUser(isEnturUser(user) ? user : null));
+    return onAuthStateChanged(auth, (user) => onUser(isVerifiedEnturUser(user) ? user : null));
 }

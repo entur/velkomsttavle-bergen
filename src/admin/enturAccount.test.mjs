@@ -37,3 +37,43 @@ describe('isEnturUser', () => {
         assert.equal(isEnturUser(undefined), false);
     });
 });
+
+import { isVerifiedEnturUser, normalizeEmail } from './enturAccount.js';
+
+describe('normalizeEmail', () => {
+    it('lowercaser adressen', () => {
+        assert.equal(normalizeEmail('Sturle@Entur.Org'), 'sturle@entur.org');
+    });
+
+    it('trimmer whitespace', () => {
+        assert.equal(normalizeEmail('  sturle@entur.org  '), 'sturle@entur.org');
+    });
+
+    it('gir tom streng for manglende adresse', () => {
+        assert.equal(normalizeEmail(undefined), '');
+        assert.equal(normalizeEmail(null), '');
+        assert.equal(normalizeEmail(42), '');
+    });
+});
+
+describe('isVerifiedEnturUser', () => {
+    it('godtar verifisert entur-konto', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'sturle@entur.org', emailVerified: true }), true);
+    });
+
+    it('avviser uverifisert entur-konto', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'sturle@entur.org', emailVerified: false }), false);
+    });
+
+    it('avviser konto uten emailVerified-felt', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'sturle@entur.org' }), false);
+    });
+
+    it('avviser verifisert ikke-entur-konto', () => {
+        assert.equal(isVerifiedEnturUser({ email: 'noen@gmail.com', emailVerified: true }), false);
+    });
+
+    it('avviser null', () => {
+        assert.equal(isVerifiedEnturUser(null), false);
+    });
+});
