@@ -5,6 +5,7 @@ import { Heading1, Paragraph } from '@entur/typography';
 
 import './admin.css';
 import AlertForm from './AlertForm';
+import AlertList from './AlertList';
 import { hasAdminAccess } from './adminAccess';
 import { signIn, signOutUser, subscribeToUser } from './adminAuth';
 import { normalizeEmail } from './enturAccount';
@@ -124,14 +125,22 @@ function Admin() {
                     }}
                 />
             ) : (
-                <PrimaryButton
-                    onClick={() => {
-                        setEditing(null);
-                        setFormOpen(true);
-                    }}
-                >
-                    Ny melding
-                </PrimaryButton>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <PrimaryButton
+                        onClick={() => {
+                            setEditing(null);
+                            setFormOpen(true);
+                        }}
+                    >
+                        Ny melding
+                    </PrimaryButton>
+                    <AlertList
+                        onEdit={(alert) => {
+                            setEditing(alert);
+                            setFormOpen(true);
+                        }}
+                    />
+                </div>
             )}
         </main>
     );
