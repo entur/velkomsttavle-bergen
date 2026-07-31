@@ -22,10 +22,19 @@ siden på nytt.
   kontorkart).
 - Firebase-prosjektet `ent-tavleber-prd` brukes i dag **kun** til Hosting. Ingen
   Firestore, ingen Authentication.
-- Firestore i Entur-Firebase-prosjekter opprettes via self-service-manifestet i
-  `.entur/`, ikke via Terraform eller konsollet. Relevant felt:
-  `spec.appEngine.enabled` + `spec.appEngine.databaseType: firestore`.
-  `databaseType` **kan ikke endres etter opprettelse**.
+- Firestore i Entur-Firebase-prosjekter provisjoneres av app-factory via
+  self-service-manifestet i `.entur/`, ikke via Terraform eller konsollet. For
+  `kind: GoogleCloudFirebaseApplication` er feltet `spec.firebase.db_type`, som
+  **defaulter til `firestore`** ([manifest-dok](https://github.com/entur/tf-gcp-apps/blob/main/docs/manifests/GoogleCloudFirebaseApplication.md)).
+  Databasen i `ent-tavleber-prd` **finnes derfor allerede** — verifisert med
+  `firebase firestore:databases:list`. Manifestet skal ikke endres.
+  (`spec.appEngine` hører til `GoogleCloudApplication`, ikke Firebase-varianten.)
+- Web-app-registreringen som gir `apiKey`/`appId` ligger **utenfor** app-factory:
+  plattformens Terraform har `google_firebase_project`,
+  `google_firebase_storage_bucket` og storage-regler, men ingen
+  `google_firebase_web_app`. Den opprettes med Firebase-CLI-en.
+- Plattformen eier `google_firebaserules_*` **kun for storage**, ikke for
+  Firestore. Firestore-reglene er dette repoets ansvar alene.
 - `@entur/alert` har `BannerAlertBox` med presis de propene vi trenger:
   `variant` (`information` | `success` | `warning` | `negative`), `title`,
   `children`. Ingen oversettelseslag mellom lagret data og komponent nødvendig.
@@ -338,20 +347,12 @@ Skrivetilgang er låst til verifiserte `@entur.org`-kontoer i reglene, og
 Steg som ingen kode kan gjøre for oss, og som må være på plass før koden virker.
 Disse tas med som eksplisitte steg i implementasjonsplanen.
 
-1. **Firestore i GCP-prosjektet.** `.entur/application.yaml` utvides med:
+1. **Firestore i GCP-prosjektet — ingenting å gjøre.** Databasen er allerede
+   provisjonert av app-factory via `spec.firebase.db_type`-defaulten. Bekreft med
+   `yarn firebase firestore:databases:list --project ent-tavleber-prd`.
 
-   ```yaml
-   spec:
-     appEngine:
-       enabled: true
-       databaseType: firestore
-   ```
-
-   deretter PR og `entur apply`. `databaseType` **kan ikke endres etterpå**.
-
-   *Åpent punkt:* feltet finnes i self-service-skjemaet, men det er ikke verifisert
-   at det er støttet for `kind: GoogleCloudFirebaseApplication` spesifikt. Sjekkes
-   i `#talk-utviklerplattform` før apply.
+   **Web-app-registreringen** er opprettet med Firebase-CLI-en, siden manifestet
+   ikke dekker den: App ID `1:475486887854:web:eb13c21d24e1fe9df7323f`.
 
 2. **Firebase Authentication.** Skrus på i Firebase-konsollet for
    `ent-tavleber-prd`, med Google som provider, og hosting-domenet lagt inn under

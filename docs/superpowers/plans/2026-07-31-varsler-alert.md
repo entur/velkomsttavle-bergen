@@ -34,10 +34,18 @@
 
 ## Avvik fra speccen
 
-Fire steder er planen mer presis enn speccen, etter at API-ene ble verifisert mot
-de faktiske pakkene. Alle er forbedringer innenfor samme intensjon, men de er
-listet her så en gjennomgang ikke må lete etter dem.
+Fem steder er planen mer presis enn speccen, etter at API-ene ble verifisert mot
+de faktiske pakkene og plattform-manifestet mot `entur/tf-gcp-apps`. Alle er
+forbedringer innenfor samme intensjon, men de er listet her så en gjennomgang
+ikke må lete etter dem.
 
+0. **Speccen var feil om Firestore-provisjonering, og ingenting skal gjøres.**
+   Speccen sa `spec.appEngine` med `databaseType: firestore` i
+   `.entur/application.yaml`, og flagget det som et åpent punkt. Feltet hører til
+   `GoogleCloudApplication`; Firebase-varianten bruker `spec.firebase.db_type`, som
+   defaulter til `firestore`. Firestore i `ent-tavleber-prd` er derfor **allerede
+   provisjonert**, og manifestet skal ikke endres. Verifisert med
+   `firestore:databases:list`.
 1. **Ett dato-og-tid-felt per tidspunkt, ikke to.** Speccen skisserte
    `DatePicker` + `TimePicker`. `DatePicker` har `showTime` og
    `granularity="minute"`, så dato og klokkeslett er samme felt. Halvparten så
@@ -104,7 +112,6 @@ Filer som opprettes eller endres, og hva hver av dem har ansvar for.
 | `firebase.json` | `firestore.rules`, `emulators` |
 | `firestore.rules` | Ny fil |
 | `.gitignore` | `.firebase/`, `*-debug.log` |
-| `.entur/application.yaml` | `spec.appEngine` |
 | `.github/workflows/deploy.yml` | Kjør tester, deploy regler |
 | `README.md` | Dokumenter varsler, admin, emulator |
 
@@ -115,7 +122,6 @@ Filer som opprettes eller endres, og hva hver av dem har ansvar for.
 Dette er fundamentet alt annet står på: Firestore må eksistere, reglene må være skrevet, og emulatoren må kjøre lokalt så resten av oppgavene kan verifiseres uten å røre produksjon.
 
 **Files:**
-- Modify: `.entur/application.yaml`
 - Modify: `package.json`
 - Modify: `firebase.json`
 - Modify: `.gitignore`
@@ -131,33 +137,27 @@ Dette er fundamentet alt annet står på: Firestore må eksistere, reglene må v
   - `firestore.rules` — reglene som håndhever validering og skrivetilgang
   - `yarn test` → kjører `node --test`
 
-- [ ] **Step 1: Manuelt plattformsteg — verifiser at Firestore kan opprettes**
+- [ ] **Step 1: Bekreft at Firestore finnes — ingen manifest-endring**
 
-Dette må gjøres av et menneske med Entur-tilgang, og **før** resten av oppgaven har mening.
+**Allerede verifisert 2026-07-31: Firestore finnes.** Dette steget er dokumentert
+for etterprøvbarhet, ikke arbeid som skal gjøres.
 
-Spør i `#talk-utviklerplattform`: *«Støtter `kind: GoogleCloudFirebaseApplication` feltet `spec.appEngine` med `databaseType: firestore`, eller opprettes Firestore på en annen måte for Firebase-apper?»*
+Firestore i `ent-tavleber-prd` er provisjonert av app-factory. `spec.firebase.db_type`
+i [`GoogleCloudFirebaseApplication`](https://github.com/entur/tf-gcp-apps/blob/main/docs/manifests/GoogleCloudFirebaseApplication.md)
+har default `firestore`, og i plattformens Terraform er `google_firestore_database`
+utkommentert — databasen kommer av `google_app_engine_application.database_type`,
+som settes fra `db_type`. `.entur/application.yaml` skal derfor **ikke** endres.
 
-Merk: `databaseType` **kan ikke endres etter opprettelse**. Ikke gjett.
+(Feltet `spec.appEngine` hører til `GoogleCloudApplication`, ikke Firebase-varianten.
+Ikke legg det inn her.)
 
-Når svaret er positivt, legg til i `.entur/application.yaml`:
+Bekreft med:
 
-```yaml
-apiVersion: orchestrator.entur.io/apps/v1
-kind: GoogleCloudFirebaseApplication
-metadata:
-  id: tavleber
-  displayName: Velkomsttavle Bergen
-  name: velkomsttavle-bergen
-  owner: team-produkt
-spec:
-  environments: [prd]
-  repositories: [velkomsttavle-bergen]
-  appEngine:
-    enabled: true
-    databaseType: firestore
+```bash
+yarn firebase firestore:databases:list --project ent-tavleber-prd
 ```
 
-Åpne PR, se over planen, og kjør `entur apply`.
+Expected: én rad, `projects/ent-tavleber-prd/databases/(default)`, type `FIRESTORE_NATIVE`.
 
 - [ ] **Step 2: Manuelt steg — skru på Firebase Authentication**
 
@@ -166,41 +166,43 @@ I Firebase-konsollet for prosjektet `ent-tavleber-prd`:
 1. **Authentication → Get started → Sign-in method → Google → Enable.**
 2. Under **Authentication → Settings → Authorized domains**, kontroller at hosting-domenet (`ent-tavleber-prd.web.app` og `ent-tavleber-prd.firebaseapp.com`) står der. `localhost` ligger der som standard.
 
-- [ ] **Step 3: Hent Firebase-web-konfigen**
+- [ ] **Step 3: Web-appen er allerede registrert**
 
-Krever `yarn firebase login`.
+**Allerede gjort 2026-07-31.** Dokumentert for etterprøvbarhet.
+
+Prosjektet hadde ingen web-app. Web-app-registreringen ligger utenfor
+app-factory — plattformens Terraform har `google_firebase_project`,
+`google_firebase_storage_bucket` og storage-regler, men ingen
+`google_firebase_web_app` — så den opprettes med Firebase-CLI-en:
 
 ```bash
-yarn firebase apps:list WEB --project ent-tavleber-prd
+yarn firebase apps:create WEB "Velkomsttavle Bergen" --project ent-tavleber-prd
 ```
 
-Finnes ingen web-app, opprett en:
+Resultat: App ID `1:475486887854:web:eb13c21d24e1fe9df7323f`.
+
+Konfigen hentes med:
 
 ```bash
-yarn firebase apps:create WEB velkomsttavle-bergen --project ent-tavleber-prd
-```
-
-Hent konfigen:
-
-```bash
-yarn firebase apps:sdkconfig WEB --project ent-tavleber-prd
+yarn firebase apps:sdkconfig WEB 1:475486887854:web:eb13c21d24e1fe9df7323f --project ent-tavleber-prd
 ```
 
 - [ ] **Step 4: Legg inn konfigen**
 
-Create `src/alerts/firebaseConfig.js` med de faktiske verdiene fra forrige steg. Verdiene under er **plassholdere** — bytt dem ut med det `apps:sdkconfig` faktisk returnerte:
+Create `src/alerts/firebaseConfig.js`. Dette er de **ekte** verdiene fra
+`apps:sdkconfig` — skriv dem av nøyaktig:
 
 ```js
 // Firebase-web-konfigen er offentlig informasjon by design: den havner i
 // klient-bundelen uansett, og apiKey er en prosjekt-identifikator, ikke en
 // hemmelighet. Sikkerheten ligger i firestore.rules.
 export const firebaseConfig = {
-    apiKey: 'ERSTATT_MEG',
+    apiKey: 'AIzaSyC1LfyEG-0OdpSQylKPbwz3AC2UM4_wL9s',
     authDomain: 'ent-tavleber-prd.firebaseapp.com',
     projectId: 'ent-tavleber-prd',
-    storageBucket: 'ent-tavleber-prd.firebasestorage.app',
-    messagingSenderId: 'ERSTATT_MEG',
-    appId: 'ERSTATT_MEG',
+    storageBucket: 'ent-tavleber-prd.appspot.com',
+    messagingSenderId: '475486887854',
+    appId: '1:475486887854:web:eb13c21d24e1fe9df7323f',
 };
 ```
 
@@ -384,7 +386,7 @@ Expected: bygget går gjennom. `firebase.js` er ennå ikke importert av noe, så
 - [ ] **Step 15: Commit**
 
 ```bash
-git add .entur/application.yaml package.json yarn.lock firebase.json firestore.rules .gitignore src/css/main.css src/alerts/firebaseConfig.js src/alerts/firebase.js
+git add package.json yarn.lock firebase.json firestore.rules .gitignore src/css/main.css src/alerts/firebaseConfig.js src/alerts/firebase.js
 git commit -m "chore: sett opp Firestore, sikkerhetsregler og emulator"
 ```
 
@@ -2375,6 +2377,10 @@ Utvid deploy-steget til også å ta reglene:
 ```
 
 - [ ] **Step 2: Vurder om CI-kontoen kan deploye regler**
+
+Ingen konflikt med plattformen: app-factorys Terraform har `google_firebaserules_ruleset`
+og `google_firebaserules_release` **kun for storage**, ikke for Firestore. Firestore-reglene
+er derfor vårt repo sitt ansvar alene.
 
 Deploy av `firestore:rules` krever `roles/firebaserules.admin` på tjenestekontoen som Workload Identity-steget autentiserer som.
 
