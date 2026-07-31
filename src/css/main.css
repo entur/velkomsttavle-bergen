@@ -4,4 +4,5 @@
 @import '@entur/loader/dist/styles.css';
 @import '@entur/typography/dist/styles.css';
 @import '@entur/grid/dist/styles.css';
+@import '@entur/alert/dist/styles.css';
 @import "@entur/tokens/dist/base.css";

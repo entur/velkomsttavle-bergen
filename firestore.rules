@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isEnturUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@entur[.]org$');
+    }
+
+    function isValidAlert(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.body is string && d.body.size() > 0 && d.body.size() <= 400
+        && d.level in ['information', 'success', 'warning', 'negative']
+        && d.startsAt is timestamp
+        && (d.endsAt == null || (d.endsAt is timestamp && d.endsAt > d.startsAt))
+        && d.enabled is bool;
+    }
+
+    match /alerts/{alertId} {
+      // Tavla er en kiosk uten pålogging og må kunne lese uautentisert.
+      // Konsekvens: meldingene er offentlig lesbare. Se speccen.
+      allow read: if true;
+
+      allow create: if isEnturUser()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.createdBy == request.auth.token.email
+        && request.resource.data.updatedBy == request.auth.token.email;
+
+      allow update: if isEnturUser()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.updatedBy == request.auth.token.email
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if isEnturUser();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
