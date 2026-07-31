@@ -38,7 +38,7 @@ export function validateAlertInput(input) {
 
     if (input.endsAt != null) {
         if (!isUsableDate(input.endsAt)) {
-            errors.endsAt = 'Sluttidspunktet er ugyldig';
+            errors.endsAt = 'Sluttidspunkt er ugyldig';
         } else if (!errors.startsAt && input.endsAt.getTime() <= input.startsAt.getTime()) {
             errors.endsAt = 'Slutt må være etter start';
         }

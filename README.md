@@ -24,8 +24,10 @@ Skjermen er delt i tre, ovenfra og ned:
      [locationforecast-API](https://api.met.no/weatherapi/locationforecast/2.0/).
      Viser et «Nå»-kort (temperatur, vind, nedbør), en stripe med de neste 6
      timene, og en rad med de 4 neste dagene. Værsymbolene ligger lokalt i
-     `public/yrSymbols/`. Værsiden laster siden på nytt hvert 15. minutt for
-     ferske data.
+     `public/yrSymbols/`. Karusellen viser bare den aktive sliden, så
+     værkomponenten monteres på nytt — og henter friske data på nytt — hver
+     gang karusellen bytter tilbake til den, altså omtrent hvert 60. sekund
+     med to slides.
    - **Kontorkart** – SVG-plantegning av 3. etasje i Bergen med romnavn som
      etiketter. Plantegningen synkes automatisk fra `entur/plantegning` (se
      [Synk av plantegning](#synk-av-plantegning)).
@@ -131,7 +133,9 @@ finner adressen.** Dette er akseptert fordi innholdet uansett står på en skjer
 i resepsjonen. **Ikke legg sensitiv eller intern-klassifisert informasjon i en
 melding.**
 
-Skrivetilgang er låst til `@entur.org` i `firestore.rules`, som også validerer
+Skrivetilgang krever både en verifisert `@entur.org`-konto **og** en oppføring
+i `admins`-allowlisten i `firestore.rules` — en Entur-konto alene er ikke nok,
+se [«Pålogging og tilgang»](#pålogging-og-tilgang) over. Reglene validerer også
 feltene og hindrer at `createdBy`/`updatedBy` settes til andre enn den
 innloggede.
 

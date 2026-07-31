@@ -4,6 +4,7 @@
  * Ligger i egen fil, uten Firebase-importer, slik at den kan testes med
  * `node --test`. Resten av appen jobber med JS-Date, ikke Firestore-Timestamp.
  */
+import { ALERT_LEVEL_VALUES } from './alertLevels.js';
 
 /** Firestore-dokument → varsel med Date-felt. Tåler dokumenter med hull i. */
 export function toAlert(id, data) {
@@ -11,7 +12,12 @@ export function toAlert(id, data) {
         id,
         title: typeof data.title === 'string' ? data.title : '',
         body: typeof data.body === 'string' ? data.body : '',
-        level: typeof data.level === 'string' ? data.level : 'information',
+        // Reglene validerer enum-verdien, men et hånd-skrevet dokument (konsoll
+        // eller Admin-SDK) omgår dem. `@entur/alert` kaster hvis variant ikke
+        // finnes i dens iconsMap, og det tar ned HELE varselbåndet — også
+        // gyldige varsler. Derfor klemmer vi ukjente nivåer til 'information'
+        // her, framfor å stole på at data alltid kommer fra skjemaet.
+        level: ALERT_LEVEL_VALUES.includes(data.level) ? data.level : 'information',
         startsAt: toDate(data.startsAt),
         endsAt: toDate(data.endsAt),
         enabled: data.enabled === true,

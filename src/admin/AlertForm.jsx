@@ -77,7 +77,7 @@ function AlertForm({ editing, userEmail, onSaved, onCancel }) {
             onSaved();
         } catch (error) {
             console.error('Kunne ikke lagre varselet', error);
-            setSaveError('Kunne ikke lagre varselet. Prøv igjen.');
+            setSaveError('Kunne ikke lagre meldingen. Prøv igjen.');
         } finally {
             setSaving(false);
         }
@@ -137,7 +137,7 @@ function AlertForm({ editing, userEmail, onSaved, onCancel }) {
                         selectedDate={draft.endsAt}
                         onChange={(value) => update('endsAt', value)}
                         variant={errors.endsAt ? 'negative' : undefined}
-                        feedback={errors.endsAt ?? 'Står den tom, vises varselet til du slår det av.'}
+                        feedback={errors.endsAt ?? 'Står den tom, vises meldingen til du slår det av.'}
                     />
                 </div>
             </div>

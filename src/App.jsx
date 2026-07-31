@@ -76,7 +76,18 @@ function App() {
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <video src="/entur.mp4" autoPlay loop muted playsInline preload="auto" style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
-            <Contrast style={{ width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: base.light.baseColors.frame.contrast, flexDirection: 'column', padding: '1.5rem 0', maxHeight: '45vh', overflow: 'hidden' }}>
+            {/*
+              justifyContent: 'flex-start' er bevisst, ikke 'center'. Feltet har
+              maxHeight + overflow: hidden, så noe MÅ klippes bort når stacken
+              (varsler + hilsen) er høyere enn 45vh. Med 'center' klippes det
+              symmetrisk fra begge kanter, og siden selectVisibleAlerts sorterer
+              alvorligste varsel øverst, er det nettopp det alvorligste varselet
+              som forsvinner over den øvre kanten først. Med 'flex-start' klippes
+              det i stedet nedenfra: hilsenen og de minst alvorlige varslene
+              lengst ned ryker først, og prioritert rekkefølge bevares. Ikke
+              endre denne tilbake til 'center'.
+            */}
+            <Contrast style={{ width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', backgroundColor: base.light.baseColors.frame.contrast, flexDirection: 'column', padding: '1.5rem 0', maxHeight: '45vh', overflow: 'hidden' }}>
                 <ErrorBoundary>
                     <AlertBanner />
                 </ErrorBoundary>

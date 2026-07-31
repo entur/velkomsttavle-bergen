@@ -69,6 +69,11 @@ describe('validateAlertInput', () => {
         assert.equal(errors.startsAt, 'Starttidspunkt er påkrevd');
     });
 
+    it('avviser ugyldig dato som sluttidspunkt', () => {
+        const errors = validateAlertInput(input({ endsAt: new Date('tull') }));
+        assert.equal(errors.endsAt, 'Sluttidspunkt er ugyldig');
+    });
+
     it('avviser slutt før start', () => {
         const errors = validateAlertInput(input({
             startsAt: new Date('2026-08-04T08:00:00Z'),

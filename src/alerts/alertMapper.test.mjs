@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
+import { ALERT_LEVEL_VALUES } from './alertLevels.js';
 import { toAlert, toFirestoreData } from './alertMapper.js';
 
 /** Etterlikner en Firestore-Timestamp: alt vi bruker er .toDate(). */
@@ -66,6 +67,33 @@ describe('toAlert', () => {
         assert.equal(alert.createdBy, '');
         assert.equal(alert.updatedBy, '');
     });
+
+    it('klemmer et ukjent nivå til information framfor å velte hele varselbåndet', () => {
+        // Reglene validerer enum-verdien, men et hånd-skrevet dokument (konsoll
+        // eller Admin-SDK) omgår dem. 'Kritisk' er den norske *etiketten*
+        // admin-UI-et viser — nettopp den feilen et menneske faktisk gjør.
+        const alert = toAlert('abc', {
+            title: 'T',
+            body: 'B',
+            level: 'Kritisk',
+            startsAt: timestamp('2026-08-03T08:00:00Z'),
+            enabled: true,
+        });
+        assert.equal(alert.level, 'information');
+    });
+
+    for (const level of ALERT_LEVEL_VALUES) {
+        it(`slipper gyldig nivå '${level}' gjennom urørt`, () => {
+            const alert = toAlert('abc', {
+                title: 'T',
+                body: 'B',
+                level,
+                startsAt: timestamp('2026-08-03T08:00:00Z'),
+                enabled: true,
+            });
+            assert.equal(alert.level, level);
+        });
+    }
 });
 
 describe('toFirestoreData', () => {

@@ -52,14 +52,18 @@ function Admin() {
     }
 
     if (checkingSession) {
-        return null;
+        return (
+            <main style={{ textAlign: 'center', margin: '4rem auto', padding: '0 1.5rem' }}>
+                <Paragraph>Sjekker innlogging …</Paragraph>
+            </main>
+        );
     }
 
     if (!user) {
         return (
             <main style={{ maxWidth: '28rem', margin: '4rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
                 <img src="/logo.svg" alt="Entur" style={{ height: '2.5rem', marginBottom: '2rem' }} />
-                <Heading1>Varsler på velkomsttavla</Heading1>
+                <Heading1>Meldinger på velkomsttavla</Heading1>
                 <Paragraph>Logg inn med Entur-kontoen din for å legge inn meldinger.</Paragraph>
                 {error && (
                     <div style={{ margin: '1rem 0' }}>
@@ -72,7 +76,11 @@ function Admin() {
     }
 
     if (access === 'ukjent' || access === 'sjekker') {
-        return null;
+        return (
+            <main style={{ textAlign: 'center', margin: '4rem auto', padding: '0 1.5rem' }}>
+                <Paragraph>Sjekker tilgang …</Paragraph>
+            </main>
+        );
     }
 
     if (access === 'nei') {
@@ -96,7 +104,7 @@ function Admin() {
     return (
         <main style={{ maxWidth: '60rem', margin: '2rem auto', padding: '0 1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                <Heading1>Varsler på velkomsttavla</Heading1>
+                <Heading1>Meldinger på velkomsttavla</Heading1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Paragraph>{user.email}</Paragraph>
                     <SecondaryButton onClick={signOutUser}>Logg ut</SecondaryButton>

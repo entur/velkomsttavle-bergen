@@ -76,7 +76,7 @@ function AlertList({ onEdit }) {
             await deleteAlert(alert.id);
         } catch (error) {
             console.error('Kunne ikke slette varselet', error);
-            window.alert('Kunne ikke slette varselet. Prøv igjen.');
+            window.alert('Kunne ikke slette meldingen. Prøv igjen.');
         }
     }
 
@@ -90,8 +90,9 @@ function AlertList({ onEdit }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {groups.visible.length > CROWDED_THRESHOLD && (
                 <SmallAlertBox variant="warning" title="Mange meldinger samtidig">
-                    {groups.visible.length} meldinger vises nå. Tavla stabler dem alle, så
-                    kartet og værmeldingen under får lite plass. Vurder å slå av noen.
+                    {groups.visible.length} meldinger vises nå. Feltet har en makshøyde, så når
+                    stabelen blir for høy, er det hilsenen og de minst alvorlige meldingene
+                    lengst ned som blir klippet bort. Vurder å slå av noen.
                 </SmallAlertBox>
             )}
 

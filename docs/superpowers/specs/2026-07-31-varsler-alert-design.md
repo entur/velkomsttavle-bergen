@@ -97,18 +97,23 @@ ruter er ikke verdt vekten.
 | `src/alerts/alertsRepository.js` | Alt Firestore-snakk: `subscribeToAlerts`, `saveAlert`, `deleteAlert` | `firebase.js` |
 | `src/alerts/alertSchedule.js` | Ren logikk: `selectVisibleAlerts(alerts, now)` | ingenting |
 | `src/alerts/alertLevels.js` | De fire nivåene med norsk etikett, hjelpetekst og sorteringsvekt | ingenting |
+| `src/alerts/alertMapper.js` | Oversetter mellom Firestore-dokumenter og appens objekter (`toAlert`, `toFirestoreData`); klemmer et ukjent `level` til `information` | `alertLevels.js` |
 | `src/alerts/alertValidation.js` | Ren logikk: `validateAlertInput(input)` | `alertLevels.js` |
 | `src/components/AlertBanner.jsx` | Tavle-visningen | repository, schedule, `@entur/alert` |
 | `src/admin/Admin.jsx` | Rot for admin: pålogging eller innhold | `adminAuth.js` |
-| `src/admin/adminAuth.js` | `signIn`, `signOut`, `subscribeToUser`, domenesjekk | `firebase/auth` |
-| `src/admin/adminAccess.js` | Slår opp om innlogget bruker står i `admins`-allowlisten | `firebase/firestore` |
+| `src/admin/adminAuth.js` | `signIn`, `signOut`, `subscribeToUser` | `firebase/auth`, `enturAccount.js` |
+| `src/admin/enturAccount.js` | Domenesjekk (`@entur.org`, verifisert e-post) og e-postnormalisering | ingenting |
+| `src/admin/adminAccess.js` | Slår opp om innlogget bruker står i `admins`-allowlisten | `firebase/firestore`, `enturAccount.js` |
 | `src/admin/AlertList.jsx` | Tabell over meldinger, gruppert på status | repository, `@entur/table` |
 | `src/admin/AlertForm.jsx` | Skjema for ny/endret melding + forhåndsvisning | validation, `@entur/form`, `@entur/datepicker` |
 | `src/admin/LevelPicker.jsx` | Fargeprøve-kortene for nivå | `alertLevels.js` |
 
-**Kun `alertsRepository.js` importerer `firebase/firestore`.** Alt annet snakker
-med repositoryet. Da kan logikken testes uten Firestore, og et bytte av lagring
-treffer én fil.
+**Tre filer importerer `firebase/firestore`:** `alertsRepository.js` (varslene
+selv), `firebase.js` (initialiserer appen og eksporterer `db`) og
+`adminAccess.js` (allowlist-oppslaget). Alt annet snakker med repositoryet,
+ikke direkte med Firestore. Det holder Firestore-avhengigheten til noen få
+filer og gjør at logikken forøvrig kan testes uten Firestore — men det er tre
+filer å endre ved et bytte av lagring, ikke én.
 
 `alertSchedule.js` og `alertValidation.js` er rene funksjoner uten React og uten
 Firestore. Det er her de reelle feilene sitter, og det er derfor de er skilt ut.
@@ -329,9 +334,16 @@ Siden alle aktive meldinger stables, kan feltet i prinsippet spise hele skjermen
 Tiltak:
 
 - Det mørkeblå feltet får `maxHeight` rundt 45vh med `overflow: hidden`.
-  Karusellen krymper, men layouten kollapser ikke.
+  Karusellen krymper **ikke** — den er et eget flex-element under feltet og er
+  upåvirket. Det som faktisk klippes bort er stacken *inne i* feltet selv, når
+  den er høyere enn 45vh: `flex-start` (ikke `center`) brukes bevisst som
+  `justifyContent`, slik at overskuddet klippes **nedenfra**. Siden
+  `selectVisibleAlerts` sorterer alvorligste varsel øverst, er det da hilsenen
+  og de minst alvorlige varslene lengst ned i stacken som forsvinner først —
+  ikke det mest alvorlige varselet, som ville skjedd med `center`.
 - Admin viser en tydelig advarsel når det er mer enn tre aktive meldinger
-  samtidig.
+  samtidig, og beskriver denne konsekvensen (hilsen og lavest prioriterte
+  varsler klippes) framfor å peke på karusellen.
 
 Å skjule meldinger stille ville vært verre; advarselen står der noen kan gjøre noe
 med den.
@@ -361,8 +373,9 @@ men å oppdage det først når man trykker lagre — etter å ha fylt ut et helt
 
 ### Innlogget med tilgang
 
-**Liste** over alle meldinger i `@entur/table`, gruppert som Aktive / Planlagte /
-Utløpte. Kolonner: nivå (fargeprikk), tittel, tidsrom, status, lagt inn av.
+**Liste** over alle meldinger i `@entur/table`, gruppert som Vises nå / Planlagt /
+Slått av / Utløpt. Status er selve gruppeoverskriften, ingen egen statuskolonne.
+Kolonner: nivå (fargeprikk), tittel, tidsrom, lagt inn av, sist endret av.
 Rediger- og slett-knapp per rad. Sletting krever bekreftelse.
 
 **Skjema** for ny eller endret melding:
@@ -372,8 +385,8 @@ Rediger- og slett-knapp per rad. Sletting krever bekreftelse.
 | Tittel | `TextField` |
 | Tekst | `TextArea` med tegnteller |
 | Nivå | `LevelPicker` (se under) |
-| Start | `DatePicker` + `TimePicker` |
-| Slutt | `DatePicker` + `TimePicker`, valgfri |
+| Start | `DatePicker` med `showTime` og `granularity="minute"` |
+| Slutt | `DatePicker` med `showTime` og `granularity="minute"`, valgfri |
 | Aktiv | `Switch` |
 
 ### `LevelPicker`
