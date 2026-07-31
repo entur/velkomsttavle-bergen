@@ -2398,7 +2398,13 @@ Legg til importer:
 
 ```jsx
 import AlertForm from './AlertForm';
+import { normalizeEmail } from './enturAccount';
 ```
+
+**Hvorfor `normalizeEmail` her:** reglene krever
+`request.resource.data.createdBy == callerEmail()`, der `callerEmail()` er
+`request.auth.token.email.lower()`. Sender skjemaet e-posten med store bokstaver,
+feiler den sammenligningen og skrivingen avvises. Klienten må normalisere likt.
 
 Legg til to state-variabler sammen med de andre:
 
@@ -2419,7 +2425,7 @@ med:
             {formOpen ? (
                 <AlertForm
                     editing={editing}
-                    userEmail={user.email}
+                    userEmail={normalizeEmail(user.email)}
                     onSaved={() => {
                         setFormOpen(false);
                         setEditing(null);
@@ -2655,7 +2661,7 @@ Bytt ut blokka fra Task 8 slik at listen står under knappen, og «Endre» åpne
             {formOpen ? (
                 <AlertForm
                     editing={editing}
-                    userEmail={user.email}
+                    userEmail={normalizeEmail(user.email)}
                     onSaved={() => {
                         setFormOpen(false);
                         setEditing(null);
