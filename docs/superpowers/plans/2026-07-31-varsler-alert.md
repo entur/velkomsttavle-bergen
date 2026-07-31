@@ -215,10 +215,10 @@ yarn add firebase@12.17.0 @entur/alert@0.19.4 @entur/form@9.3.8 @entur/button@4.
 Kontroller etterpå at `yarn.lock` **ikke** har fått inn `@entur/tokens@4`, `@entur/typography@3` eller `@entur/icons@10`:
 
 ```bash
-grep -nE '"@entur/(tokens|typography|icons)@' yarn.lock | grep -vE '@\^?[39]\.'
+grep -oE '@entur/(tokens|typography|icons)@\^?[0-9]+' yarn.lock | sort -u
 ```
 
-Forventet: ingen treff på `tokens@4`, `typography@3` eller `icons@10`. Får du treff, er en pakkeversjon feil — gå tilbake til versjonslista i Global Constraints.
+Forventet: nøyaktig tre linjer — `@entur/tokens@^3`, `@entur/typography@^2`, `@entur/icons@^9`. Dukker det opp en `tokens@4`, `typography@3` eller `icons@10`, er en pakkeversjon feil — gå tilbake til versjonslista i Global Constraints.
 
 - [ ] **Step 6: Legg til test-script**
 
