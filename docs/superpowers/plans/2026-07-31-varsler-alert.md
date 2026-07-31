@@ -2808,9 +2808,13 @@ verifisert `@entur.org`-adresse. Hvem som opprettet og sist endret en melding
 lagres og vises i listen.
 
 **En Entur-konto er ikke nok.** Tilgang gis per person via en allowlist:
-collectionen `admins` i Firestore, med ett dokument per person der dokument-ID-en
-er e-postadressen i små bokstaver. Innholdet i dokumentet spiller ingen rolle —
-det er eksistensen som gir tilgang.
+collectionen `admins` i Firestore, med ett dokument per person. Innholdet i
+dokumentet spiller ingen rolle — det er eksistensen som gir tilgang.
+
+> **Dokument-ID-en må være e-postadressen i små bokstaver.** Reglene slår opp med
+> `request.auth.token.email.lower()`, så en ID som `Ola@Entur.org` treffer ikke, og
+> personen får «Ingen tilgang» uten at noe ser feil ut. Dette er den enkleste
+> feilen å gjøre i konsollet.
 
 Å gi eller fjerne tilgang gjøres i Firebase-konsollet: legg til eller slett et
 dokument i `admins`. Ingen deploy, ingen kode. Reglene tillater ikke at klienten
@@ -2854,6 +2858,16 @@ http://localhost:4000, og Auth-emulatoren lar deg logge inn som en oppdiktet
 `@entur.org`-bruker uten ekte Google-konto.
 
 Uten `VITE_USE_EMULATOR=true` snakker `yarn dev` med **produksjons**-Firestore.
+
+Emulatoren starter med tom `admins`-collection, så du kommer ikke inn i admin før
+du har lagt deg selv i allowlisten. Reglene tillater ikke klient-skriving, så bruk
+emulatorens owner-bypass:
+
+```bash
+curl -s -X POST -H 'Authorization: Bearer owner' -H 'Content-Type: application/json' \
+  'http://127.0.0.1:8080/v1/projects/ent-tavleber-prd/databases/(default)/documents/admins?documentId=din.adresse@entur.org' \
+  -d '{"fields":{"addedBy":{"stringValue":"lokal utvikling"}}}'
+```
 
 ### Tester
 
