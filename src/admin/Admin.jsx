@@ -4,14 +4,18 @@ import { PrimaryButton, SecondaryButton } from '@entur/button';
 import { Heading1, Paragraph } from '@entur/typography';
 
 import './admin.css';
+import AlertForm from './AlertForm';
 import { hasAdminAccess } from './adminAccess';
 import { signIn, signOutUser, subscribeToUser } from './adminAuth';
+import { normalizeEmail } from './enturAccount';
 
 function Admin() {
     const [user, setUser] = useState(null);
     const [checkingSession, setCheckingSession] = useState(true);
     const [error, setError] = useState(null);
     const [access, setAccess] = useState('ukjent');
+    const [formOpen, setFormOpen] = useState(false);
+    const [editing, setEditing] = useState(null);
 
     useEffect(() => subscribeToUser((nextUser) => {
         setUser(nextUser);
@@ -106,7 +110,29 @@ function Admin() {
                 </SmallAlertBox>
             </div>
 
-            <p>Skjema og liste kommer.</p>
+            {formOpen ? (
+                <AlertForm
+                    editing={editing}
+                    userEmail={normalizeEmail(user.email)}
+                    onSaved={() => {
+                        setFormOpen(false);
+                        setEditing(null);
+                    }}
+                    onCancel={() => {
+                        setFormOpen(false);
+                        setEditing(null);
+                    }}
+                />
+            ) : (
+                <PrimaryButton
+                    onClick={() => {
+                        setEditing(null);
+                        setFormOpen(true);
+                    }}
+                >
+                    Ny melding
+                </PrimaryButton>
+            )}
         </main>
     );
 }
