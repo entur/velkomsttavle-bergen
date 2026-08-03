@@ -7,7 +7,7 @@ import './admin.css';
 import AlertForm from './AlertForm';
 import AlertList from './AlertList';
 import { hasAdminAccess } from './adminAccess';
-import { completeSignIn, signIn, signOutUser, subscribeToUser } from './adminAuth';
+import { signIn, signOutUser, subscribeToUser } from './adminAuth';
 import { signInMessage } from './signInMessage';
 import { normalizeEmail } from './enturAccount';
 
@@ -24,15 +24,6 @@ function Admin() {
         setUser(nextUser);
         setCheckingSession(false);
     }), []);
-
-    // Kommer vi tilbake fra en redirect-innlogging, ligger resultatet klart her.
-    // Returnerer null i det vanlige tilfellet, der vi ikke kom fra en innlogging.
-    useEffect(() => {
-        completeSignIn().catch((signInError) => {
-            console.error('Kunne ikke fullføre innloggingen', signInError);
-            setError(signInMessage(signInError));
-        });
-    }, []);
 
     useEffect(() => {
         if (!user) {
@@ -58,11 +49,11 @@ function Admin() {
         setSigningIn(true);
         try {
             await signIn();
-            // Ved suksess navigerer nettleseren bort, så vi kommer ikke hit.
         } catch (signInError) {
-            console.error('Kunne ikke starte innloggingen', signInError);
-            setSigningIn(false);
+            console.error('Innlogging feilet', signInError);
             setError(signInMessage(signInError));
+        } finally {
+            setSigningIn(false);
         }
     }
 
@@ -86,7 +77,7 @@ function Admin() {
                     </div>
                 )}
                 <PrimaryButton onClick={handleSignIn} disabled={signingIn}>
-                    {signingIn ? 'Sender deg til Google …' : 'Logg inn med Google'}
+                    {signingIn ? 'Logger inn …' : 'Logg inn med Google'}
                 </PrimaryButton>
             </main>
         );
