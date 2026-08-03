@@ -4,10 +4,14 @@ import OfficeMap from './floorplan/OfficeMap';
 import Carousel from './components/Carousel';
 import AlertBanner from './components/AlertBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { startWeatherPolling } from './weather/metForecast';
 import {Heading2, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
 import {base} from "@entur/tokens";
 import {SunCloudIcon, MapIcon} from "@entur/icons";
+
+// Hardcoded location for Bergen
+const LOCATION = { name: 'Bergen', lat: 60.39299, lng: 5.32415 };
 
 // Memoized component for staff image and headings
 const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, greeting }) {
@@ -25,10 +29,15 @@ const StaffAndHeadings = memo(function StaffAndHeadings({ randomStaffImage, gree
 });
 
 function App() {
-    // Hardcoded location for Bergen
-    const LOCATION = { name: 'Bergen', lat: 60.39299, lng: 5.32415 };
     const [randomStaffImage, setRandomStaffImage] = useState(null);
     const [greeting, setGreeting] = useState(() => getGreetingText(new Date()));
+    const [weather, setWeather] = useState(null);
+
+    // Værvarselet hentes her, ikke i Weather: karusellen rendrer bare den
+    // aktive sliden, så Weather avmonteres og remonteres omtrent hvert 60.
+    // sekund. App står montert hele tiden, så pollingen holder seg innenfor
+    // det MET sine vilkår ber om.
+    useEffect(() => startWeatherPolling({ location: LOCATION, onData: setWeather }), []);
 
 
     // Greeting, staff image, and date logic (set on mount and every 15 minutes)
@@ -95,7 +104,7 @@ function App() {
             </Contrast>
             <Carousel
                 slides={[
-                    { key: 'weather', Icon: SunCloudIcon, node: <Weather location={LOCATION} /> },
+                    { key: 'weather', Icon: SunCloudIcon, node: <Weather weather={weather} /> },
                     { key: 'map', Icon: MapIcon, node: <OfficeMap /> },
                 ]}
             />

@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { formatNumber } from '../ts/main';
 import { UmbrellaIcon, WindIcon } from "@entur/icons";
 import { base, semantic } from "@entur/tokens";
@@ -6,24 +5,6 @@ import { Heading3, Label } from "@entur/typography";
 
 const HIGHLIGHT = base.light.baseColors.shape.highlight;
 const PEACH = base.light.baseColors.frame.highlightalt;
-
-async function _fetch(url) {
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' }
-    });
-    return await response.json();
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
-}
-
-async function getYr(lat, lng) {
-  const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lng}`;
-  return await _fetch(url);
-}
 
 // En rad «ikon + verdi» brukt i nå-kortet (hvit tekst på mørkeblått kort)
 function DetailRow({ icon, children }) {
@@ -70,38 +51,19 @@ function buildDailyForecast(timeseries, days = 4) {
     return result;
 }
 
-export default function Weather({ location }) {
-    const [weatherData, setWeatherData] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        async function fetchWeather() {
-            if (!location) return;
-            setIsLoading(true);
-            const data = await getYr(location.lat, location.lng);
-            setWeatherData(data);
-            setIsLoading(false);
-        }
-
-        fetchWeather();
-    }, [location]);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            window.location.reload();
-        }, 15 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    if (isLoading) {
+/**
+ * Rendrer værvarselet. Henter ingenting selv: karusellen avmonterer og
+ * remonterer denne komponenten omtrent hvert 60. sekund, så hentingen bor i
+ * `App` (se `src/weather/metForecast.js`) og kommer inn som prop.
+ *
+ * @param {{ weather: unknown|null }} props Rått svar fra locationforecast
+ */
+export default function Weather({ weather }) {
+    if (!weather || !weather.properties || !weather.properties.timeseries) {
         return <div className="w-full">laster inn...</div>;
     }
 
-    if (!weatherData || !weatherData.properties || !weatherData.properties.timeseries) {
-        return null;
-    }
-
-    const timeSeries = weatherData.properties.timeseries;
+    const timeSeries = weather.properties.timeseries;
     const now = timeSeries[0];
     const nowDetails = now.data.instant.details;
     const nowSymbol = now.data.next_1_hours?.summary?.symbol_code || now.data.next_6_hours?.summary?.symbol_code;
