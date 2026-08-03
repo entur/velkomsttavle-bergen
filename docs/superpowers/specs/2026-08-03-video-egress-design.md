@@ -165,6 +165,35 @@ skjult, og Chrome pauser avspilling der. Søketesten dekker samme spørsmål str
 (vilkårlig tilgang til alle deler av videoen uten nettverk), men den er ikke det samme
 som å se tavla loope i en time. Endelig bekreftelse er avlesingen av Hosting → Usage.
 
+## Etterspill: blob-URL virket ikke på tavla
+
+Etter deploy var videofeltet sort på selve tavla, og en refresh hjalp ikke. I Chrome på
+utviklermaskin virket alt. Tavla kjører Samsung-skjermens innebygde nettleser, som ikke
+ble testet.
+
+Mest sannsynlige årsak: den nettleseren kan ikke bruke en `blob:`-URL som mediekilde.
+Det er en kjent begrensning i TV- og embedded-nettlesere, der avspilling går gjennom en
+egen native pipeline uten tilgang til nettleserens blob-lager.
+
+**Den egentlige feilen i koden var ikke blob-valget, men at ingenting sjekket om det
+virket.** Nedlastingen lyktes, så komponenten ble stående i `ready` med en kilde enheten
+ikke kan dekode. Fallbacken til direkte `src` utløses bare ved nedlastingsfeil, og det
+var ingen nedlastingsfeil. Resultatet var sort skjerm på ubestemt tid.
+
+Blobben behandles nå som et *forslag*: `createPlaybackWatchdog` overvåker elementet etter
+at kilden er satt, og faller tilbake til vanlig `src` hvis det enten fyrer `error` eller
+ikke har nådd `HAVE_CURRENT_DATA` innen 6 sekunder. Begge feilformene er dekket, siden en
+nettleser som ikke takler kilden kan gjøre enten det ene eller det andre.
+
+`public/videotest.html` er lagt til for å avgjøre saken på selve enheten: den prøver
+vanlig URL og blob-URL hver for seg og skriver resultatet i stor skrift.
+
+**Konsekvens for egressen:** virker ikke blob på tavla, faller den tilbake til
+direktestrømming, og tiltak 1 gir ingen gevinst *der*. Da er det tiltak 2 som bærer
+resultatet — 7824 KB → 737 KB er alene et kutt på 10,6×, og en fil på 737 KB er liten nok
+til å bli liggende i mediecachen, slik issue-en selv påpeker. Bekreft med Hosting → Usage
+før vi vurderer om blob-veien er verdt å beholde i det hele tatt.
+
 ## Sidefunn: bygget var allerede brutt på main
 
 Verifiseringen avdekket at `main` ikke bygde i det hele tatt, uavhengig av denne
