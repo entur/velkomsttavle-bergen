@@ -24,10 +24,12 @@ Skjermen er delt i tre, ovenfra og ned:
      [locationforecast-API](https://api.met.no/weatherapi/locationforecast/2.0/).
      Viser et «Nå»-kort (temperatur, vind, nedbør), en stripe med de neste 6
      timene, og en rad med de 4 neste dagene. Værsymbolene ligger lokalt i
-     `public/yrSymbols/`. Karusellen viser bare den aktive sliden, så
-     værkomponenten monteres på nytt — og henter friske data på nytt — hver
-     gang karusellen bytter tilbake til den, altså omtrent hvert 60. sekund
-     med to slides.
+     `public/yrSymbols/`. Karusellen rendrer bare den aktive sliden, så
+     værkomponenten avmonteres og remonteres hvert minutt — hentingen ligger
+     derfor i `App` (`src/weather/metForecast.js`), som står montert hele tiden.
+     Nye data hentes tidligst hvert 15. minutt, og ellers når `Expires`-headeren
+     fra MET sier at varselet er utdatert. Tavla laster seg aldri på nytt av seg
+     selv.
    - **Kontorkart** – SVG-plantegning av 3. etasje i Bergen med romnavn som
      etiketter. Plantegningen synkes automatisk fra `entur/plantegning` (se
      [Synk av plantegning](#synk-av-plantegning)).
@@ -182,7 +184,7 @@ Kjører Nodes innebygde test-runner over logikken som kan gå galt: tidsvindu og
 sortering (`src/alerts/alertSchedule.test.mjs`), validering
 (`alertValidation.test.mjs`), Firestore-mapping (`alertMapper.test.mjs`) og
 domenesjekken for pålogging (`src/admin/enturAccount.test.mjs`) — pluss
-floorplan-transformen.
+værpollingen (`src/weather/metForecast.test.js`) og floorplan-transformen.
 
 Firestore-reglene er **ikke** dekket av automatiske tester; de verifiseres
 manuelt i emulatoren. Blir dette et system flere team lener seg på, bør de
@@ -204,9 +206,5 @@ Kjøre synken lokalt (krever et GitHub-token med lesetilgang til
 FLOORPLAN_SYNC_TOKEN=<token> node scripts/sync-floorplan.mjs
 ```
 
-Transform-logikken er dekket av tester i `scripts/floorplan-transform.test.mjs`,
-som kjøres med Node sin innebygde test-runner:
-
-```bash
-node --test scripts/floorplan-transform.test.mjs
-```
+Transform-logikken er dekket av tester i `scripts/floorplan-transform.test.mjs`
+(se [Tester](#tester)).
