@@ -1,0 +1,91 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Videodiagnose</title>
+<style>
+  body { background: #12123a; color: #fff; font: 700 28px/1.4 system-ui, sans-serif; margin: 0; padding: 24px; }
+  h1 { font-size: 34px; margin: 0 0 16px; }
+  .row { margin: 0 0 14px; padding: 14px 18px; border-radius: 10px; background: #1e1e50; }
+  .ok { background: #14532d; }
+  .fail { background: #7f1d1d; }
+  .label { font-size: 22px; opacity: .8; display: block; }
+  #ua { font-size: 18px; font-weight: 400; word-break: break-all; opacity: .8; }
+  video { display: none; }
+</style>
+
+<h1>Videodiagnose for tavla</h1>
+
+<div class="row" id="r-direct"><span class="label">1. Vanlig URL som kilde</span><span id="s-direct">tester…</span></div>
+<div class="row" id="r-blob"><span class="label">2. blob:-URL som kilde</span><span id="s-blob">tester…</span></div>
+<div class="row" id="r-verdict"><span class="label">Konklusjon</span><span id="s-verdict">venter…</span></div>
+<div class="row"><span class="label">Nettleser</span><span id="ua"></span></div>
+
+<video id="v-direct" muted playsinline preload="auto"></video>
+<video id="v-blob" muted playsinline preload="auto"></video>
+
+<script>
+  document.getElementById('ua').textContent = navigator.userAgent;
+
+  var SRC = '/entur.mp4';
+  var TIMEOUT = 15000;
+
+  function set(id, rowId, text, ok) {
+    document.getElementById(id).textContent = text;
+    document.getElementById(rowId).className = 'row ' + (ok ? 'ok' : 'fail');
+  }
+
+  // Resolves true only when the element actually produces a decodable frame.
+  function canPlay(video, source) {
+    return new Promise(function (resolve) {
+      var done = false;
+      function finish(result) {
+        if (done) return;
+        done = true;
+        resolve(result);
+      }
+      video.addEventListener('loadeddata', function () {
+        finish(video.readyState >= 2 ? 'JA' : 'NEI (ingen frame)');
+      });
+      video.addEventListener('error', function () {
+        var e = video.error;
+        finish('NEI (feil ' + (e ? e.code : '?') + ')');
+      });
+      setTimeout(function () { finish('NEI (tidsavbrudd)'); }, TIMEOUT);
+      video.src = source;
+      video.load();
+    });
+  }
+
+  var directOk = false, blobOk = false;
+
+  canPlay(document.getElementById('v-direct'), SRC)
+    .then(function (r) {
+      directOk = r === 'JA';
+      set('s-direct', 'r-direct', r, directOk);
+      return fetch(SRC).then(function (res) { return res.blob(); });
+    })
+    .then(function (blob) {
+      var url = URL.createObjectURL(blob);
+      return canPlay(document.getElementById('v-blob'), url);
+    })
+    .then(function (r) {
+      blobOk = r === 'JA';
+      set('s-blob', 'r-blob', r, blobOk);
+
+      var verdict;
+      if (directOk && !blobOk) {
+        verdict = 'blob virker IKKE her — appen må bruke vanlig URL';
+      } else if (directOk && blobOk) {
+        verdict = 'begge virker — sortskjermen har en annen årsak';
+      } else if (!directOk && !blobOk) {
+        verdict = 'ingen av dem virker — videofila eller nettverket er problemet';
+      } else {
+        verdict = 'bare blob virker — uventet';
+      }
+      set('s-verdict', 'r-verdict', verdict, directOk && blobOk);
+    })
+    .catch(function (err) {
+      set('s-blob', 'r-blob', 'NEI (' + err + ')', false);
+      set('s-verdict', 'r-verdict', 'fetch feilet — se linje 2', false);
+    });
+</script>
