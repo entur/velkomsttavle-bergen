@@ -4011,10 +4011,10 @@ pkg-dir@^4.1.0:
   dependencies:
     find-up "^4.0.0"
 
-pnpm@^11.17.0:
-  version "11.17.0"
-  resolved "https://registry.npmjs.org/pnpm/-/pnpm-11.17.0.tgz"
-  integrity sha512-zKPOozKtJUu4QUX5ZtGfSHlhUhA0b8kseaBH8joNezzKPDeS8AdrofGDHSd++88KkRmzGppg7Kf7PWIx8zHvcg==
+pnpm@^11.18.0:
+  version "11.18.0"
+  resolved "https://registry.yarnpkg.com/pnpm/-/pnpm-11.18.0.tgz#6eb0fa6a5dc5ddfa7b802e612a99d7e25ab564a4"
+  integrity sha512-M9g8d9qC9J+6g2klxvG4QRgewxMrZwY5vQEvcHX1x89jTF+HAUfBmq50ePrAHfCdiJLogEVIlu3SPumzN1dWPA==
 
 portfinder@^1.0.32:
   version "1.0.38"
