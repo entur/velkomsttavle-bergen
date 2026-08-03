@@ -10,8 +10,14 @@ import { deleteAlert, subscribeToAllAlerts } from '../alerts/alertsRepository';
 
 const REEVALUATE_MS = 30 * 1000;
 
-/** Over dette antallet samtidige varsler begynner tavla å bli trang. */
-const CROWDED_THRESHOLD = 3;
+/**
+ * Over dette antallet samtidige varsler begynner tavla å klippe.
+ *
+ * Målt på 1920×1080: tre varsler gir 584 px innhold mot feltets makshøyde på
+ * 486 px, så hilsenen er allerede halvveis borte ved tre. Advarselen skal komme
+ * når problemet starter, ikke etter.
+ */
+const CROWDED_THRESHOLD = 2;
 
 const GROUPS = [
     { key: 'visible', heading: 'Vises nå' },
