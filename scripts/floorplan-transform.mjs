@@ -10,6 +10,8 @@ export function transformTsxToJsx(source) {
     .replace(/^import type \{[^}]*\} from ['"][^'"]*FloorplanView['"];?\r?\n/m, '')
     // fjern type-annotasjonen på props
     .replace(/:\s*FloorplanSVGProps/, '')
+    // fjern TypeScript «as»-type-assertions (f.eks. «} as React.CSSProperties»)
+    .replace(/\s+as\s+[A-Za-z][A-Za-z0-9_.]*(\.[A-Za-z][A-Za-z0-9_.]*)*/g, '')
 }
 
 export function flattenLabels(config) {

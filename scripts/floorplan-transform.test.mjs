@@ -19,6 +19,22 @@ test('transformTsxToJsx removes the type import line', () => {
   assert.ok(out.includes('export default BergenThird'))
 })
 
+test('transformTsxToJsx removes TypeScript as-assertions', () => {
+  const src = [
+    "import type { FloorplanSVGProps } from '../../components/FloorplanView'",
+    '',
+    'const BergenThird = ({ labels }: FloorplanSVGProps) => {',
+    "  const style = { '--x': '10px' } as React.CSSProperties",
+    '  return null',
+    '}',
+    '',
+    'export default BergenThird',
+  ].join('\n')
+  const out = transformTsxToJsx(src)
+  assert.ok(!out.includes(' as React.CSSProperties'), 'as-assertion should be gone')
+  assert.ok(out.includes("{ '--x': '10px' }"), 'object literal should remain')
+})
+
 test('transformTsxToJsx throws when the expected type is missing', () => {
   assert.throws(() => transformTsxToJsx('const x = 1\n'), /FloorplanSVGProps/)
 })
@@ -43,3 +59,4 @@ test('flattenLabels merges meeting rooms and static labels', () => {
     { id: 'skap', name: 'Skap', x: 358, y: 485, rotation: -90 },
   ])
 })
+
