@@ -108,15 +108,31 @@ kvalitet.
 8,01 MB for 30 s er 2,14 Mbps. Fila har et stereo 48 kHz AAC-lydspor som aldri høres,
 siden elementet er `muted`; det er rene bortkastede bytes.
 
-Tre kandidater enkodes med `ffmpeg`, alle med `-an`, `-movflags +faststart`,
-`-pix_fmt yuv420p`:
+Kandidater enkodes med `ffmpeg`, alle med `-an`, `-movflags +faststart`,
+`-pix_fmt yuv420p`, og vurderes visuelt før én velges.
 
-1. 1080p, CRF 28, preset slow
-2. 720p, CRF 26
-3. 720p, CRF 32 (aggressiv)
+**Utfall.** Originalen viste seg å være så ineffektivt enkodet at avveiningen mellom
+kvalitet og størrelse i praksis forsvant — full 1080p i høy kvalitet ble 10,6× mindre:
 
-Størrelsene rapporteres og kandidatene vurderes visuelt før én velges og erstatter
-`public/entur.mp4`.
+| Variant | Størrelse |
+|---|---|
+| Original | 7824 KB |
+| **Valgt: 1080p CRF 20** | **737 KB** |
+| 1080p CRF 28 | 408 KB |
+| 720p CRF 26 | 286 KB |
+| 720p CRF 32 | 188 KB |
+
+Alle kandidatene er verifisert med `ffprobe` til 25 fps / 751 frames / 30,04 s — ingen
+droppede frames. Vi valgte 1080p CRF 20: å spare ytterligere 450 KB er uten betydning
+når blob-fiksen uansett gjør at fila hentes én gang, så det er ingen grunn til å ofre
+kvalitet på en veggskjerm.
+
+Kommandoen:
+
+```
+ffmpeg -i entur.mp4 -an -c:v libx264 -preset slow -pix_fmt yuv420p \
+  -movflags +faststart -crf 20 ut.mp4
+```
 
 ## Verifisering
 
@@ -130,3 +146,42 @@ Størrelsene rapporteres og kandidatene vurderes visuelt før én velges og erst
 - `npm run build` fullfører, og `dist/entur.mp4` finnes.
 - Etter deploy: les av Hosting → Usage etter et døgn og bekreft at tallet har falt.
   Det er den eneste målingen som er til å stole på her.
+
+### Målt resultat i `vite preview`
+
+| | Før | Etter |
+|---|---|---|
+| Forespørsler mot `/entur.mp4` | — | 1 |
+| Overført | 8 012 567 B | 755 030 B |
+| Bufret av 30,04 s | 15,4 s (produksjon, etter 254 s) | 30,04 s umiddelbart |
+| `networkState` | — | 1 (NETWORK_IDLE) |
+
+Videoen ble deretter søkt gjennom 18–24 ganger over hele tidslinja, inkludert
+loop-skjøten (29,9 s → 0). Forespørselstallet holdt seg på 1. Hadde noen del av
+videoen ikke ligget i minnet, ville et søk dit utløst en range-forespørsel.
+
+**Forbehold:** sanntids-looping lot seg ikke observere direkte — nettleserruta kjører
+skjult, og Chrome pauser avspilling der. Søketesten dekker samme spørsmål strengere
+(vilkårlig tilgang til alle deler av videoen uten nettverk), men den er ikke det samme
+som å se tavla loope i en time. Endelig bekreftelse er avlesingen av Hosting → Usage.
+
+## Sidefunn: bygget var allerede brutt på main
+
+Verifiseringen avdekket at `main` ikke bygde i det hele tatt, uavhengig av denne
+endringen. Floorplan-synken i 26bd7ab la inn to feil i `src/floorplan/BergenThird.jsx`:
+en `} as React.CSSProperties`-assertion i en `.jsx`-fil, og en import av
+`../../data/roomColors` som ikke fantes.
+
+Dette er urelatert til #105 og ble løst separat i #103 (`82f2c88`), som denne greina er
+rebaset på. To ting derfra er verdt en oppfølging:
+
+1. **Romfargene i `data/roomColors.js` stemmer ikke med `entur/plantegning`.**
+   Fila sier at verdiene speiler paletten der, men ingen av dem gjør det — for eksempel
+   er `meeting` `#C5E0EC` (blå) mot `#F2E0D6` (fersken) upstream, og `landscape` er
+   `#F5F0E8` mot `#CBE5FE`. `individualOffice` mangler helt. Kartet rendrer altså med
+   feil farger. De faktiske verdiene ligger i `src/data/roomColors.ts` i
+   `entur/plantegning`.
+2. **`as`-regexen i transformen er uankret.** `/\s+as\s+[A-Za-z][A-Za-z0-9_.]*/g` matcher
+   også prosa som «Rom as Noe» inne i SVG-tekst, og ville da stille fjerne « as Noe» fra
+   en romtekst. Å kreve at assertionen følger en avsluttet literal — `(?<=[}\])])` — gjør
+   at en form vi ikke dekker heller feiler bygget synlig.
