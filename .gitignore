@@ -33,3 +33,6 @@ vite.config.ts.timestamp-*
 # Firebase
 .firebase/
 *-debug.log
+
+# Claude Code (worktrees, lokal launch-config)
+.claude/

@@ -4,6 +4,7 @@ import OfficeMap from './floorplan/OfficeMap';
 import Carousel from './components/Carousel';
 import AlertBanner from './components/AlertBanner';
 import ErrorBoundary from './components/ErrorBoundary';
+import LoopingVideo from './components/LoopingVideo';
 import { startWeatherPolling } from './weather/metForecast';
 import {Heading2, LeadParagraph} from "@entur/typography";
 import {Contrast} from "@entur/layout";
@@ -84,7 +85,7 @@ function App() {
 
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <video src="/entur.mp4" autoPlay loop muted playsInline preload="auto" style={{ width: '100vw', height: 'auto', display: 'block', maxHeight: '40vh', objectFit: 'cover' }} />
+            <LoopingVideo src="/entur.mp4" style={{ width: '100vw', height: '40vh', display: 'block', objectFit: 'cover', backgroundColor: base.light.baseColors.frame.contrast }} />
             {/*
               justifyContent: 'flex-start' er bevisst, ikke 'center'. Feltet har
               maxHeight + overflow: hidden, så noe MÅ klippes bort når stacken
