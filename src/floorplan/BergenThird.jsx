@@ -150,7 +150,7 @@ const BergenThird = ({ labels }) => {
                   {
                     '--label-x': `${label.x}px`,
                     '--label-y': `${label.y}px`,
-                  } as React.CSSProperties
+                  }
                 }
                 ref={measureLabelOrigin}
                 transform={
