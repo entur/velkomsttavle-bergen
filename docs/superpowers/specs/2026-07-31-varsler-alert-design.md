@@ -94,7 +94,7 @@ ruter er ikke verdt vekten.
 |---|---|---|
 | `src/alerts/firebase.js` | Initialiserer Firebase-appen én gang, eksporterer `db` | `firebase/app`, `firebase/firestore` |
 | `src/alerts/firebaseConfig.js` | Web-konfigen for `ent-tavleber-prd` | — |
-| `src/alerts/alertsRepository.js` | Alt Firestore-snakk: `subscribeToAlerts`, `saveAlert`, `deleteAlert` | `firebase.js` |
+| `src/alerts/alertsRepository.js` | Alt Firestore-snakk: `subscribeToEnabledAlerts` (tavla), `subscribeToAllAlerts` (admin), `saveAlert`, `deleteAlert` | `firebase.js`, `alertMapper.js` |
 | `src/alerts/alertSchedule.js` | Ren logikk: `selectVisibleAlerts(alerts, now)` | ingenting |
 | `src/alerts/alertLevels.js` | De fire nivåene med norsk etikett, hjelpetekst og sorteringsvekt | ingenting |
 | `src/alerts/alertMapper.js` | Oversetter mellom Firestore-dokumenter og appens objekter (`toAlert`, `toFirestoreData`); klemmer et ukjent `level` til `information` | `alertLevels.js` |
@@ -327,6 +327,20 @@ skalerer opp tekst og ikon, justert mot faktisk skjerm i resepsjonen.
 error boundary. Feiler Firestore — offline, avviste regler, ugyldig dokument —
 rendres ingenting og feilen logges til konsollet. Video, hilsen og karusell er
 upåvirket.
+
+**Error boundary-en må reparere seg selv.** Tavla står og går i ukevis og laster
+seg aldri på nytt av seg selv, så en boundary som låser seg permanent ville tatt
+varselfeltet ut av drift til noen gikk bort og lastet siden manuelt. Den nullstiller
+seg derfor etter fem minutter, slik at innholdet remonteres og får et friskt
+Firestore-abonnement. Er problemet fortsatt der, feiler den igjen og prøver på nytt
+— og feltet kommer tilbake av seg selv når dataene er rettet.
+
+**Et ugyldig `level` skal ikke velte de gyldige varslene.** `@entur/alert` slår opp
+ikonet sitt på variantnavnet uten å sjekke, så en verdi utenfor de fire kaster og
+tar med seg hele stabelen. `toAlert` klemmer derfor et ukjent `level` til
+`information`. Reglene sperrer dette fra klienten, men et dokument skrevet for hånd
+i konsollet — for eksempel med den norske etiketten «Kritisk» i stedet for
+`negative` — går rundt reglene.
 
 ### Plassbegrensning
 
