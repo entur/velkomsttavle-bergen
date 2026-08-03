@@ -7,7 +7,8 @@
 		"build": "vite build --config vite.config.js",
 		"preview": "vite preview --config vite.config.js",
 		"deploy": "vite build --config vite.config.js && gh-pages -d dist",
-		"deploy:firebase": "vite build --config vite.config.js && firebase deploy --only hosting"
+		"deploy:firebase": "vite build --config vite.config.js && firebase deploy --only hosting",
+		"test": "node --test"
 	},
 	"devDependencies": {
 		"@types/react": "^19.2.8",
@@ -18,15 +19,21 @@
 		"vite": "^8.1.5"
 	},
 	"dependencies": {
+		"@entur/alert": "0.19.4",
+		"@entur/button": "4.0.11",
+		"@entur/datepicker": "11.8.1",
+		"@entur/form": "9.3.8",
 		"@entur/grid": "^0.3.70",
 		"@entur/icons": "^9.0.4",
 		"@entur/layout": "^3.3.1",
+		"@entur/table": "4.10.16",
 		"@entur/tokens": "^3.21.1",
 		"@entur/tooltip": "^5.3.1",
 		"@entur/travel": "^7.0.4",
 		"@entur/typography": "^2.1.1",
 		"@tailwindcss/vite": "^4.1.18",
 		"date-fns": "^4.1.0",
+		"firebase": "12.17.0",
 		"pnpm": "^11.18.0",
 		"react": "^19.2.3",
 		"react-dom": "^19.2.3"

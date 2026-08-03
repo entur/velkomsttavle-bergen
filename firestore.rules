@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function callerEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isEnturUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && callerEmail().matches('.*@entur[.]org$');
+    }
+
+    // Tilgang til å legge inn meldinger krever en oppføring i allowlisten.
+    // Å ha en Entur-konto er ikke nok.
+    function isAdmin() {
+      return isEnturUser()
+        && exists(/databases/$(database)/documents/admins/$(callerEmail()));
+    }
+
+    function isValidAlert(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.body is string && d.body.size() > 0 && d.body.size() <= 400
+        && d.level in ['information', 'success', 'warning', 'negative']
+        && d.startsAt is timestamp
+        && (d.endsAt == null || (d.endsAt is timestamp && d.endsAt > d.startsAt))
+        && d.enabled is bool;
+    }
+
+    match /alerts/{alertId} {
+      // Tavla er en kiosk uten pålogging og må kunne lese uautentisert.
+      // Konsekvens: meldingene er offentlig lesbare. Se speccen.
+      allow read: if true;
+
+      allow create: if isAdmin()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.createdBy == callerEmail()
+        && request.resource.data.updatedBy == callerEmail();
+
+      allow update: if isAdmin()
+        && isValidAlert(request.resource.data)
+        && request.resource.data.updatedBy == callerEmail()
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminEmail} {
+      // Man leser kun sitt eget dokument: klienten kan sjekke egen tilgang
+      // uten å kunne liste ut hvem andre som har den.
+      allow read: if isEnturUser() && adminEmail == callerEmail();
+      // Tilgang gis og fjernes i Firebase-konsollet, aldri fra klienten.
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
