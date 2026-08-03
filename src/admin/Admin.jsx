@@ -7,7 +7,8 @@ import './admin.css';
 import AlertForm from './AlertForm';
 import AlertList from './AlertList';
 import { hasAdminAccess } from './adminAccess';
-import { signIn, signOutUser, subscribeToUser } from './adminAuth';
+import { completeSignIn, signIn, signOutUser, subscribeToUser } from './adminAuth';
+import { signInMessage } from './signInMessage';
 import { normalizeEmail } from './enturAccount';
 
 function Admin() {
@@ -17,11 +18,21 @@ function Admin() {
     const [access, setAccess] = useState('ukjent');
     const [formOpen, setFormOpen] = useState(false);
     const [editing, setEditing] = useState(null);
+    const [signingIn, setSigningIn] = useState(false);
 
     useEffect(() => subscribeToUser((nextUser) => {
         setUser(nextUser);
         setCheckingSession(false);
     }), []);
+
+    // Kommer vi tilbake fra en redirect-innlogging, ligger resultatet klart her.
+    // Returnerer null i det vanlige tilfellet, der vi ikke kom fra en innlogging.
+    useEffect(() => {
+        completeSignIn().catch((signInError) => {
+            console.error('Kunne ikke fullføre innloggingen', signInError);
+            setError(signInMessage(signInError));
+        });
+    }, []);
 
     useEffect(() => {
         if (!user) {
@@ -44,10 +55,14 @@ function Admin() {
 
     async function handleSignIn() {
         setError(null);
+        setSigningIn(true);
         try {
             await signIn();
+            // Ved suksess navigerer nettleseren bort, så vi kommer ikke hit.
         } catch (signInError) {
-            setError(signInError.message ?? 'Innlogging feilet. Prøv igjen.');
+            console.error('Kunne ikke starte innloggingen', signInError);
+            setSigningIn(false);
+            setError(signInMessage(signInError));
         }
     }
 
@@ -70,7 +85,9 @@ function Admin() {
                         <SmallAlertBox variant="negative">{error}</SmallAlertBox>
                     </div>
                 )}
-                <PrimaryButton onClick={handleSignIn}>Logg inn med Google</PrimaryButton>
+                <PrimaryButton onClick={handleSignIn} disabled={signingIn}>
+                    {signingIn ? 'Sender deg til Google …' : 'Logg inn med Google'}
+                </PrimaryButton>
             </main>
         );
     }
