@@ -13,6 +13,15 @@ import { signIn, signOutUser, subscribeToUser } from './adminAuth';
 import { signInMessage } from './signInMessage';
 import { normalizeEmail } from './enturAccount';
 
+/**
+ * Admin-sidene har hvit bakgrunn, så de bruker logo-on-light.svg med mørkeblått
+ * ordmerke. public/logo.svg er hvit og koral og hører til kiosken, der den står
+ * på et mørkeblått felt — den ville vært nesten usynlig her.
+ */
+function EnturLogo() {
+    return <img src="/logo-on-light.svg" alt="Entur" style={{ height: '2.5rem', marginBottom: '2rem' }} />;
+}
+
 function Admin({ route }) {
     const [user, setUser] = useState(null);
     const [checkingSession, setCheckingSession] = useState(true);
@@ -70,7 +79,7 @@ function Admin({ route }) {
     if (!user) {
         return (
             <main style={{ maxWidth: '28rem', margin: '4rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
-                <img src="/logo.svg" alt="Entur" style={{ height: '2.5rem', marginBottom: '2rem' }} />
+                <EnturLogo />
                 <Heading1>Meldinger på velkomsttavla</Heading1>
                 <Paragraph>Logg inn med Entur-kontoen din for å legge inn meldinger.</Paragraph>
                 {error && (
@@ -96,7 +105,7 @@ function Admin({ route }) {
     if (access === 'nei') {
         return (
             <main style={{ maxWidth: '32rem', margin: '4rem auto', padding: '0 1.5rem', textAlign: 'center' }}>
-                <img src="/logo.svg" alt="Entur" style={{ height: '2.5rem', marginBottom: '2rem' }} />
+                <EnturLogo />
                 <Heading1>Ingen tilgang</Heading1>
                 <Paragraph>
                     Du er innlogget som {user.email}, men kontoen har ikke tilgang til å legge
