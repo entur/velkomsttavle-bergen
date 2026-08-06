@@ -8,9 +8,11 @@
 		"preview": "vite preview --config vite.config.js",
 		"deploy": "vite build --config vite.config.js && gh-pages -d dist",
 		"deploy:firebase": "vite build --config vite.config.js && firebase deploy --only hosting",
-		"test": "node --test"
+		"test": "node --test",
+		"test:rules": "firebase emulators:exec --only firestore --project ent-tavleber-prd \"node --test firestore.rules.spec.mjs\""
 	},
 	"devDependencies": {
+		"@firebase/rules-unit-testing": "^5.0.1",
 		"@types/react": "^19.2.8",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.4",
