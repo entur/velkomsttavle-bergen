@@ -29,6 +29,15 @@ service cloud.firestore {
         && d.enabled is bool;
     }
 
+    function isValidBoard(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.placeName is string && d.placeName.size() > 0 && d.placeName.size() <= 40
+        && d.top is map && d.top.kind in ['video', 'logo']
+        && d.middle is list && d.middle.size() <= 5
+        && d.carousel is list && d.carousel.size() <= 5
+        && d.updatedBy == callerEmail();
+    }
+
     match /alerts/{alertId} {
       // Tavla er en kiosk uten pålogging og må kunne lese uautentisert.
       // Konsekvens: meldingene er offentlig lesbare. Se speccen.
@@ -45,6 +54,26 @@ service cloud.firestore {
         && request.resource.data.createdBy == resource.data.createdBy;
 
       allow delete: if isAdmin();
+    }
+
+    match /boards/{boardId} {
+      // Tavla er en kiosk uten pålogging og må kunne lese oppsettet sitt
+      // uautentisert. Konsekvens: oppsettet er offentlig lesbart — stoppested,
+      // koordinater og åpningstider like mye som meldingene. Se speccen.
+      allow read: if true;
+
+      allow create: if isAdmin()
+        && isValidBoard(request.resource.data)
+        && request.resource.data.createdBy == callerEmail();
+
+      allow update: if isAdmin()
+        && isValidBoard(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      // Ingen sletting fra klienten i fase 1. En tavle som skal bort, tas i
+      // konsollet — det er sjeldent nok, og en feilklikk-sletting tar en skjerm
+      // ned uten at noen ser det.
+      allow delete: if false;
     }
 
     match /admins/{adminEmail} {
