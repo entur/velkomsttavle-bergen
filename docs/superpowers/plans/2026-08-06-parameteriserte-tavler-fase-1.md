@@ -1362,10 +1362,15 @@ export default BoardMissing;
 
 ```bash
 for f in TopBand Greeting OpeningHours BoardMissing; do
-  npx esbuild --loader=jsx --outfile=/dev/null "src/components/$f.jsx" && echo "$f ok"
+  if npx esbuild --outfile=/dev/null "src/components/$f.jsx" 2>/dev/null; then echo "$f ok"; else echo "$f FEILET"; fi
 done
 ```
 Expected: fire «ok»-linjer.
+
+Ikke `--loader=jsx` — det flagget gjelder bare når esbuild leser fra stdin, og gir
+«"loader" without extension only applies when reading from stdin» for en filsti.
+esbuild kjenner `.jsx` av seg selv. Ikke `... && echo ok` bak en pipe heller: da
+binder `&&` seg til siste ledd i pipen, og «ok» skrives selv når esbuild feilet.
 
 Dette fanger bare parsefeil. At komponentene ser riktige ut på skjermen, verifiseres i Task 7 og 8, når de faktisk tas i bruk.
 
