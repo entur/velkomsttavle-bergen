@@ -31,6 +31,14 @@ function Carousel({ slides }) {
         return () => clearInterval(id);
     }, [slides.length]);
 
+    // En tavle uten karusell-moduler er lovlig: velger man bare video og
+    // hilsen, skal feltet falle bort framfor at slides[index] krasjer. Vakten
+    // må stå etter hooks-kallene — de må kjøre ubetinget, ellers bryter React
+    // sine regler når lista går fra tom til ikke-tom.
+    if (slides.length === 0) {
+        return null;
+    }
+
     const progress = elapsed / SLIDE_DURATION;
 
     return (
