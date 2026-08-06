@@ -6,21 +6,51 @@ kontoret.
 
 ## Hva tavla viser
 
-Skjermen er delt i tre, ovenfra og ned:
+Hva som står på en tavle bestemmes av et dokument i Firestore-collectionen
+`boards`, ikke av koden. Skjermen peker på `/t/<tavle-id>`, appen abonnerer på
+dokumentet, og en endring i admin slår ut på skjermen innen sekunder uten at
+noen laster siden på nytt.
 
-1. **Intro-video** – `public/entur.mp4` spilles av i loop øverst (lyd av, autoplay).
-   Videoen serveres same-origin med `immutable`-cache (se `firebase.json`) slik at
-   den looper fra nettleser-cache uten flaky nettverkskall.
-2. **Velkomsthilsen** – et tilfeldig ansatt-illustrasjon (`staff_man.svg` /
-   `staff_woman.svg`) ved siden av «Velkommen til Entur Bergen» og en hilsen som
-   varierer med klokkeslett og ukedag (god morgen, vel hjem, god helg osv.).
-   Oppdateres hvert 15. minutt.
+Layouten er den samme på alle tavler — tre felt ovenfra og ned — men innholdet i
+hvert felt velges per tavle:
 
-   Øverst i feltet, over figuren og hilsenen, vises eventuelle **varsler** fra
-   Firestore — se [Varsler og admin-side](#varsler-og-admin-side).
-3. **Karusell** – veksler mellom to slides hvert 30. sekund, med en progress-bar
+| Felt | Moduler |
+|---|---|
+| Toppen | `video` (intro-videoen) eller `logo` (Entur-logoen) |
+| Midten | `greeting` (hilsen, automatisk eller fast tekst, med eller uten ansatt-illustrasjon) og `openingHours` (åpningstider lagt inn dag for dag) |
+| Karusellen | `weather` (værmelding for valgte koordinater) og `floorplan` (plantegning) |
+
+Overskriften «Velkommen til Entur `<stedsnavn>`» og eventuelle **varsler** står
+alltid i midtfeltet, uansett hvilke moduler tavla har. Ukjente modultyper hoppes
+over, så en skjerm som ikke er lastet på nytt svartner ikke av at noen legger
+til en modul den ikke kjenner. Er karusellen tom, faller feltet bort og
+midtfeltet får plassen.
+
+Modulkatalogen ligger i [`src/boards/boardConfig.js`](src/boards/boardConfig.js).
+Der ligger også normaliseringen som gjør et dokument om til noe kiosken trygt
+kan rendre — Firestore-reglene kan ikke iterere over en liste og validerer bare
+grovformen, så det er normaliseringen som er vernet mot et dokument skrevet for
+hånd i konsollet.
+
+Modulene i detalj:
+
+1. **Intro-video** (`top: video`) – `public/entur.mp4` spilles av i loop øverst
+   (lyd av, autoplay). Videoen serveres same-origin med `immutable`-cache (se
+   `firebase.json`) slik at den looper fra nettleser-cache uten flaky
+   nettverkskall. Alternativet `top: logo` viser Entur-logoen på samme mørkeblå
+   felt.
+2. **Velkomsthilsen** (`greeting`) – en tilfeldig ansatt-illustrasjon
+   (`staff_man.svg` / `staff_woman.svg`) ved siden av «Velkommen til Entur
+   Bergen» og en hilsen. Med `text: 'auto'` varierer hilsenen med klokkeslett og
+   ukedag (god morgen, vel hjem, god helg osv.) og oppdateres hvert 15. minutt;
+   ellers står den faste teksten fra oppsettet. Illustrasjonen kan skrus av.
+
+   **Åpningstider** (`openingHours`) er den andre modulen i midtfeltet. Sju dager
+   med åpner/stenger eller «Stengt», lagt inn i et skjema. Tavla viser dem som de
+   står — det finnes ingen «åpent nå»-logikk.
+3. **Karusell** – veksler mellom slidene hvert 30. sekund, med en progress-bar
    og en ikon-rad som viser hvilken slide som er aktiv:
-   - **Vær** – værmelding for Bergen hentet direkte fra MET Norway / Yr sitt
+   - **Vær** – værmelding for koordinatene i oppsettet, hentet direkte fra MET Norway / Yr sitt
      [locationforecast-API](https://api.met.no/weatherapi/locationforecast/2.0/).
      Viser et «Nå»-kort (temperatur, vind, nedbør), en stripe med de neste 6
      timene, og en rad med de 4 neste dagene. Værsymbolene ligger lokalt i
@@ -32,7 +62,27 @@ Skjermen er delt i tre, ovenfra og ned:
      selv.
    - **Kontorkart** – SVG-plantegning av 3. etasje i Bergen med romnavn som
      etiketter. Plantegningen synkes automatisk fra `entur/plantegning` (se
-     [Synk av plantegning](#synk-av-plantegning)).
+     [Synk av plantegning](#synk-av-plantegning)). Det finnes bare én
+     plantegning, `bergen-3`, så `plan`-parameteren har én lovlig verdi i dag.
+
+## Ruter
+
+| Rute | Hva |
+|---|---|
+| `/t/<tavle-id>` | tavla |
+| `/` | default-tavla (`bergen-3`), og adressefeltet rettes til `/t/bergen-3` |
+| `/admin` | tavleoversikt og meldinger |
+| `/admin/t/<tavle-id>` | oppsettet for én tavle |
+
+Rot-ruten finnes fordi skjermen i resepsjonen ble satt opp mot `/` før tavlene
+fikk hver sin id. Den bruker `history.replaceState`, ikke en redirect — tavla
+skal aldri laste seg på nytt av seg selv. Konstanten `DEFAULT_BOARD_ID` i
+[`src/routing/parseRoute.js`](src/routing/parseRoute.js) kan fjernes når
+skjermen peker på `/t/bergen-3`.
+
+Ruting skjer uten router-avhengighet: `parseRoute` er tre regexer, og kiosken
+skal ikke laste kode den aldri bruker. Firebase Hosting rewriter allerede `**`
+til `/index.html`, så dyplenker virker i produksjon uten ekstra konfigurasjon.
 
 ## Teknologi
 
@@ -127,6 +177,10 @@ dokument — så ingen kan liste ut hvem som har tilgang, eller gi seg selv tilg
 Logger noen inn med en Entur-konto som ikke står i allowlisten, får de en
 «Ingen tilgang»-skjerm framfor å oppdage det først når de trykker lagre.
 
+Allowlisten gir også tilgang til å endre oppsettet på tavlene. Det gjøres om i
+fase 2, der tilgang blir noe man har per tavle — se speccen
+[2026-08-06-parameteriserte-tavler-design.md](docs/superpowers/specs/2026-08-06-parameteriserte-tavler-design.md).
+
 ### Meldingene er offentlig lesbare
 
 Tavla er en kiosk uten pålogging og må lese meldingene uautentisert. Appen
@@ -185,6 +239,11 @@ sortering (`src/alerts/alertSchedule.test.mjs`), validering
 (`alertValidation.test.mjs`), Firestore-mapping (`alertMapper.test.mjs`) og
 domenesjekken for pålogging (`src/admin/enturAccount.test.mjs`) — pluss
 værpollingen (`src/weather/metForecast.test.js`) og floorplan-transformen.
+
+For tavler dekkes ruteparsingen (`src/routing/parseRoute.test.mjs`),
+åpningstidene (`src/boards/openingHours.test.mjs`), modulkatalogen og
+normaliseringen (`src/boards/boardConfig.test.mjs`) og valideringen av
+oppsettskjemaet (`src/boards/boardValidation.test.mjs`).
 
 Firestore-reglene er **ikke** dekket av automatiske tester; de verifiseres
 manuelt i emulatoren. Blir dette et system flere team lener seg på, bør de
