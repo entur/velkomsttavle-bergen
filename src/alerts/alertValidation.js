@@ -3,6 +3,9 @@ import { ALERT_LEVEL_VALUES } from './alertLevels.js';
 export const TITLE_MAX_LENGTH = 80;
 export const BODY_MAX_LENGTH = 400;
 
+/** Taket speiler firestore.rules. Endrer du det her, endre det der også. */
+export const BOARD_IDS_MAX = 20;
+
 /**
  * Validerer skjemainnholdet før lagring.
  *
@@ -42,6 +45,13 @@ export function validateAlertInput(input) {
         } else if (!errors.startsAt && input.endsAt.getTime() <= input.startsAt.getTime()) {
             errors.endsAt = 'Slutt må være etter start';
         }
+    }
+
+    const boardIds = Array.isArray(input.boardIds) ? input.boardIds : [];
+    if (boardIds.length === 0) {
+        errors.boardIds = 'Velg minst én tavle';
+    } else if (boardIds.length > BOARD_IDS_MAX) {
+        errors.boardIds = `En melding kan stå på maks ${BOARD_IDS_MAX} tavler`;
     }
 
     return errors;

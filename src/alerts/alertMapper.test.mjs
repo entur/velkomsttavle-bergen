@@ -31,6 +31,31 @@ describe('toAlert', () => {
         assert.equal(alert.updatedBy, 'b@entur.org');
     });
 
+    it('leser boardIds og kaster det som ikke er brukbare id-er', () => {
+        const alert = toAlert('abc', {
+            title: 'Tittel',
+            body: 'Tekst',
+            level: 'information',
+            startsAt: timestamp('2026-08-03T08:00:00Z'),
+            endsAt: null,
+            enabled: true,
+            boardIds: ['bergen-3', 42, 'Ugyldig Id', 'billettkontor-bergen', null],
+        });
+        assert.deepEqual(alert.boardIds, ['bergen-3', 'billettkontor-bergen']);
+    });
+
+    it('gir tom liste når boardIds mangler', () => {
+        const alert = toAlert('abc', {
+            title: 'Tittel',
+            body: 'Tekst',
+            level: 'information',
+            startsAt: timestamp('2026-08-03T08:00:00Z'),
+            endsAt: null,
+            enabled: true,
+        });
+        assert.deepEqual(alert.boardIds, []);
+    });
+
     it('beholder null som endsAt', () => {
         const alert = toAlert('abc', {
             title: 'Tittel',
@@ -104,7 +129,17 @@ describe('toFirestoreData', () => {
         startsAt: new Date('2026-08-03T08:00:00Z'),
         endsAt: new Date('2026-08-04T08:00:00Z'),
         enabled: true,
+        boardIds: ['bergen-3'],
     };
+
+    it('skriver boardIds videre', () => {
+        assert.deepEqual(toFirestoreData(input, 'a@entur.org').boardIds, ['bergen-3']);
+    });
+
+    it('kaster ugyldige id-er også på vei inn', () => {
+        const data = toFirestoreData({ ...input, boardIds: ['bergen-3', 'Ugyldig Id', 7] }, 'a@entur.org');
+        assert.deepEqual(data.boardIds, ['bergen-3']);
+    });
 
     it('trimmer tittel og tekst', () => {
         const data = toFirestoreData(input, 'a@entur.org');
