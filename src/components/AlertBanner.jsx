@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BannerAlertBox } from '@entur/alert';
 
-import { subscribeToEnabledAlerts } from '../alerts/alertsRepository';
+import { subscribeToBoardAlerts } from '../alerts/alertsRepository';
 import { selectVisibleAlerts } from '../alerts/alertSchedule';
 
 /** Hvor ofte vi sjekker om et tidsvindu har åpnet eller lukket seg. */
@@ -15,14 +15,14 @@ const REEVALUATE_MS = 30 * 1000;
  * sekund, som er presist nok for en melding som skal vises «fra 08:00» og
  * koster ingen nettverkskall.
  */
-function AlertBanner() {
+function AlertBanner({ boardId }) {
     const [alerts, setAlerts] = useState([]);
     const [now, setNow] = useState(() => new Date());
 
-    useEffect(() => subscribeToEnabledAlerts(setAlerts, (error) => {
+    useEffect(() => subscribeToBoardAlerts(boardId, setAlerts, (error) => {
         console.error('Kunne ikke hente varsler', error);
         setAlerts([]);
-    }), []);
+    }), [boardId]);
 
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), REEVALUATE_MS);

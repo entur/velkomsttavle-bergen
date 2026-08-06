@@ -16,23 +16,18 @@ import { toAlert, toFirestoreData } from './alertMapper.js';
 const COLLECTION = 'alerts';
 
 /**
- * Tavla: bare varsler som er slått på. Tidsvindu-filtreringen skjer i
- * klienten, se selectVisibleAlerts — Firestore kan ikke range-filtrere på
- * både startsAt og endsAt i samme spørring uten sammensatt indeks, og vi må
- * reevaluere når klokka passerer et start- eller sluttpunkt uansett.
+ * Meldingene som gjelder én tavle.
+ *
+ * Ingen `enabled`-filtrering i spørringen: `array-contains` sammen med en
+ * likhetstest ville krevd en sammensatt indeks, og `selectVisibleAlerts`
+ * filtrerer allerede på status, som håndterer både av-bryteren og tidsvinduet.
+ *
+ * Tavla og admin bruker samme funksjon — tavla filtrerer med
+ * `selectVisibleAlerts`, admin vil ha alt.
  */
-export function subscribeToEnabledAlerts(onAlerts, onError) {
-    const enabledAlerts = query(collection(db, COLLECTION), where('enabled', '==', true));
-    return onSnapshot(enabledAlerts, (snapshot) => onAlerts(mapSnapshot(snapshot)), onError);
-}
-
-/** Admin: alt, uansett status. */
-export function subscribeToAllAlerts(onAlerts, onError) {
-    return onSnapshot(
-        collection(db, COLLECTION),
-        (snapshot) => onAlerts(mapSnapshot(snapshot)),
-        onError,
-    );
+export function subscribeToBoardAlerts(boardId, onAlerts, onError) {
+    const forBoard = query(collection(db, COLLECTION), where('boardIds', 'array-contains', boardId));
+    return onSnapshot(forBoard, (snapshot) => onAlerts(mapSnapshot(snapshot)), onError);
 }
 
 /** Oppretter når input.id mangler, oppdaterer ellers. Returnerer dokument-id. */
