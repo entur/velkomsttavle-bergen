@@ -6,12 +6,14 @@ import { Heading1, Paragraph } from '@entur/typography';
 import './admin.css';
 import AlertForm from './AlertForm';
 import AlertList from './AlertList';
+import BoardAdmin from './BoardAdmin';
+import BoardList from './BoardList';
 import { hasAdminAccess } from './adminAccess';
 import { signIn, signOutUser, subscribeToUser } from './adminAuth';
 import { signInMessage } from './signInMessage';
 import { normalizeEmail } from './enturAccount';
 
-function Admin() {
+function Admin({ route }) {
     const [user, setUser] = useState(null);
     const [checkingSession, setCheckingSession] = useState(true);
     const [error, setError] = useState(null);
@@ -109,54 +111,68 @@ function Admin() {
         );
     }
 
+    const heading = route.kind === 'adminBoard' ? 'Oppsett for tavla' : 'Meldinger på velkomsttavla';
+
     return (
         <main style={{ maxWidth: '60rem', margin: '2rem auto', padding: '0 1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                <Heading1>Meldinger på velkomsttavla</Heading1>
+                <Heading1>{heading}</Heading1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Paragraph>{user.email}</Paragraph>
                     <SecondaryButton onClick={signOutUser}>Logg ut</SecondaryButton>
                 </div>
             </div>
 
-            <div style={{ margin: '1.5rem 0' }}>
-                <SmallAlertBox variant="information" title="Meldingene er offentlig lesbare">
-                    Tavla står i resepsjonen og henter meldingene uten pålogging, så de kan
-                    leses av hvem som helst som finner adressen. Ikke skriv sensitiv eller
-                    intern-klassifisert informasjon her.
-                </SmallAlertBox>
-            </div>
-
-            {formOpen ? (
-                <AlertForm
-                    editing={editing}
-                    userEmail={normalizeEmail(user.email)}
-                    onSaved={() => {
-                        setFormOpen(false);
-                        setEditing(null);
-                    }}
-                    onCancel={() => {
-                        setFormOpen(false);
-                        setEditing(null);
-                    }}
-                />
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    <PrimaryButton
-                        onClick={() => {
-                            setEditing(null);
-                            setFormOpen(true);
-                        }}
-                    >
-                        Ny melding
-                    </PrimaryButton>
-                    <AlertList
-                        onEdit={(alert) => {
-                            setEditing(alert);
-                            setFormOpen(true);
-                        }}
-                    />
+            {route.kind === 'adminBoard' ? (
+                <div style={{ marginTop: '1.5rem' }}>
+                    <BoardAdmin boardId={route.boardId} userEmail={normalizeEmail(user.email)} />
                 </div>
+            ) : (
+                <>
+                    <div style={{ margin: '1.5rem 0' }}>
+                        <SmallAlertBox variant="information" title="Meldingene er offentlig lesbare">
+                            Tavla står i resepsjonen og henter meldingene uten pålogging, så de kan
+                            leses av hvem som helst som finner adressen. Ikke skriv sensitiv eller
+                            intern-klassifisert informasjon her.
+                        </SmallAlertBox>
+                    </div>
+
+                    <div style={{ marginBottom: '2rem' }}>
+                        <BoardList />
+                    </div>
+
+                    {formOpen ? (
+                        <AlertForm
+                            editing={editing}
+                            userEmail={normalizeEmail(user.email)}
+                            onSaved={() => {
+                                setFormOpen(false);
+                                setEditing(null);
+                            }}
+                            onCancel={() => {
+                                setFormOpen(false);
+                                setEditing(null);
+                            }}
+                        />
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                            <PrimaryButton
+                                onClick={() => {
+                                    setEditing(null);
+                                    setFormOpen(true);
+                                }}
+                            >
+                                Ny melding
+                            </PrimaryButton>
+                            <AlertList
+                                onEdit={(alert) => {
+                                    setEditing(alert);
+                                    setFormOpen(true);
+                                }}
+                            />
+                        </div>
+                    )}
+                </>
             )}
         </main>
     );
