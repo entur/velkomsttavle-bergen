@@ -49,21 +49,11 @@ function Carousel({ slides, theme }) {
 
     return (
         <div style={{ flex: 1, minHeight: 0, width: '100vw', backgroundColor: palette.background, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {slides.map(() => {
             <div style={{ width: '100%', height: '6px', backgroundColor: palette.background, flex: '0 0 auto' }}>
                 <div style={{ width: `${progress * 100}%`, height: '100%', backgroundColor: CORAL }} />
             </div>
-            <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'center', padding: '0.75rem 0', flex: '0 0 auto' }}>
-                {slides.map((slide, i) => {
-                    const Icon = slide.Icon;
-                    return (
-                        <Icon
-                            key={slide.key}
-                            size={48}
-                            color={i === index ? palette.iconActive : palette.iconInactive}
-                        />
-                    );
-                })}
-            </div>
+            })}
             <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {slides[index].node}
             </div>
