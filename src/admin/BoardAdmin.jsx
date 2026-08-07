@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { SmallAlertBox } from '@entur/alert';
-import { Heading1, Paragraph } from '@entur/typography';
+import { TertiaryButton } from '@entur/button';
+import { Heading1, Heading3, Paragraph } from '@entur/typography';
 
+import BoardAccess from './BoardAccess';
+import BoardAlerts from './BoardAlerts';
 import BoardConfigForm from './BoardConfigForm';
-import { fetchBoard } from '../boards/boardsRepository';
+import { deleteBoard, fetchBoard } from '../boards/boardsRepository';
 
 /**
  * Oppsettet for én tavle.
@@ -30,6 +33,25 @@ function BoardAdmin({ boardId, userEmail }) {
         };
     }, [boardId]);
 
+    async function handleDelete() {
+        // Sletting kan ikke angres og tar en skjerm ned. Navnet må skrives inn,
+        // ikke bare bekreftes — en «er du sikker?» klikkes bort på refleks.
+        const svar = window.prompt(
+            `Sletter du tavla, viser skjermen som peker på /t/${boardId} «Fant ingen tavle».\n\n`
+            + `Skriv tavlas navn for å bekrefte: ${state.board?.name}`,
+        );
+        if (svar !== state.board?.name) {
+            return;
+        }
+        try {
+            await deleteBoard(boardId);
+            window.location.href = '/admin';
+        } catch (error) {
+            console.error('Kunne ikke slette tavla', error);
+            window.alert('Kunne ikke slette tavla.');
+        }
+    }
+
     if (state.status === 'laster') {
         return <Paragraph>Henter tavla …</Paragraph>;
     }
@@ -52,7 +74,20 @@ function BoardAdmin({ boardId, userEmail }) {
                 Tavla henter oppsettet uten pålogging, så koordinater og åpningstider kan
                 leses av hvem som helst som finner adressen.
             </SmallAlertBox>
-            <BoardConfigForm board={state.board} userEmail={userEmail} />
+            <section>
+                <Heading3>Oppsett</Heading3>
+                <BoardConfigForm board={state.board} userEmail={userEmail} />
+            </section>
+            <BoardAccess boardId={boardId} userEmail={userEmail} />
+            <BoardAlerts boardId={boardId} userEmail={userEmail} />
+            <section>
+                <Heading3>Slett tavla</Heading3>
+                <Paragraph>
+                    Meldingene røres ikke — en melding som også står på andre tavler
+                    blir stående der. Sletting kan ikke angres.
+                </Paragraph>
+                <TertiaryButton onClick={handleDelete}>Slett tavla</TertiaryButton>
+            </section>
         </div>
     );
 }
