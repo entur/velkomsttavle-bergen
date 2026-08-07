@@ -23,7 +23,7 @@ export function isEnturUser(user) {
 /**
  * E-post på oppslagsform: trimmet og i små bokstaver.
  *
- * Dokument-ID-ene i `admins` er lowercased, og firestore.rules slår opp med
+ * Dokument-ID-ene i `memberships` er lowercased, og firestore.rules slår opp med
  * `request.auth.token.email.lower()`. Klienten må normalisere likt, ellers
  * spriker klientens tilgangssjekk og reglenes.
  */

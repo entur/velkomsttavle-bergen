@@ -12,6 +12,7 @@ on:
       - vite.config.js
       - firebase.json
       - firestore.rules
+      - firestore.rules.spec.mjs
       - .firebaserc
       - .github/workflows/deploy.yml
   workflow_dispatch:
@@ -40,6 +41,17 @@ jobs:
 
       - name: Test
         run: yarn test
+
+      - name: Set up Java (Firestore-emulatoren krever JVM)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Tilgangsmodellen ligger i reglene, ikke i koden: en feil her er et
+      # sikkerhetshull som ikke ser feil ut i noen komponent.
+      - name: Test Firestore rules
+        run: yarn test:rules
 
       - name: Build
         run: yarn build
