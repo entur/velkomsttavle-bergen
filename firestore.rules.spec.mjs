@@ -35,6 +35,8 @@ function board(overrides = {}) {
     return {
         name: 'Bergen 3. etasje',
         placeName: 'Bergen',
+        theme: 'dark',
+        staffImage: true,
         top: { kind: 'video' },
         middle: [],
         carousel: [],
@@ -120,6 +122,23 @@ describe('boards', () => {
 
     it('kan ikke skrives i en annens navn', async () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ updatedBy: 'kari@entur.org' })));
+    });
+
+    it('avviser en tavle med ukjent tema', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ theme: 'lilla' })));
+    });
+
+    it('avviser en tavle uten tema', async () => {
+        const { theme, ...utenTema } = board();
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), utenTema));
+    });
+
+    it('avviser en tavle der ansatt-illustrasjonen ikke er en boolean', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ staffImage: 'ja' })));
+    });
+
+    it('godtar det lyse temaet', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ theme: 'light' })));
     });
 
     it('kan slettes av den som har tilgang, men ikke av andre', async () => {
