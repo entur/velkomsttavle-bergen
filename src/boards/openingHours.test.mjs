@@ -57,14 +57,39 @@ describe('formatOpeningHours', () => {
         const rows = formatOpeningHours(normalizeDays([
             { day: 'mon', opens: '08:00', closes: '16:00' },
         ]));
-        assert.deepEqual(rows[0], { day: 'mon', label: 'Mandag', value: '08:00–16:00' });
-        assert.equal(rows[1].value, 'Stengt');
+        assert.deepEqual(rows[0], { key: 'mon', label: 'Mandag', value: '08:00–16:00' });
     });
 
-    it('gir alle sju dagene en label', () => {
+    it('slår sammen mandag til fredag når de er like', () => {
+        const rows = formatOpeningHours(normalizeDays(
+            ['mon', 'tue', 'wed', 'thu', 'fri'].map((day) => ({ day, opens: '08:00', closes: '16:00' })),
+        ));
+        assert.deepEqual(rows, [
+            { key: 'mon', label: 'Mandag–Fredag', value: '08:00–16:00' },
+            { key: 'sat', label: 'Lørdag–Søndag', value: 'Stengt' },
+        ]);
+    });
+
+    it('skiller ut dagen som har andre tider', () => {
+        const rows = formatOpeningHours(normalizeDays([
+            ...['mon', 'tue', 'wed', 'thu'].map((day) => ({ day, opens: '08:00', closes: '16:00' })),
+            { day: 'fri', opens: '08:00', closes: '14:00' },
+        ]));
+        assert.deepEqual(rows.map((row) => row.label), ['Mandag–Torsdag', 'Fredag', 'Lørdag–Søndag']);
+        assert.equal(rows[1].value, '08:00–14:00');
+    });
+
+    it('gir én rad når hele uka er lik', () => {
         const rows = formatOpeningHours(normalizeDays([]));
-        assert.equal(rows.length, 7);
-        assert.equal(rows.every((row) => typeof row.label === 'string' && row.label.length > 0), true);
+        assert.deepEqual(rows, [{ key: 'mon', label: 'Mandag–Søndag', value: 'Stengt' }]);
+    });
+
+    it('slår ikke sammen dager som ikke ligger inntil hverandre', () => {
+        const rows = formatOpeningHours(normalizeDays([
+            { day: 'mon', opens: '08:00', closes: '16:00' },
+            { day: 'wed', opens: '08:00', closes: '16:00' },
+        ]));
+        assert.deepEqual(rows.map((row) => row.label), ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag–Søndag']);
     });
 });
 

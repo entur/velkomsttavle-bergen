@@ -46,8 +46,9 @@ Modulene i detalj:
    ellers står den faste teksten fra oppsettet. Illustrasjonen kan skrus av.
 
    **Åpningstider** (`openingHours`) er den andre modulen i midtfeltet. Sju dager
-   med åpner/stenger eller «Stengt», lagt inn i et skjema. Tavla viser dem som de
-   står — det finnes ingen «åpent nå»-logikk.
+   med åpner/stenger eller «Stengt», lagt inn i et skjema. Tavla slår sammen
+   dager som ligger etter hverandre og har samme verdi, slik at fem like ukedager
+   blir «Mandag–Fredag 08:00–16:00». Det finnes ingen «åpent nå»-logikk.
 3. **Karusell** – veksler mellom slidene hvert 30. sekund, med en progress-bar
    og en ikon-rad som viser hvilken slide som er aktiv:
    - **Vær** – værmelding for koordinatene i oppsettet, hentet direkte fra MET Norway / Yr sitt
