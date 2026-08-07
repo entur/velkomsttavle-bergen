@@ -12,6 +12,7 @@ import {
     PLACE_NAME_MAX_LENGTH,
     findModule,
 } from '../boards/boardConfig';
+import StopPlaceField from './StopPlaceField';
 import { DAY_LABELS, normalizeDays } from '../boards/openingHours';
 import { hasErrors, validateBoardInput } from '../boards/boardValidation';
 import { saveBoardConfig } from '../boards/boardsRepository';
@@ -22,6 +23,7 @@ function draftFrom(board) {
     const openingHours = findModule(board.middle, 'openingHours');
     const weather = findModule(board.carousel, 'weather');
     const floorplan = findModule(board.carousel, 'floorplan');
+    const departures = findModule(board.carousel, 'departures');
     return {
         id: board.id,
         name: board.name,
@@ -41,6 +43,10 @@ function draftFrom(board) {
         weatherLng: weather ? String(weather.lng) : '',
         floorplanEnabled: Boolean(floorplan),
         floorplanPlan: floorplan ? floorplan.plan : FLOORPLAN_PLANS[0],
+        departuresEnabled: Boolean(departures),
+        stopPlaceId: departures ? departures.stopPlaceId : '',
+        stopPlaceName: departures ? departures.stopPlaceName : '',
+        carouselTheme: board.carouselTheme,
     };
 }
 
@@ -70,12 +76,20 @@ function configFrom(draft) {
     if (draft.floorplanEnabled) {
         carousel.push({ type: 'floorplan', plan: draft.floorplanPlan });
     }
+    if (draft.departuresEnabled) {
+        carousel.push({
+            type: 'departures',
+            stopPlaceId: draft.stopPlaceId,
+            stopPlaceName: draft.stopPlaceName.trim(),
+        });
+    }
 
     return {
         id: draft.id,
         name: draft.name.trim(),
         placeName: draft.placeName.trim(),
         top: { kind: draft.topKind },
+        carouselTheme: draft.carouselTheme,
         middle,
         carousel,
     };
@@ -248,6 +262,19 @@ function BoardConfigForm({ board, userEmail }) {
 
             <section>
                 <Heading3>Karusellen</Heading3>
+                <RadioGroup
+                    name="carouselTheme"
+                    label="Bakgrunn"
+                    value={draft.carouselTheme}
+                    onChange={(event) => update('carouselTheme', event.target.value)}
+                >
+                    <Radio value="light">Lys</Radio>
+                    <Radio value="dark">Mørk</Radio>
+                </RadioGroup>
+                {errors.carouselTheme && (
+                    <SmallAlertBox variant="negative">{errors.carouselTheme}</SmallAlertBox>
+                )}
+
                 <Checkbox
                     checked={draft.weatherEnabled}
                     onChange={(event) => update('weatherEnabled', event.target.checked)}
@@ -301,6 +328,25 @@ function BoardConfigForm({ board, userEmail }) {
                         {errors.floorplan && (
                             <SmallAlertBox variant="negative">{errors.floorplan}</SmallAlertBox>
                         )}
+                    </div>
+                )}
+
+                <Checkbox
+                    checked={draft.departuresEnabled}
+                    onChange={(event) => update('departuresEnabled', event.target.checked)}
+                >
+                    Avgangstider
+                </Checkbox>
+                {draft.departuresEnabled && (
+                    <div style={{ margin: '0.75rem 0 0 2rem', maxWidth: '28rem' }}>
+                        <StopPlaceField
+                            value={{ id: draft.stopPlaceId, name: draft.stopPlaceName }}
+                            onChange={(valgt) => {
+                                setSaved(false);
+                                setDraft((current) => ({ ...current, stopPlaceId: valgt.id, stopPlaceName: valgt.name }));
+                            }}
+                            error={errors.stopPlace}
+                        />
                     </div>
                 )}
             </section>
