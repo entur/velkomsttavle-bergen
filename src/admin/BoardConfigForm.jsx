@@ -29,10 +29,11 @@ function draftFrom(board) {
         name: board.name,
         placeName: board.placeName,
         topKind: board.top.kind,
+        theme: board.theme,
+        staffImage: board.staffImage,
         greetingEnabled: Boolean(greeting),
         greetingAuto: !greeting || greeting.text === GREETING_AUTO,
         greetingText: greeting && greeting.text !== GREETING_AUTO ? greeting.text : '',
-        staffImage: greeting ? greeting.staffImage : true,
         openingHoursEnabled: Boolean(openingHours),
         days: normalizeDays(openingHours ? openingHours.days : []),
         weatherEnabled: Boolean(weather),
@@ -57,7 +58,6 @@ function configFrom(draft) {
         middle.push({
             type: 'greeting',
             text: draft.greetingAuto ? GREETING_AUTO : draft.greetingText.trim(),
-            staffImage: draft.staffImage,
         });
     }
     if (draft.openingHoursEnabled) {
@@ -88,6 +88,8 @@ function configFrom(draft) {
         id: draft.id,
         name: draft.name.trim(),
         placeName: draft.placeName.trim(),
+        theme: draft.theme,
+        staffImage: draft.staffImage,
         top: { kind: draft.topKind },
         carouselTheme: draft.carouselTheme,
         middle,
@@ -175,11 +177,34 @@ function BoardConfigForm({ board, userEmail }) {
             </section>
 
             <section>
+                <Heading3>Farger</Heading3>
+                <Paragraph>
+                    Gjelder toppen og midten samlet. Logoen bytter med: hvit og koral på
+                    mørkeblått, farget på lavendel.
+                </Paragraph>
+                <RadioGroup
+                    name="theme"
+                    value={draft.theme}
+                    onChange={(event) => update('theme', event.target.value)}
+                >
+                    <Radio value="dark">Mørk blå</Radio>
+                    <Radio value="light">Lys lavendel</Radio>
+                </RadioGroup>
+            </section>
+
+            <section>
                 <Heading3>Midtfeltet</Heading3>
                 <Paragraph>
                     Meldinger vises alltid øverst her, og overskriften «Velkommen til Entur
                     {' '}{draft.placeName || '…'}» står der uansett hva du velger.
                 </Paragraph>
+
+                <Checkbox
+                    checked={draft.staffImage}
+                    onChange={(event) => update('staffImage', event.target.checked)}
+                >
+                    Vis ansatt-illustrasjon
+                </Checkbox>
 
                 <Checkbox
                     checked={draft.greetingEnabled}
@@ -189,12 +214,6 @@ function BoardConfigForm({ board, userEmail }) {
                 </Checkbox>
                 {draft.greetingEnabled && (
                     <div style={{ margin: '0.75rem 0 1.5rem 2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <Checkbox
-                            checked={draft.staffImage}
-                            onChange={(event) => update('staffImage', event.target.checked)}
-                        >
-                            Vis ansatt-illustrasjon
-                        </Checkbox>
                         <RadioGroup
                             name="greetingAuto"
                             value={draft.greetingAuto ? 'auto' : 'fast'}

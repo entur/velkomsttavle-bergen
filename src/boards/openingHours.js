@@ -3,9 +3,9 @@
  *
  * Uten Firebase-importer og uten JSX, slik at det kan testes med `node --test`.
  *
- * Åpningstidene er lagt inn i et skjema, ikke som fritekst, og tavla viser dem
- * som de står. Det finnes ingen «åpent nå»-logikk — det ville krevd at vi tok
- * stilling til tidssone og helligdager, og ingen har bedt om det.
+ * Åpningstidene er lagt inn i et skjema, ikke som fritekst. Det finnes ingen
+ * «åpent nå»-logikk — det ville krevd at vi tok stilling til tidssone og
+ * helligdager, og ingen har bedt om det.
  */
 
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -57,11 +57,31 @@ export function normalizeDays(value) {
     });
 }
 
-/** Radene tavla og admin viser. Tankestrek, ikke bindestrek, mellom tidene. */
+/**
+ * Radene tavla viser. Dager som ligger etter hverandre og har samme verdi blir
+ * én rad: «Mandag–Fredag 08:00–16:00» framfor fem like linjer.
+ *
+ * Sammenslåingen forutsetter at dagene står i ukerekkefølge. Det garanterer
+ * normalizeDays; endres den rekkefølgen, blir gruppene stille feil.
+ *
+ * Tankestrek, ikke bindestrek, både mellom dagsnavnene og mellom tidene.
+ */
 export function formatOpeningHours(days) {
-    return days.map((day) => ({
-        day: day.day,
-        label: DAY_LABELS[day.day],
-        value: day.closed ? 'Stengt' : `${day.opens}–${day.closes}`,
+    const groups = [];
+    for (const day of days) {
+        const value = day.closed ? 'Stengt' : `${day.opens}–${day.closes}`;
+        const previous = groups[groups.length - 1];
+        if (previous && previous.value === value) {
+            previous.to = day.day;
+        } else {
+            groups.push({ from: day.day, to: day.day, value });
+        }
+    }
+    return groups.map((group) => ({
+        key: group.from,
+        label: group.from === group.to
+            ? DAY_LABELS[group.from]
+            : `${DAY_LABELS[group.from]}–${DAY_LABELS[group.to]}`,
+        value: group.value,
     }));
 }

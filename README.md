@@ -16,8 +16,9 @@ hvert felt velges per tavle:
 
 | Felt | Moduler |
 |---|---|
+| Farger | `theme`: `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet. Karusellen har sitt eget valg, se under |
 | Toppen | `video` (intro-videoen) eller `logo` (Entur-logoen) |
-| Midten | `greeting` (hilsen, automatisk eller fast tekst, med eller uten ansatt-illustrasjon) og `openingHours` (åpningstider lagt inn dag for dag) |
+| Midten | `greeting` (hilsen, automatisk eller fast tekst) og `openingHours` (åpningstider lagt inn dag for dag). Ansatt-illustrasjonen (`staffImage`) er et eget valg, uavhengig av begge |
 | Karusellen | `weather` (værmelding for valgte koordinater), `floorplan` (plantegning) og `departures` (avgangstider fra ett stoppested) |
 
 Overskriften «Velkommen til Entur `<stedsnavn>`» og eventuelle **varsler** står
@@ -32,6 +33,11 @@ mellom slides er en feil, ikke et design. Fargene ligger i
 [`src/boards/carouselTheme.js`](src/boards/carouselTheme.js), som har en test som
 kontrastmåler seg selv.
 
+Tavla har altså **to uavhengige fargevalg**: `theme` for toppen og midten
+([`src/boards/boardTheme.js`](src/boards/boardTheme.js)) og `carouselTheme` for
+karusellen. De kom fra hver sin endring og er ikke koblet — en tavle kan settes
+lys øverst og mørk nederst. Om de bør slås sammen til ett valg er ikke avgjort.
+
 Modulkatalogen ligger i [`src/boards/boardConfig.js`](src/boards/boardConfig.js).
 Der ligger også normaliseringen som gjør et dokument om til noe kiosken trygt
 kan rendre — Firestore-reglene kan ikke iterere over en liste og validerer bare
@@ -43,17 +49,22 @@ Modulene i detalj:
 1. **Intro-video** (`top: video`) – `public/entur.mp4` spilles av i loop øverst
    (lyd av, autoplay). Videoen serveres same-origin med `immutable`-cache (se
    `firebase.json`) slik at den looper fra nettleser-cache uten flaky
-   nettverkskall. Alternativet `top: logo` viser Entur-logoen på samme mørkeblå
-   felt.
-2. **Velkomsthilsen** (`greeting`) – en tilfeldig ansatt-illustrasjon
-   (`staff_man.svg` / `staff_woman.svg`) ved siden av «Velkommen til Entur
-   Bergen» og en hilsen. Med `text: 'auto'` varierer hilsenen med klokkeslett og
-   ukedag (god morgen, vel hjem, god helg osv.) og oppdateres hvert 15. minutt;
-   ellers står den faste teksten fra oppsettet. Illustrasjonen kan skrus av.
+   nettverkskall. Alternativet `top: logo` viser Entur-logoen, i den varianten
+   som passer fargevalget.
+2. **Velkomsthilsen** (`greeting`) – en hilsen under «Velkommen til Entur
+   Bergen». Med `text: 'auto'` varierer hilsenen med klokkeslett og ukedag (god
+   morgen, vel hjem, god helg osv.) og oppdateres hvert 15. minutt; ellers står
+   den faste teksten fra oppsettet.
+
+   **Ansatt-illustrasjonen** (`staffImage`) er et eget valg på tavla, ikke en del
+   av hilsenen: en tilfeldig av `staff_man.svg` / `staff_woman.svg` står til
+   venstre for innholdet i midtfeltet, uansett om tavla har hilsen,
+   åpningstider eller bare overskriften.
 
    **Åpningstider** (`openingHours`) er den andre modulen i midtfeltet. Sju dager
-   med åpner/stenger eller «Stengt», lagt inn i et skjema. Tavla viser dem som de
-   står — det finnes ingen «åpent nå»-logikk.
+   med åpner/stenger eller «Stengt», lagt inn i et skjema. Tavla slår sammen
+   dager som ligger etter hverandre og har samme verdi, slik at fem like ukedager
+   blir «Mandag–Fredag 08:00–16:00». Det finnes ingen «åpent nå»-logikk.
 3. **Karusell** – veksler mellom slidene hvert 30. sekund, med en progress-bar
    og en ikon-rad som viser hvilken slide som er aktiv:
    - **Vær** – værmelding for koordinatene i oppsettet, hentet direkte fra MET Norway / Yr sitt
@@ -187,7 +198,7 @@ yarn deploy:firebase
 
 ## Varsler og admin-side
 
-Tavla kan vise tidsstyrte meldinger øverst i det mørkeblå feltet. Meldingene
+Tavla kan vise tidsstyrte meldinger øverst i midtfeltet. Meldingene
 legges inn på `/admin` og lagres i Firestore i `ent-tavleber-prd`.
 
 Hver melding har tittel, tekst, nivå, et tidsrom og en av/på-bryter. Nivået

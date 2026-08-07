@@ -16,7 +16,7 @@ function OpeningHours({ days }) {
             <Heading3>Åpningstider</Heading3>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', columnGap: '2.5rem', rowGap: '0.25rem', fontSize: '1.375rem' }}>
                 {rows.map((row) => (
-                    <Fragment key={row.day}>
+                    <Fragment key={row.key}>
                         <span>{row.label}</span>
                         <span style={{ textAlign: 'right' }}>{row.value}</span>
                     </Fragment>

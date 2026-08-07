@@ -52,6 +52,8 @@ service cloud.firestore {
     function isValidBoard(d) {
       return d.name is string && d.name.size() > 0 && d.name.size() <= 60
         && d.placeName is string && d.placeName.size() > 0 && d.placeName.size() <= 40
+        && d.theme in ['dark', 'light']
+        && d.staffImage is bool
         && d.top is map && d.top.kind in ['video', 'logo']
         && (!d.keys().hasAny(['carouselTheme']) || d.carouselTheme in ['light', 'dark'])
         && d.middle is list && d.middle.size() <= 5

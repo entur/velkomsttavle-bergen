@@ -2,13 +2,18 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+    THEMES,
     boardHeading,
     findModule,
     normalizeBoardConfig,
     toFirestoreBoard,
 } from './boardConfig.js';
 
-/** Et dokument slik det ser ut i Firestore for dagens Bergen-tavle. */
+/**
+ * Et dokument slik det ser ut i Firestore for dagens Bergen-tavle. `staffImage`
+ * ligger her bevisst inne i greeting-modulen, på formen fra før migreringen
+ * til toppnivå — det gjør at mange tester treffer migreringsveien gratis.
+ */
 function bergenDocument() {
     return {
         name: 'Bergen 3. etasje',
@@ -29,7 +34,7 @@ describe('normalizeBoardConfig', () => {
         assert.equal(config.name, 'Bergen 3. etasje');
         assert.equal(config.placeName, 'Bergen');
         assert.equal(config.top.kind, 'video');
-        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'auto', staffImage: true }]);
+        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'auto' }]);
         assert.equal(config.carousel.length, 2);
     });
 
@@ -89,12 +94,54 @@ describe('normalizeBoardConfig', () => {
         assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), top: { kind: 'logo' } }).top.kind, 'logo');
     });
 
+    it('faller på det mørke temaet når theme mangler eller er ukjent', () => {
+        assert.equal(normalizeBoardConfig('x', bergenDocument()).theme, 'dark');
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), theme: 'lilla' }).theme, 'dark');
+        assert.equal(normalizeBoardConfig('x', {}).theme, 'dark');
+    });
+
+    it('godtar det lyse temaet', () => {
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), theme: 'light' }).theme, 'light');
+    });
+
+    it('leser ansatt-illustrasjonen fra toppnivå', () => {
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), staffImage: false }).staffImage, false);
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), staffImage: true }).staffImage, true);
+    });
+
+    it('arver ansatt-illustrasjonen fra en gammel hilsen-modul', () => {
+        const config = normalizeBoardConfig('x', {
+            ...bergenDocument(),
+            middle: [{ type: 'greeting', text: 'auto', staffImage: false }],
+        });
+        assert.equal(config.staffImage, false);
+        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'auto' }]);
+    });
+
+    it('lar toppnivået vinne over den gamle plasseringen', () => {
+        const config = normalizeBoardConfig('x', {
+            ...bergenDocument(),
+            staffImage: true,
+            middle: [{ type: 'greeting', text: 'auto', staffImage: false }],
+        });
+        assert.equal(config.staffImage, true);
+    });
+
+    it('viser ansatt-illustrasjonen når ingen av plassene sier noe', () => {
+        assert.equal(normalizeBoardConfig('x', {}).staffImage, true);
+        assert.equal(normalizeBoardConfig('x', {
+            ...bergenDocument(),
+            middle: [{ type: 'openingHours', days: [] }],
+        }).staffImage, true);
+    });
+
     it('gir hilsenen forsvarlige verdier', () => {
         const config = normalizeBoardConfig('x', {
             ...bergenDocument(),
             middle: [{ type: 'greeting' }],
         });
-        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'auto', staffImage: true }]);
+        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'auto' }]);
+        assert.equal(config.staffImage, true);
     });
 
     it('trimmer og beholder en fast hilsen-tekst', () => {
@@ -102,7 +149,7 @@ describe('normalizeBoardConfig', () => {
             ...bergenDocument(),
             middle: [{ type: 'greeting', text: '  Hei og velkommen  ', staffImage: false }],
         });
-        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'Hei og velkommen', staffImage: false }]);
+        assert.deepEqual(config.middle, [{ type: 'greeting', text: 'Hei og velkommen' }]);
     });
 
     it('normaliserer åpningstidene til sju dager', () => {
@@ -193,11 +240,19 @@ describe('toFirestoreBoard', () => {
         assert.equal(data.updatedBy, 'ola@entur.org');
         assert.deepEqual(data.top, { kind: 'video' });
         assert.equal(data.carousel.length, 2);
+        assert.equal(data.theme, 'dark');
+        assert.equal(data.staffImage, true);
         assert.equal('id' in data, false);
     });
 
     it('skriver med karusell-temaet', () => {
         const config = normalizeBoardConfig('bergen-3', { ...bergenDocument(), carouselTheme: 'dark' });
         assert.equal(toFirestoreBoard(config, 'ola@entur.org').carouselTheme, 'dark');
+    });
+});
+
+describe('THEMES', () => {
+    it('har nøyaktig de to temaene', () => {
+        assert.deepEqual(THEMES, ['dark', 'light']);
     });
 });

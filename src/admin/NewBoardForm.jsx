@@ -13,8 +13,10 @@ function startConfig(id, name, placeName) {
     return normalizeBoardConfig(id, {
         name,
         placeName,
+        theme: 'dark',
+        staffImage: true,
         top: { kind: 'video' },
-        middle: [{ type: 'greeting', text: 'auto', staffImage: true }],
+        middle: [{ type: 'greeting', text: 'auto' }],
         carousel: [{ type: 'weather', name: placeName, lat: 60.39299, lng: 5.32415 }],
     });
 }
