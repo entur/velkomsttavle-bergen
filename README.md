@@ -16,16 +16,27 @@ hvert felt velges per tavle:
 
 | Felt | Moduler |
 |---|---|
-| Farger | `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet |
+| Farger | `theme`: `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet. Karusellen har sitt eget valg, se under |
 | Toppen | `video` (intro-videoen) eller `logo` (Entur-logoen) |
 | Midten | `greeting` (hilsen, automatisk eller fast tekst) og `openingHours` (åpningstider lagt inn dag for dag). Ansatt-illustrasjonen (`staffImage`) er et eget valg, uavhengig av begge |
-| Karusellen | `weather` (værmelding for valgte koordinater) og `floorplan` (plantegning) |
+| Karusellen | `weather` (værmelding for valgte koordinater), `floorplan` (plantegning) og `departures` (avgangstider fra ett stoppested) |
 
 Overskriften «Velkommen til Entur `<stedsnavn>`» og eventuelle **varsler** står
 alltid i midtfeltet, uansett hvilke moduler tavla har. Ukjente modultyper hoppes
 over, så en skjerm som ikke er lastet på nytt svartner ikke av at noen legger
 til en modul den ikke kjenner. Er karusellen tom, faller feltet bort og
 midtfeltet får plassen.
+
+Karusellen kan settes **lys eller mørk** per tavle (`carouselTheme`). Temaet
+gjelder hele karusellen, ikke enkeltmoduler — en karusell som skifter bakgrunn
+mellom slides er en feil, ikke et design. Fargene ligger i
+[`src/boards/carouselTheme.js`](src/boards/carouselTheme.js), som har en test som
+kontrastmåler seg selv.
+
+Tavla har altså **to uavhengige fargevalg**: `theme` for toppen og midten
+([`src/boards/boardTheme.js`](src/boards/boardTheme.js)) og `carouselTheme` for
+karusellen. De kom fra hver sin endring og er ikke koblet — en tavle kan settes
+lys øverst og mørk nederst. Om de bør slås sammen til ett valg er ikke avgjort.
 
 Modulkatalogen ligger i [`src/boards/boardConfig.js`](src/boards/boardConfig.js).
 Der ligger også normaliseringen som gjør et dokument om til noe kiosken trygt
@@ -89,6 +100,47 @@ skjermen peker på `/t/bergen-3`.
 Ruting skjer uten router-avhengighet: `parseRoute` er tre regexer, og kiosken
 skal ikke laste kode den aldri bruker. Firebase Hosting rewriter allerede `**`
 til `/index.html`, så dyplenker virker i produksjon uten ekstra konfigurasjon.
+
+## Avgangstider
+
+Avgangsmodulen henter fra [Entur Journey Planner v3](https://api.entur.io/journey-planner/v3/graphql),
+en åpen tjeneste uten nøkkel. Den krever headeren `ET-Client-Name`, som vi setter
+til `entur-velkomsttavle`. APIet er CORS-åpent, så kiosken kaller det direkte fra
+nettleseren — ingen backend.
+
+Faste verdier, ikke konfigurerbare: **6 avganger**, maks **3 timer** fram,
+hentet hvert **60. sekund**. Nedtellingen regnes om hvert 15. sekund uten
+nettverkskall.
+
+Tavla viser nedtelling («om 4 min») under 20 minutter og klokkeslett ellers.
+Nedtellingen regnes fra **forventet** tid, ikke planlagt — et tog som er ti
+minutter forsinket skal si «om 13 min», ikke «om 3 min».
+
+Avvik kommer i tre former, og de behandles ulikt:
+
+| Form | Felt i APIet | På tavla |
+|---|---|---|
+| Forsinkelse | `expectedDepartureTime` ≠ `aimedDepartureTime` | Gul brikke, planlagt tid gjennomstreket |
+| Innstilling | `cancellation` | Rød brikke. Avgangen **forsvinner ikke** |
+| Situasjon | `situations[].summary` | Fritekst under destinasjonen |
+
+> Feltet for innstilling heter `cancellation`. `cancelled` finnes ikke på
+> `EstimatedCall` i v3 og gir valideringsfeil fra APIet.
+
+Linjemerket farges etter **kategori** — `L` lokaltog grønn, `R` regiontog rød,
+`F` fjerntog blå — fordi det er kodingen Bane NORs perrongskjermer bruker. Den
+reisende går fra billettkontoret til sporet og møter samme farge. Linjer uten
+kategori får farge etter transportmiddel fra Enturs egen palett.
+
+`line.presentation.colour` fra APIet brukes **ikke**: det er en operatørfarge,
+ikke en linjefarge. Alle tre togene fra Bergen stasjon er Vy og får samme røde,
+og de fleste bussrutene har feltet tomt.
+
+**Bane NORs trafikkmeldinger brukes ikke**, av tre uavhengige grunner: Bane NOR
+er en kilde *inn* i Entur (codespace `BNR`), feeden deres sender ingen
+CORS-headere og kan derfor ikke leses fra en nettleser uten proxy, og meldingene
+gjelder strekninger over lange perioder framfor enkeltavganger. Strekningsarbeid
+legges inn som en vanlig melding på tavla.
 
 ## Teknologi
 
@@ -275,6 +327,15 @@ normaliseringen (`src/boards/boardConfig.test.mjs`), valideringen av
 oppsettskjemaet (`src/boards/boardValidation.test.mjs`), tavle-id-er
 (`src/boards/boardId.test.mjs`) og tilgangslistene
 (`src/access/memberships.test.mjs`).
+
+For avganger dekkes mapping fra GraphQL-svaret
+(`src/departures/departureMapper.test.mjs`), nedtellingen
+(`departureCountdown.test.mjs`), linjefargene (`lineAppearance.test.mjs`),
+henting og polling (`enturDepartures.test.mjs`) og stoppestedssøket
+(`stopPlaceSearch.test.mjs`). Karusell-paletten
+(`src/boards/carouselTheme.test.mjs`) kontrastmåler seg selv — den låser
+rettelsen av inaktive karusellikoner, som lå på 1.39 mot lavendel og dermed var
+usynlige.
 
 Firestore-reglene har egne tester:
 

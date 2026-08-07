@@ -6,11 +6,13 @@ import ErrorBoundary from './components/ErrorBoundary';
 import TopBand from './components/TopBand';
 import MiddleBand from './components/MiddleBand';
 import BoardMissing from './components/BoardMissing';
+import Departures from './components/Departures';
 import { startWeatherPolling } from './weather/metForecast';
+import { startDeparturePolling } from './departures/enturDepartures';
 import { subscribeToBoard } from './boards/boardsRepository';
 import { GREETING_AUTO, boardHeading, findModule } from './boards/boardConfig';
 import { DEFAULT_BOARD_ID } from './routing/parseRoute';
-import { SunCloudIcon, MapIcon } from '@entur/icons';
+import { ClockIcon, SunCloudIcon, MapIcon } from '@entur/icons';
 
 const STAFF_IMAGES = ['/staff_woman.svg', '/staff_man.svg'];
 const GREETING_REFRESH_MS = 15 * 60 * 1000;
@@ -18,6 +20,7 @@ const GREETING_REFRESH_MS = 15 * 60 * 1000;
 function App({ boardId = DEFAULT_BOARD_ID }) {
     const [board, setBoard] = useState({ status: 'loading' });
     const [weather, setWeather] = useState(null);
+    const [departures, setDepartures] = useState(null);
     const [staffImage, setStaffImage] = useState(STAFF_IMAGES[0]);
     const [autoGreeting, setAutoGreeting] = useState(() => getGreetingText(new Date()));
 
@@ -60,6 +63,23 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
         return startWeatherPolling({ location: { lat, lng }, onData: setWeather });
     }, [lat, lng]);
 
+    // Samme mønster som været: avhengigheten er en streng, ikke modul-objektet.
+    // onSnapshot gir et nytt objekt for hver oppdatering av tavla, og et objekt
+    // her ville startet pollingen på nytt hver gang noen lagret i admin.
+    const departuresModule = config ? findModule(config.carousel, 'departures') : undefined;
+    const stopPlaceId = departuresModule ? departuresModule.stopPlaceId : null;
+
+    // Pollingen ligger her, ikke i Departures: karusellen rendrer bare den
+    // aktive sliden, så komponenten avmonteres og remonteres hver gang sliden
+    // kommer tilbake.
+    useEffect(() => {
+        if (stopPlaceId === null) {
+            return undefined;
+        }
+        setDepartures(null);
+        return startDeparturePolling({ stopPlaceId, onData: setDepartures });
+    }, [stopPlaceId]);
+
     if (board.status === 'loading') {
         return null;
     }
@@ -72,14 +92,31 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
             return {
                 key: 'weather',
                 Icon: SunCloudIcon,
-                node: <ErrorBoundary><Weather weather={weather} /></ErrorBoundary>,
+                node: <ErrorBoundary><Weather weather={weather} theme={config.carouselTheme} /></ErrorBoundary>,
             };
         }
         if (module.type === 'floorplan') {
             return {
                 key: 'floorplan',
                 Icon: MapIcon,
-                node: <ErrorBoundary><OfficeMap /></ErrorBoundary>,
+                node: <ErrorBoundary><OfficeMap theme={config.carouselTheme} /></ErrorBoundary>,
+            };
+        }
+        if (module.type === 'departures') {
+            return {
+                key: 'departures',
+                // ClockIcon, ikke TrainIcon: modulen tar hvilket som helst
+                // stoppested, og et togikon ville løyet på en bussterminal.
+                Icon: ClockIcon,
+                node: (
+                    <ErrorBoundary>
+                        <Departures
+                            departures={departures}
+                            stopPlaceName={module.stopPlaceName}
+                            theme={config.carouselTheme}
+                        />
+                    </ErrorBoundary>
+                ),
             };
         }
         return null;
@@ -101,7 +138,7 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
                 staffImageSrc={config.staffImage ? staffImage : null}
                 hasCarousel={hasCarousel}
             />
-            {hasCarousel && <Carousel slides={slides} />}
+            {hasCarousel && <Carousel slides={slides} theme={config.carouselTheme} />}
         </div>
     );
 }

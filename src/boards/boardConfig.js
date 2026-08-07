@@ -11,6 +11,7 @@
  * går an å rendre blir derfor kastet her, ikke i komponentene.
  */
 import { normalizeDays } from './openingHours.js';
+import { CAROUSEL_THEMES, DEFAULT_CAROUSEL_THEME } from './carouselTheme.js';
 
 export const TOP_KINDS = ['video', 'logo'];
 
@@ -24,10 +25,16 @@ export const THEMES = ['dark', 'light'];
 export const MIDDLE_TYPES = ['greeting', 'openingHours'];
 
 /** Rekkefølgen her er rekkefølgen på skjermen. */
-export const CAROUSEL_TYPES = ['weather', 'floorplan'];
+export const CAROUSEL_TYPES = ['weather', 'floorplan', 'departures'];
 
-/** `departures` kommer i fase 3. Katalogen står klar; modulen finnes ikke. */
 export const FLOORPLAN_PLANS = ['bergen-3'];
+
+/** NSR-id-en til et stoppested. Quay-er og bare tall er ikke stoppesteder. */
+export const STOP_PLACE_ID_PATTERN = /^NSR:StopPlace:\d+$/;
+
+export function isValidStopPlaceId(value) {
+    return typeof value === 'string' && STOP_PLACE_ID_PATTERN.test(value);
+}
 
 export const GREETING_AUTO = 'auto';
 export const GREETING_TEXT_MAX_LENGTH = 120;
@@ -46,6 +53,9 @@ export function normalizeBoardConfig(id, data = {}) {
         theme: THEMES.includes(source.theme) ? source.theme : DEFAULT_THEME,
         staffImage: staffImageFrom(source),
         top: { kind: TOP_KINDS.includes(source.top?.kind) ? source.top.kind : DEFAULT_TOP_KIND },
+        carouselTheme: CAROUSEL_THEMES.includes(source.carouselTheme)
+            ? source.carouselTheme
+            : DEFAULT_CAROUSEL_THEME,
         middle: normalizeModules(source.middle, MIDDLE_TYPES, MIDDLE_NORMALIZERS),
         carousel: normalizeModules(source.carousel, CAROUSEL_TYPES, CAROUSEL_NORMALIZERS),
     };
@@ -81,6 +91,7 @@ export function toFirestoreBoard(config, userEmail) {
         theme: config.theme,
         staffImage: config.staffImage,
         top: { kind: config.top.kind },
+        carouselTheme: config.carouselTheme,
         middle: config.middle,
         carousel: config.carousel,
         updatedBy: userEmail,
@@ -113,6 +124,17 @@ const CAROUSEL_NORMALIZERS = {
     },
     floorplan: (module) => (
         FLOORPLAN_PLANS.includes(module.plan) ? { type: 'floorplan', plan: module.plan } : null
+    ),
+    // Uten et brukbart stoppested kan modulen ikke slå opp noe. Da er det bedre
+    // å la den falle bort enn å vise en tom slide karusellen bruker 30 sekunder på.
+    departures: (module) => (
+        isValidStopPlaceId(module.stopPlaceId)
+            ? {
+                type: 'departures',
+                stopPlaceId: module.stopPlaceId,
+                stopPlaceName: asText(module.stopPlaceName, PLACE_NAME_MAX_LENGTH),
+            }
+            : null
     ),
 };
 

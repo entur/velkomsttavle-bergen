@@ -39,9 +39,12 @@ describe('normalizeBoardConfig', () => {
     });
 
     it('hopper over modultyper den ikke kjenner', () => {
+        // Typen her må være en som IKKE står i katalogen. Testen brukte
+        // opprinnelig `departures`, men den finnes fra fase 3 — poenget er at en
+        // kiosk som ikke er lastet på nytt skal tåle en modultype fra framtida.
         const config = normalizeBoardConfig('x', {
             ...bergenDocument(),
-            carousel: [{ type: 'departures', stopPlaceId: 'NSR:StopPlace:1' }, { type: 'floorplan', plan: 'bergen-3' }],
+            carousel: [{ type: 'kantinemeny', rett: 'fiskesuppe' }, { type: 'floorplan', plan: 'bergen-3' }],
         });
         assert.deepEqual(config.carousel, [{ type: 'floorplan', plan: 'bergen-3' }]);
     });
@@ -158,6 +161,47 @@ describe('normalizeBoardConfig', () => {
         assert.equal(config.middle[0].days[0].closed, false);
     });
 
+    it('beholder en gyldig avgangsmodul', () => {
+        const config = normalizeBoardConfig('x', {
+            ...bergenDocument(),
+            carousel: [{ type: 'departures', stopPlaceId: 'NSR:StopPlace:59983', stopPlaceName: 'Bergen stasjon' }],
+        });
+        assert.deepEqual(config.carousel, [
+            { type: 'departures', stopPlaceId: 'NSR:StopPlace:59983', stopPlaceName: 'Bergen stasjon' },
+        ]);
+    });
+
+    it('dropper avgangsmodul med ubrukelig stoppested', () => {
+        for (const stopPlaceId of ['59983', 'NSR:Quay:1', 'NSR:StopPlace:', undefined]) {
+            const config = normalizeBoardConfig('x', {
+                ...bergenDocument(),
+                carousel: [{ type: 'departures', stopPlaceId, stopPlaceName: 'Noe' }],
+            });
+            assert.deepEqual(config.carousel, [], String(stopPlaceId));
+        }
+    });
+
+    it('setter avganger etter vær og plantegning i katalogrekkefølgen', () => {
+        const config = normalizeBoardConfig('x', {
+            ...bergenDocument(),
+            carousel: [
+                { type: 'departures', stopPlaceId: 'NSR:StopPlace:59983', stopPlaceName: 'Bergen stasjon' },
+                { type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 },
+            ],
+        });
+        assert.deepEqual(config.carousel.map((m) => m.type), ['weather', 'departures']);
+    });
+
+    it('leser karusell-temaet', () => {
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), carouselTheme: 'dark' }).carouselTheme, 'dark');
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), carouselTheme: 'light' }).carouselTheme, 'light');
+    });
+
+    it('faller til lyst tema når feltet mangler eller er ukjent', () => {
+        assert.equal(normalizeBoardConfig('x', bergenDocument()).carouselTheme, 'light');
+        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), carouselTheme: 'lilla' }).carouselTheme, 'light');
+    });
+
     it('godtar tomme felt', () => {
         const config = normalizeBoardConfig('x', { name: 'Tom', placeName: 'Bergen', middle: [], carousel: [] });
         assert.deepEqual(config.middle, []);
@@ -199,6 +243,11 @@ describe('toFirestoreBoard', () => {
         assert.equal(data.theme, 'dark');
         assert.equal(data.staffImage, true);
         assert.equal('id' in data, false);
+    });
+
+    it('skriver med karusell-temaet', () => {
+        const config = normalizeBoardConfig('bergen-3', { ...bergenDocument(), carouselTheme: 'dark' });
+        assert.equal(toFirestoreBoard(config, 'ola@entur.org').carouselTheme, 'dark');
     });
 });
 
