@@ -122,7 +122,7 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
                 ...(hasCarousel ? { maxHeight: '45vh' } : { flex: 1, minHeight: 0 }),
             }}>
                 <ErrorBoundary>
-                    <AlertBanner />
+                    <AlertBanner boardId={boardId} />
                 </ErrorBoundary>
                 {/* Overskriften skal alltid stå der. Har tavla en hilsen, eier
                     den overskriften; ellers står den alene. */}

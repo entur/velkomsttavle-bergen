@@ -160,26 +160,35 @@ det Entur-kontoen din. Både admin-siden og Firestore-reglene krever en
 verifisert `@entur.org`-adresse. Hvem som opprettet og sist endret en melding
 lagres og vises i listen.
 
-**En Entur-konto er ikke nok.** Tilgang gis per person via en allowlist:
-collectionen `admins` i Firestore, med ett dokument per person. Innholdet i
-dokumentet spiller ingen rolle — det er eksistensen som gir tilgang.
+**Tilgang gis per tavle, ikke globalt.** Enhver Entur-konto kan logge inn og
+opprette sin egen tavle. Den som oppretter en tavle får tilgang til den, og kan
+gi andre tilgang fra tavlesiden i admin.
+
+Tilgang er tilgang: den som har den kan endre oppsettet, publisere meldinger og
+gi andre tilgang. Det finnes ingen roller. Den siste med tilgang kan ikke fjerne
+seg selv — da måtte tavla vært ordnet i Firebase-konsollet.
+
+Tilgang lagres i collectionen `memberships`, med ett dokument per person og
+dokument-id lik e-postadressen i **små bokstaver**. Dokumentet inneholder en
+liste `boards` med tavle-id-ene personen har tilgang til.
 
 > **Dokument-ID-en må være e-postadressen i små bokstaver.** Reglene slår opp med
-> `request.auth.token.email.lower()`, så en ID som `Ola@Entur.org` treffer ikke, og
-> personen får «Ingen tilgang» uten at noe ser feil ut. Dette er den enkleste
-> feilen å gjøre i konsollet.
+> `request.auth.token.email.lower()`, så en ID som `Ola@Entur.org` treffer ikke.
+> Dette er den enkleste feilen å gjøre i konsollet.
 
-Å gi eller fjerne tilgang gjøres i Firebase-konsollet: legg til eller slett et
-dokument i `admins`. Ingen deploy, ingen kode. Reglene tillater ikke at klienten
-skriver til collectionen, og en innlogget bruker kan bare lese sitt **eget**
-dokument — så ingen kan liste ut hvem som har tilgang, eller gi seg selv tilgang.
+> At tilgang ligger per bruker og ikke som en medlemsliste på tavla er ikke
+> tilfeldig. En melding kan gjelde flere tavler, og reglene må avgjøre om *alle*
+> tavlene i lista er dine. Med tilgang per bruker er det ett oppslag og én
+> `hasOnly`. Med en medlemsliste per tavle måtte reglene iterert over lista, og
+> det kan de ikke.
 
-Logger noen inn med en Entur-konto som ikke står i allowlisten, får de en
-«Ingen tilgang»-skjerm framfor å oppdage det først når de trykker lagre.
+Den første tavla di er et spesialtilfelle: du oppretter den, men har ingen tavler
+ennå, så regelen som krever at det du legger til er noe du har, ville stoppet deg.
+Klienten oppgir derfor id-en den gjør krav på i feltet `claiming`, og regelen slår
+opp at `createdBy` på den tavla er deg. Kravet gjelder bare din egen oppføring.
 
-Allowlisten gir også tilgang til å endre oppsettet på tavlene. Det gjøres om i
-fase 2, der tilgang blir noe man har per tavle — se speccen
-[2026-08-06-parameteriserte-tavler-design.md](docs/superpowers/specs/2026-08-06-parameteriserte-tavler-design.md).
+Har alle med tilgang til en tavle sluttet, må noen med Firebase-konsolltilgang
+legge inn en ny oppføring i `memberships` for hånd.
 
 ### Meldingene er offentlig lesbare
 
@@ -189,11 +198,25 @@ finner adressen.** Dette er akseptert fordi innholdet uansett står på en skjer
 i resepsjonen. **Ikke legg sensitiv eller intern-klassifisert informasjon i en
 melding.**
 
-Skrivetilgang krever både en verifisert `@entur.org`-konto **og** en oppføring
-i `admins`-allowlisten i `firestore.rules` — en Entur-konto alene er ikke nok,
-se [«Pålogging og tilgang»](#pålogging-og-tilgang) over. Reglene validerer også
-feltene og hindrer at `createdBy`/`updatedBy` settes til andre enn den
-innloggede.
+Skrivetilgang krever en verifisert `@entur.org`-konto **og** tilgang til hver av
+tavlene meldinga skal stå på, se [«Pålogging og tilgang»](#pålogging-og-tilgang)
+over. Reglene validerer også feltene og hindrer at `createdBy`/`updatedBy` settes
+til andre enn den innloggede.
+
+### Én melding, flere tavler
+
+En melding har feltet `boardIds` — lista over tavlene den skal stå på. Publiserer
+du den samme meldinga på tre tavler, er det **én** melding: endrer du teksten,
+endres den alle stedene. Skjemaet viser bare tavlene du har tilgang til.
+
+Reglene sjekker `boardIds` både før og etter en endring. Uten sjekken på den
+gamle lista kunne man tatt en melding som står på to tavler, fjernet den ene fra
+lista og skrevet om teksten — altså avpublisert fra en tavle man ikke har
+tilgang til.
+
+Sletter du en tavle, røres ikke meldingene. En melding som peker på en slettet
+tavle blir liggende med en id ingen renderer, og vises fortsatt på de andre
+tavlene sine.
 
 ### Lokal utvikling mot emulator
 
@@ -218,14 +241,14 @@ http://localhost:4000, og Auth-emulatoren lar deg logge inn som en oppdiktet
 
 Uten `VITE_USE_EMULATOR=true` snakker `yarn dev` med **produksjons**-Firestore.
 
-Emulatoren starter med tom `admins`-collection, så du kommer ikke inn i admin før
-du har lagt deg selv i allowlisten. Reglene tillater ikke klient-skriving, så bruk
-emulatorens owner-bypass:
+Emulatoren starter tom, men du trenger ingen oppsett-runde: logg inn og trykk
+«Ny tavle», så har du en tavle du eier. Vil du heller starte med en bestemt tavle
+og tilgang til den, kan du skrive begge deler med emulatorens owner-bypass:
 
 ```bash
 curl -s -X POST -H 'Authorization: Bearer owner' -H 'Content-Type: application/json' \
-  'http://127.0.0.1:8080/v1/projects/ent-tavleber-prd/databases/(default)/documents/admins?documentId=din.adresse@entur.org' \
-  -d '{"fields":{"addedBy":{"stringValue":"lokal utvikling"}}}'
+  'http://127.0.0.1:8080/v1/projects/ent-tavleber-prd/databases/(default)/documents/memberships?documentId=din.adresse@entur.org' \
+  -d '{"fields":{"boards":{"arrayValue":{"values":[{"stringValue":"bergen-3"}]}}}}'
 ```
 
 ### Tester
@@ -242,12 +265,26 @@ værpollingen (`src/weather/metForecast.test.js`) og floorplan-transformen.
 
 For tavler dekkes ruteparsingen (`src/routing/parseRoute.test.mjs`),
 åpningstidene (`src/boards/openingHours.test.mjs`), modulkatalogen og
-normaliseringen (`src/boards/boardConfig.test.mjs`) og valideringen av
-oppsettskjemaet (`src/boards/boardValidation.test.mjs`).
+normaliseringen (`src/boards/boardConfig.test.mjs`), valideringen av
+oppsettskjemaet (`src/boards/boardValidation.test.mjs`), tavle-id-er
+(`src/boards/boardId.test.mjs`) og tilgangslistene
+(`src/access/memberships.test.mjs`).
 
-Firestore-reglene er **ikke** dekket av automatiske tester; de verifiseres
-manuelt i emulatoren. Blir dette et system flere team lener seg på, bør de
-testes med `@firebase/rules-unit-testing`.
+Firestore-reglene har egne tester:
+
+```bash
+yarn test:rules
+```
+
+De ligger i `firestore.rules.spec.mjs` og kjøres mot Firestore-emulatoren via
+`firebase emulators:exec` (krever Java). Filnavnet slutter bevisst på
+`.rules.spec.mjs` og ikke `.test.mjs`, slik at `node --test` **ikke** plukker dem
+opp under vanlige `yarn test` — de ville feilet uten emulator. CI kjører begge.
+
+Testene dekker det som faktisk kan misbrukes: grensen mellom tavler, at en
+melding ikke kan avpubliseres fra en tavle du ikke har tilgang til, og at ingen
+kan gi seg selv tilgang. Kjører du emulatoren fra før på port 8080, må den
+stoppes først — `emulators:exec` vil ha porten selv.
 
 ## Synk av plantegning
 

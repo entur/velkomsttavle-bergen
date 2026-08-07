@@ -5,6 +5,7 @@ import { DatePicker, nativeDateToDateValue, timeOrDateValueToNativeDate } from '
 import { Switch, TextArea, TextField } from '@entur/form';
 import { base } from '@entur/tokens';
 
+import BoardPicker from './BoardPicker';
 import LevelPicker from './LevelPicker';
 import { saveAlert } from '../alerts/alertsRepository';
 import {
@@ -16,7 +17,7 @@ import {
 
 const LOCALE = 'nb-NO';
 
-function emptyDraft() {
+function emptyDraft(boardId) {
     return {
         id: null,
         title: '',
@@ -26,6 +27,8 @@ function emptyDraft() {
         startsAt: nativeDateToDateValue(new Date()),
         endsAt: null,
         enabled: true,
+        // Forhåndsutfylt med tavla man står i. De andre må hukes av bevisst.
+        boardIds: [boardId],
     };
 }
 
@@ -38,11 +41,12 @@ function draftFrom(alert) {
         startsAt: nativeDateToDateValue(alert.startsAt),
         endsAt: nativeDateToDateValue(alert.endsAt),
         enabled: alert.enabled,
+        boardIds: alert.boardIds,
     };
 }
 
-function AlertForm({ editing, userEmail, onSaved, onCancel }) {
-    const [draft, setDraft] = useState(() => (editing ? draftFrom(editing) : emptyDraft()));
+function AlertForm({ editing, boardId, boards, userEmail, onSaved, onCancel }) {
+    const [draft, setDraft] = useState(() => (editing ? draftFrom(editing) : emptyDraft(boardId)));
     const [errors, setErrors] = useState({});
     const [saveError, setSaveError] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -63,6 +67,7 @@ function AlertForm({ editing, userEmail, onSaved, onCancel }) {
             startsAt: timeOrDateValueToNativeDate(draft.startsAt),
             endsAt: timeOrDateValueToNativeDate(draft.endsAt),
             enabled: draft.enabled,
+            boardIds: draft.boardIds,
         };
 
         const validationErrors = validateAlertInput(input);
@@ -141,6 +146,19 @@ function AlertForm({ editing, userEmail, onSaved, onCancel }) {
                     />
                 </div>
             </div>
+
+            <BoardPicker
+                boards={boards}
+                selected={draft.boardIds}
+                onChange={(boardIds) => update('boardIds', boardIds)}
+                error={errors.boardIds}
+            />
+            {draft.boardIds.length > 1 && (
+                <SmallAlertBox variant="information">
+                    Denne meldinga står på {draft.boardIds.length} tavler. Endrer du den her,
+                    endres den alle stedene.
+                </SmallAlertBox>
+            )}
 
             <Switch
                 checked={draft.enabled}

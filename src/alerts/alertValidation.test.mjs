@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 
 import {
     BODY_MAX_LENGTH,
+    BOARD_IDS_MAX,
     TITLE_MAX_LENGTH,
     hasErrors,
     validateAlertInput,
@@ -16,6 +17,9 @@ function input(overrides = {}) {
         startsAt: new Date('2026-08-03T08:00:00Z'),
         endsAt: new Date('2026-08-04T08:00:00Z'),
         enabled: true,
+        // En melding må høre til minst én tavle. Uten dette feltet er den
+        // ikke lenger fullt utfylt.
+        boardIds: ['bergen-3'],
         ...overrides,
     };
 }
@@ -99,6 +103,29 @@ describe('validateAlertInput', () => {
         assert.equal(errors.body, 'Tekst er påkrevd');
         assert.equal(errors.level, 'Velg et nivå');
         assert.equal(errors.startsAt, 'Starttidspunkt er påkrevd');
+    });
+});
+
+describe('validateAlertInput — tavler', () => {
+    it('godtar én tavle', () => {
+        assert.equal(validateAlertInput(input()).boardIds, undefined);
+    });
+
+    it('godtar flere tavler', () => {
+        assert.equal(validateAlertInput(input({ boardIds: ['bergen-3', 'oslo-1'] })).boardIds, undefined);
+    });
+
+    it('krever minst én tavle', () => {
+        assert.equal(validateAlertInput(input({ boardIds: [] })).boardIds, 'Velg minst én tavle');
+        assert.equal(validateAlertInput(input({ boardIds: undefined })).boardIds, 'Velg minst én tavle');
+    });
+
+    it('setter et tak på antall tavler', () => {
+        const mange = Array.from({ length: BOARD_IDS_MAX + 1 }, (_, i) => `tavle-${i}`);
+        assert.equal(
+            validateAlertInput(input({ boardIds: mange })).boardIds,
+            `En melding kan stå på maks ${BOARD_IDS_MAX} tavler`,
+        );
     });
 });
 

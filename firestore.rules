@@ -13,20 +13,40 @@ service cloud.firestore {
         && callerEmail().matches('.*@entur[.]org$');
     }
 
-    // Tilgang til å legge inn meldinger krever en oppføring i allowlisten.
-    // Å ha en Entur-konto er ikke nok.
-    function isAdmin() {
-      return isEnturUser()
-        && exists(/databases/$(database)/documents/admins/$(callerEmail()));
+    // Tavlene du har tilgang til. Tilgang lagres per bruker, ikke som en
+    // medlemsliste på tavla, fordi en melding kan gjelde flere tavler: regelen
+    // må avgjøre om ALLE tavlene i lista er dine, og regler kan ikke iterere
+    // over en liste. Med denne formen er det ett oppslag og én hasOnly.
+    function myBoards() {
+      return exists(/databases/$(database)/documents/memberships/$(callerEmail()))
+        ? get(/databases/$(database)/documents/memberships/$(callerEmail())).data.boards
+        : [];
     }
 
-    function isValidAlert(d) {
-      return d.title is string && d.title.size() > 0 && d.title.size() <= 80
-        && d.body is string && d.body.size() > 0 && d.body.size() <= 400
-        && d.level in ['information', 'success', 'warning', 'negative']
-        && d.startsAt is timestamp
-        && (d.endsAt == null || (d.endsAt is timestamp && d.endsAt > d.startsAt))
-        && d.enabled is bool;
+    function isMember(boardId) {
+      return isEnturUser() && boardId in myBoards();
+    }
+
+    // Tavla klienten gjør krav på fordi den nettopp opprettet den.
+    //
+    // Uten dette er den første tavla di et hull: du oppretter boards/x, men
+    // myBoards() er tom, så du får ikke lagt x inn i din egen oppføring — og
+    // sitter med en tavle du ikke kan redigere. Id-en står i et eget felt, ikke
+    // bare i lista, nettopp fordi regelen må kunne slå den opp; å finne «det
+    // nye elementet» i en liste er ikke mulig uten iterasjon.
+    //
+    // `email` er dokumentet som skrives. Kravet gjelder bare din EGEN oppføring:
+    // dette er en bootstrap-mekanisme, ikke en måte å gi andre tilgang på. Å gi
+    // bort en tavle går gjennom myBoards() som alt annet — altså må du ha gjort
+    // krav på den selv først. Uten denne sperren kunne den som opprettet en
+    // tavle fylt andres tilgangslister uten selv å ha tavla.
+    function claimed(email) {
+      return email == callerEmail()
+        && request.resource.data.keys().hasAny(['claiming'])
+        && exists(/databases/$(database)/documents/boards/$(request.resource.data.claiming))
+        && get(/databases/$(database)/documents/boards/$(request.resource.data.claiming)).data.createdBy == callerEmail()
+        ? [request.resource.data.claiming]
+        : [];
     }
 
     function isValidBoard(d) {
@@ -38,50 +58,84 @@ service cloud.firestore {
         && d.updatedBy == callerEmail();
     }
 
+    function isValidMembership(d) {
+      return d.boards is list && d.boards.size() <= 100;
+    }
+
+    function isValidAlert(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 80
+        && d.body is string && d.body.size() > 0 && d.body.size() <= 400
+        && d.level in ['information', 'success', 'warning', 'negative']
+        && d.startsAt is timestamp
+        && (d.endsAt == null || (d.endsAt is timestamp && d.endsAt > d.startsAt))
+        && d.enabled is bool
+        && d.boardIds is list
+        && d.boardIds.size() > 0
+        && d.boardIds.size() <= 20;
+    }
+
+    match /boards/{boardId} {
+      // Kiosken har ingen pålogging og må lese oppsettet sitt uautentisert.
+      // Konsekvens: oppsettet er offentlig lesbart — stoppested, koordinater og
+      // åpningstider like mye som meldingene. Se speccen.
+      allow read: if true;
+
+      allow create: if isEnturUser()
+        && isValidBoard(request.resource.data)
+        && request.resource.data.createdBy == callerEmail();
+
+      allow update: if isMember(boardId)
+        && isValidBoard(request.resource.data)
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if isMember(boardId);
+    }
+
+    match /memberships/{email} {
+      // Egen oppføring, eller oppføringen til noen du deler en tavle med — det
+      // siste er det admin-siden bruker for å vise hvem som har tilgang.
+      allow read: if isEnturUser()
+        && (email == callerEmail() || resource.data.boards.hasAny(myBoards()));
+
+      allow create: if isEnturUser()
+        && isValidMembership(request.resource.data)
+        && request.resource.data.boards.hasOnly(myBoards().concat(claimed(email)));
+
+      // Både det som legges til og det som fjernes må være tavler du selv har.
+      // Uten den andre linja kunne jeg fjernet en tilgang jeg ikke rår over.
+      allow update: if isEnturUser()
+        && isValidMembership(request.resource.data)
+        && request.resource.data.boards.hasOnly(resource.data.boards.concat(myBoards()).concat(claimed(email)))
+        && resource.data.boards.hasOnly(request.resource.data.boards.concat(myBoards()));
+
+      // Tilgang fjernes ved å tømme lista, ikke ved å slette dokumentet — da
+      // ville en sletting tatt bort tilganger giveren ikke rår over.
+      allow delete: if false;
+    }
+
     match /alerts/{alertId} {
       // Tavla er en kiosk uten pålogging og må kunne lese uautentisert.
       // Konsekvens: meldingene er offentlig lesbare. Se speccen.
       allow read: if true;
 
-      allow create: if isAdmin()
+      allow create: if isEnturUser()
         && isValidAlert(request.resource.data)
+        && request.resource.data.boardIds.hasOnly(myBoards())
         && request.resource.data.createdBy == callerEmail()
         && request.resource.data.updatedBy == callerEmail();
 
-      allow update: if isAdmin()
+      // Både før og etter: sjekkes bare den nye lista, kan jeg ta en melding som
+      // står på din tavle og min, fjerne din fra lista og skrive om teksten —
+      // altså avpublisere fra en tavle jeg ikke har tilgang til.
+      allow update: if isEnturUser()
         && isValidAlert(request.resource.data)
+        && resource.data.boardIds.hasOnly(myBoards())
+        && request.resource.data.boardIds.hasOnly(myBoards())
         && request.resource.data.updatedBy == callerEmail()
         && request.resource.data.createdBy == resource.data.createdBy;
 
-      allow delete: if isAdmin();
-    }
-
-    match /boards/{boardId} {
-      // Tavla er en kiosk uten pålogging og må kunne lese oppsettet sitt
-      // uautentisert. Konsekvens: oppsettet er offentlig lesbart — stoppested,
-      // koordinater og åpningstider like mye som meldingene. Se speccen.
-      allow read: if true;
-
-      allow create: if isAdmin()
-        && isValidBoard(request.resource.data)
-        && request.resource.data.createdBy == callerEmail();
-
-      allow update: if isAdmin()
-        && isValidBoard(request.resource.data)
-        && request.resource.data.createdBy == resource.data.createdBy;
-
-      // Ingen sletting fra klienten i fase 1. En tavle som skal bort, tas i
-      // konsollet — det er sjeldent nok, og en feilklikk-sletting tar en skjerm
-      // ned uten at noen ser det.
-      allow delete: if false;
-    }
-
-    match /admins/{adminEmail} {
-      // Man leser kun sitt eget dokument: klienten kan sjekke egen tilgang
-      // uten å kunne liste ut hvem andre som har den.
-      allow read: if isEnturUser() && adminEmail == callerEmail();
-      // Tilgang gis og fjernes i Firebase-konsollet, aldri fra klienten.
-      allow write: if false;
+      allow delete: if isEnturUser()
+        && resource.data.boardIds.hasOnly(myBoards());
     }
 
     match /{document=**} {

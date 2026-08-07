@@ -5,11 +5,16 @@
  * `node --test`. Resten av appen jobber med JS-Date, ikke Firestore-Timestamp.
  */
 import { ALERT_LEVEL_VALUES } from './alertLevels.js';
+import { isValidBoardId } from '../boards/boardId.js';
 
 /** Firestore-dokument → varsel med Date-felt. Tåler dokumenter med hull i. */
 export function toAlert(id, data) {
     return {
         id,
+        // Ugyldige id-er kastes her, ikke i komponentene: en id som ikke kan
+        // være en tavle kan uansett ikke matche noen, og en liste med tull i
+        // gjør bare feilsøkingen vanskeligere lenger ned.
+        boardIds: Array.isArray(data.boardIds) ? data.boardIds.filter(isValidBoardId) : [],
         title: typeof data.title === 'string' ? data.title : '',
         body: typeof data.body === 'string' ? data.body : '',
         // Reglene validerer enum-verdien, men et hånd-skrevet dokument (konsoll
@@ -35,6 +40,7 @@ export function toAlert(id, data) {
  */
 export function toFirestoreData(input, userEmail) {
     return {
+        boardIds: Array.isArray(input.boardIds) ? input.boardIds.filter(isValidBoardId) : [],
         title: input.title.trim(),
         body: input.body.trim(),
         level: input.level,

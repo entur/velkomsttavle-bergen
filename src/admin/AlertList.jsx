@@ -6,7 +6,7 @@ import { Heading3, Paragraph } from '@entur/typography';
 
 import { levelLabel } from '../alerts/alertLevels';
 import { groupAlertsByStatus } from '../alerts/alertSchedule';
-import { deleteAlert, subscribeToAllAlerts } from '../alerts/alertsRepository';
+import { deleteAlert, subscribeToBoardAlerts } from '../alerts/alertsRepository';
 
 const REEVALUATE_MS = 30 * 1000;
 
@@ -58,15 +58,31 @@ function LevelDot({ level }) {
     );
 }
 
-function AlertList({ onEdit }) {
+/**
+ * «Også på Oslo, Trondheim» — eller tom tekst når meldinga bare står her.
+ *
+ * En id uten treff i `boards` er en tavle du ikke har tilgang til, eller en som
+ * er slettet. Da viser vi id-en som den er framfor å skjule at meldinga også
+ * står et annet sted.
+ */
+function elsewhere(alert, boardId, boards) {
+    const others = alert.boardIds.filter((id) => id !== boardId);
+    if (others.length === 0) {
+        return '';
+    }
+    const names = others.map((id) => boards.find((board) => board.id === id)?.name || id);
+    return `Også på ${names.join(', ')}`;
+}
+
+function AlertList({ boardId, boards, onEdit }) {
     const [alerts, setAlerts] = useState([]);
     const [now, setNow] = useState(() => new Date());
     const [loadError, setLoadError] = useState(null);
 
-    useEffect(() => subscribeToAllAlerts(setAlerts, (error) => {
+    useEffect(() => subscribeToBoardAlerts(boardId, setAlerts, (error) => {
         console.error('Kunne ikke hente varsler', error);
         setLoadError('Kunne ikke hente meldingene. Last siden på nytt.');
-    }), []);
+    }), [boardId]);
 
     useEffect(() => {
         const interval = setInterval(() => setNow(new Date()), REEVALUATE_MS);
@@ -118,6 +134,7 @@ function AlertList({ onEdit }) {
                                     <HeaderCell>Nivå</HeaderCell>
                                     <HeaderCell>Tittel</HeaderCell>
                                     <HeaderCell>Tidsrom</HeaderCell>
+                                    <HeaderCell>Andre tavler</HeaderCell>
                                     <HeaderCell>Lagt inn av</HeaderCell>
                                     <HeaderCell>Sist endret av</HeaderCell>
                                     <HeaderCell aria-label="Handlinger" />
@@ -131,6 +148,7 @@ function AlertList({ onEdit }) {
                                         </DataCell>
                                         <DataCell>{alert.title}</DataCell>
                                         <DataCell>{formatRange(alert)}</DataCell>
+                                        <DataCell>{elsewhere(alert, boardId, boards) || '–'}</DataCell>
                                         <DataCell>{alert.createdBy || '–'}</DataCell>
                                         <DataCell>{alert.updatedBy || '–'}</DataCell>
                                         <DataCell>
