@@ -2,19 +2,14 @@ import { useState, useEffect } from 'react';
 import Weather from './components/Weather';
 import OfficeMap from './floorplan/OfficeMap';
 import Carousel from './components/Carousel';
-import AlertBanner from './components/AlertBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import TopBand from './components/TopBand';
-import Greeting from './components/Greeting';
-import OpeningHours from './components/OpeningHours';
+import MiddleBand from './components/MiddleBand';
 import BoardMissing from './components/BoardMissing';
 import { startWeatherPolling } from './weather/metForecast';
 import { subscribeToBoard } from './boards/boardsRepository';
 import { GREETING_AUTO, boardHeading, findModule } from './boards/boardConfig';
 import { DEFAULT_BOARD_ID } from './routing/parseRoute';
-import { Heading2 } from '@entur/typography';
-import { Contrast } from '@entur/layout';
-import { base } from '@entur/tokens';
 import { SunCloudIcon, MapIcon } from '@entur/icons';
 
 const STAFF_IMAGES = ['/staff_woman.svg', '/staff_man.svg'];
@@ -91,59 +86,32 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     }).filter(Boolean);
 
     const hasCarousel = slides.length > 0;
-    const hasGreeting = Boolean(findModule(config.middle, 'greeting'));
+    const greeting = findModule(config.middle, 'greeting');
+    const openingHours = findModule(config.middle, 'openingHours');
 
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <TopBand kind={config.top.kind} />
-            {/*
-              justifyContent: 'flex-start' er bevisst, ikke 'center'. Feltet har
-              maxHeight + overflow: hidden, så noe MÅ klippes bort når stacken
-              (varsler + hilsen) er høyere enn 45vh. Med 'center' klippes det
-              symmetrisk fra begge kanter, og siden selectVisibleAlerts sorterer
-              alvorligste varsel øverst, er det nettopp det alvorligste varselet
-              som forsvinner over den øvre kanten først. Med 'flex-start' klippes
-              det i stedet nedenfra: hilsenen og de minst alvorlige varslene
-              lengst ned ryker først, og prioritert rekkefølge bevares. Ikke
-              endre denne tilbake til 'center'.
-
-              Uten karusell-moduler får feltet plassen karusellen ellers hadde
-              hatt (flex: 1 i stedet for maxHeight), men klippes fortsatt nedenfra.
-            */}
-            <Contrast style={{
-                width: '100vw',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                backgroundColor: base.light.baseColors.frame.contrast,
-                flexDirection: 'column',
-                padding: '1.5rem 0',
-                overflow: 'hidden',
-                ...(hasCarousel ? { maxHeight: '45vh' } : { flex: 1, minHeight: 0 }),
-            }}>
-                <ErrorBoundary>
-                    <AlertBanner boardId={boardId} />
-                </ErrorBoundary>
-                {/* Overskriften skal alltid stå der. Har tavla en hilsen, eier
-                    den overskriften; ellers står den alene. */}
-                {!hasGreeting && <Heading2>{boardHeading(config.placeName)}</Heading2>}
-                {config.middle.map((module) => (
-                    <ErrorBoundary key={module.type}>
-                        {module.type === 'greeting' ? (
-                            <Greeting
-                                heading={boardHeading(config.placeName)}
-                                text={module.text === GREETING_AUTO ? autoGreeting : module.text}
-                                staffImageSrc={module.staffImage ? staffImage : null}
-                            />
-                        ) : (
-                            <OpeningHours days={module.days} />
-                        )}
-                    </ErrorBoundary>
-                ))}
-            </Contrast>
+            <TopBand kind={config.top.kind} theme={config.theme} />
+            <MiddleBand
+                theme={config.theme}
+                boardId={boardId}
+                heading={boardHeading(config.placeName)}
+                greetingText={greetingTextFrom(greeting, autoGreeting)}
+                openingHoursDays={openingHours ? openingHours.days : null}
+                staffImageSrc={config.staffImage ? staffImage : null}
+                hasCarousel={hasCarousel}
+            />
             {hasCarousel && <Carousel slides={slides} />}
         </div>
     );
+}
+
+/** Hilsenen slik den skal stå på skjermen, eller null når tavla ikke har noen. */
+function greetingTextFrom(greeting, autoGreeting) {
+    if (!greeting) {
+        return null;
+    }
+    return greeting.text === GREETING_AUTO ? autoGreeting : greeting.text;
 }
 
 // Hilsenen som følger klokka og ukedagen.

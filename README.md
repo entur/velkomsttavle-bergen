@@ -16,8 +16,9 @@ hvert felt velges per tavle:
 
 | Felt | Moduler |
 |---|---|
+| Farger | `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet |
 | Toppen | `video` (intro-videoen) eller `logo` (Entur-logoen) |
-| Midten | `greeting` (hilsen, automatisk eller fast tekst, med eller uten ansatt-illustrasjon) og `openingHours` (åpningstider lagt inn dag for dag) |
+| Midten | `greeting` (hilsen, automatisk eller fast tekst) og `openingHours` (åpningstider lagt inn dag for dag). Ansatt-illustrasjonen (`staffImage`) er et eget valg, uavhengig av begge |
 | Karusellen | `weather` (værmelding for valgte koordinater) og `floorplan` (plantegning) |
 
 Overskriften «Velkommen til Entur `<stedsnavn>`» og eventuelle **varsler** står
@@ -37,13 +38,17 @@ Modulene i detalj:
 1. **Intro-video** (`top: video`) – `public/entur.mp4` spilles av i loop øverst
    (lyd av, autoplay). Videoen serveres same-origin med `immutable`-cache (se
    `firebase.json`) slik at den looper fra nettleser-cache uten flaky
-   nettverkskall. Alternativet `top: logo` viser Entur-logoen på samme mørkeblå
-   felt.
-2. **Velkomsthilsen** (`greeting`) – en tilfeldig ansatt-illustrasjon
-   (`staff_man.svg` / `staff_woman.svg`) ved siden av «Velkommen til Entur
-   Bergen» og en hilsen. Med `text: 'auto'` varierer hilsenen med klokkeslett og
-   ukedag (god morgen, vel hjem, god helg osv.) og oppdateres hvert 15. minutt;
-   ellers står den faste teksten fra oppsettet. Illustrasjonen kan skrus av.
+   nettverkskall. Alternativet `top: logo` viser Entur-logoen, i den varianten
+   som passer fargevalget.
+2. **Velkomsthilsen** (`greeting`) – en hilsen under «Velkommen til Entur
+   Bergen». Med `text: 'auto'` varierer hilsenen med klokkeslett og ukedag (god
+   morgen, vel hjem, god helg osv.) og oppdateres hvert 15. minutt; ellers står
+   den faste teksten fra oppsettet.
+
+   **Ansatt-illustrasjonen** (`staffImage`) er et eget valg på tavla, ikke en del
+   av hilsenen: en tilfeldig av `staff_man.svg` / `staff_woman.svg` står til
+   venstre for innholdet i midtfeltet, uansett om tavla har hilsen,
+   åpningstider eller bare overskriften.
 
    **Åpningstider** (`openingHours`) er den andre modulen i midtfeltet. Sju dager
    med åpner/stenger eller «Stengt», lagt inn i et skjema. Tavla slår sammen
