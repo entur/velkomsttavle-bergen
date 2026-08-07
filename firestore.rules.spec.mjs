@@ -122,6 +122,19 @@ describe('boards', () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ updatedBy: 'kari@entur.org' })));
     });
 
+    it('godtar begge karusell-temaene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ carouselTheme: 'dark' })));
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ carouselTheme: 'light' })));
+    });
+
+    it('godtar en tavle uten carouselTheme — feltet er nytt i fase 3', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board()));
+    });
+
+    it('avviser et ukjent karusell-tema', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ carouselTheme: 'lilla' })));
+    });
+
     it('kan slettes av den som har tilgang, men ikke av andre', async () => {
         await assertFails(deleteDoc(doc(as('kari@entur.org'), 'boards/bergen-3')));
         await assertSucceeds(deleteDoc(doc(as('ola@entur.org'), 'boards/bergen-3')));
