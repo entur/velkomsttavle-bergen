@@ -226,9 +226,15 @@ Følger værmodulen: `fetchDepartures` returnerer `{ departures: null }` ved net
 |---|---|
 | Nettverksfeil | Forrige liste blir stående |
 | GraphQL-feil | Forrige liste blir stående, feilen logges |
-| Ukjent stoppested | «Fant ingen avganger for dette stoppestedet» |
+| Ukjent stoppested | «Ingen avganger de neste 3 timene» — samme melding som under |
 | Tom liste | «Ingen avganger de neste 3 timene» |
 | Modul kaster | `ErrorBoundary` rundt hver modul, som i fase 1 |
+
+De to første radene er slått sammen med vilje. `stopPlace: null` og
+`estimatedCalls: []` blir begge en tom liste gjennom mappingen, og å skille dem
+ville krevd et eget signal gjennom hele kjeden. Siden normaliseringen allerede
+kaster id-er som ikke er stoppesteder, oppstår «gyldig id som ikke finnes» bare
+ved feilskrevet oppsett — og da er meldingen uansett riktig.
 
 ## Testing
 
