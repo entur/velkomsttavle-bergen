@@ -1,7 +1,9 @@
 import { formatNumber } from '../ts/main';
 import { UmbrellaIcon, WindIcon } from "@entur/icons";
-import { base, semantic } from "@entur/tokens";
+import { base } from "@entur/tokens";
 import { Heading3, Label } from "@entur/typography";
+
+import { carouselPalette } from '../boards/carouselTheme';
 
 const HIGHLIGHT = base.light.baseColors.shape.highlight;
 const PEACH = base.light.baseColors.frame.highlightalt;
@@ -58,7 +60,7 @@ function buildDailyForecast(timeseries, days = 4) {
  *
  * @param {{ weather: unknown|null }} props Rått svar fra locationforecast
  */
-export default function Weather({ weather }) {
+export default function Weather({ weather, theme }) {
     if (!weather || !weather.properties || !weather.properties.timeseries) {
         return <div className="w-full">laster inn...</div>;
     }
@@ -72,6 +74,8 @@ export default function Weather({ weather }) {
     // De neste 6 timene (hopp over inneværende time som vises i nå-kortet)
     const hourly = timeSeries.slice(1, 7);
     const daily = buildDailyForecast(timeSeries, 4);
+    const palette = carouselPalette(theme);
+    const dark = palette.theme === 'dark';
 
     return (
         <div style={{
@@ -82,7 +86,9 @@ export default function Weather({ weather }) {
             boxSizing: 'border-box',
             padding: '1.5rem 2rem',
             gap: '1.5rem',
-            backgroundColor: semantic.fill.background.subdued.light
+            // Ingen egen bakgrunn: den hører til karusellen. Maler modulen sin
+            // egen, blir været et lavendelpanel som svever på mørk bunn.
+            color: palette.text,
         }}>
             {/* Nå-kort til venstre, timesstripe + dagsrad stablet til høyre */}
             <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: '2rem', alignItems: 'stretch' }}>
@@ -96,6 +102,9 @@ export default function Weather({ weather }) {
                     borderRadius: '16px',
                     background: `linear-gradient(160deg, ${base.light.baseColors.frame.contrastalt} 0%, ${base.light.baseColors.frame.contrast} 100%)`,
                     boxShadow: '0 8px 24px rgba(24,28,86,0.25)',
+                    // Kortet er mørkeblått og forsvinner mot en mørk karusell.
+                    // Kanten er det eneste som skiller dem i mørkt tema.
+                    border: dark ? `2px solid ${palette.panel}` : 'none',
                     flex: '0 0 auto',
                     minHeight: 0,
                     overflow: 'hidden'
@@ -124,7 +133,7 @@ export default function Weather({ weather }) {
                 {/* Høyre kolonne: timesstripe over, dagsrad under – hver i sitt peach-kort */}
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, gap: '1.5rem' }}>
                     {/* Timesstripe */}
-                    <div style={{ display: 'flex', flex: 1, minHeight: 0, justifyContent: 'space-around', alignItems: 'center', minWidth: 0, backgroundColor: PEACH, borderRadius: '16px', padding: '1rem 1.5rem', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', flex: 1, minHeight: 0, justifyContent: 'space-around', alignItems: 'center', minWidth: 0, backgroundColor: dark ? palette.panel : PEACH, color: dark ? '#ffffff' : undefined, borderRadius: '16px', padding: '1rem 1.5rem', overflow: 'hidden' }}>
                         {hourly.map((weather) => {
                             const symbolCode = weather.data.next_1_hours?.summary?.symbol_code || weather.data.next_6_hours?.summary?.symbol_code;
                             const precip = weather.data.next_1_hours?.details?.precipitation_amount ?? 0;
@@ -149,7 +158,7 @@ export default function Weather({ weather }) {
                     </div>
 
                     {/* Dagsrad */}
-                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flex: '0 0 auto', backgroundColor: PEACH, borderRadius: '16px', padding: '1rem 1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flex: '0 0 auto', backgroundColor: dark ? palette.panel : PEACH, color: dark ? '#ffffff' : undefined, borderRadius: '16px', padding: '1rem 1.5rem' }}>
                         {daily.map((day) => (
                             <div key={day.date.toDateString()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
                                 <Heading3 style={{ margin: 0, textTransform: 'capitalize' }}>{day.weekday}</Heading3>
