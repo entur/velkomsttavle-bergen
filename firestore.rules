@@ -53,6 +53,7 @@ service cloud.firestore {
       return d.name is string && d.name.size() > 0 && d.name.size() <= 60
         && d.placeName is string && d.placeName.size() > 0 && d.placeName.size() <= 40
         && d.top is map && d.top.kind in ['video', 'logo']
+        && (!d.keys().hasAny(['carouselTheme']) || d.carouselTheme in ['light', 'dark'])
         && d.middle is list && d.middle.size() <= 5
         && d.carousel is list && d.carousel.size() <= 5
         && d.updatedBy == callerEmail();

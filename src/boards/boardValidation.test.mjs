@@ -29,6 +29,10 @@ function validDraft(overrides = {}) {
         weatherLng: '5.32415',
         floorplanEnabled: true,
         floorplanPlan: 'bergen-3',
+        departuresEnabled: false,
+        stopPlaceId: '',
+        stopPlaceName: '',
+        carouselTheme: 'light',
         ...overrides,
     };
 }
@@ -135,5 +139,39 @@ describe('validateBoardInput', () => {
     it('avviser en plantegning som ikke finnes', () => {
         const errors = validateBoardInput(validDraft({ floorplanPlan: 'oslo-7' }));
         assert.equal(errors.floorplan, 'Velg en plantegning');
+    });
+});
+
+describe('validateBoardInput — avganger og tema', () => {
+    it('godtar en avgangsmodul med valgt stoppested', () => {
+        const errors = validateBoardInput(validDraft({
+            departuresEnabled: true,
+            stopPlaceId: 'NSR:StopPlace:59983',
+            stopPlaceName: 'Bergen stasjon',
+        }));
+        assert.equal(errors.stopPlace, undefined);
+    });
+
+    it('krever at et stoppested er valgt når modulen er på', () => {
+        const errors = validateBoardInput(validDraft({ departuresEnabled: true }));
+        assert.equal(errors.stopPlace, 'Søk opp og velg et stoppested');
+    });
+
+    it('avviser en id som ikke er et stoppested', () => {
+        const errors = validateBoardInput(validDraft({
+            departuresEnabled: true,
+            stopPlaceId: 'NSR:Quay:1',
+            stopPlaceName: 'Noe',
+        }));
+        assert.equal(errors.stopPlace, 'Søk opp og velg et stoppested');
+    });
+
+    it('ser bort fra stoppestedet når modulen er slått av', () => {
+        assert.equal(validateBoardInput(validDraft({ stopPlaceId: 'tull' })).stopPlace, undefined);
+    });
+
+    it('avviser et ukjent tema', () => {
+        assert.equal(validateBoardInput(validDraft({ carouselTheme: 'lilla' })).carouselTheme, 'Velg lyst eller mørkt');
+        assert.equal(validateBoardInput(validDraft({ carouselTheme: 'dark' })).carouselTheme, undefined);
     });
 });

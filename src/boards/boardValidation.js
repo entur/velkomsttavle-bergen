@@ -12,7 +12,9 @@ import {
     GREETING_TEXT_MAX_LENGTH,
     NAME_MAX_LENGTH,
     PLACE_NAME_MAX_LENGTH,
+    isValidStopPlaceId,
 } from './boardConfig.js';
+import { CAROUSEL_THEMES } from './carouselTheme.js';
 import { DAY_LABELS, isTimeOfDay } from './openingHours.js';
 
 export function validateBoardInput(draft) {
@@ -62,6 +64,14 @@ export function validateBoardInput(draft) {
 
     if (draft.floorplanEnabled && !FLOORPLAN_PLANS.includes(draft.floorplanPlan)) {
         errors.floorplan = 'Velg en plantegning';
+    }
+
+    if (draft.departuresEnabled && !isValidStopPlaceId(draft.stopPlaceId)) {
+        errors.stopPlace = 'Søk opp og velg et stoppested';
+    }
+
+    if (!CAROUSEL_THEMES.includes(draft.carouselTheme)) {
+        errors.carouselTheme = 'Velg lyst eller mørkt';
     }
 
     return errors;
