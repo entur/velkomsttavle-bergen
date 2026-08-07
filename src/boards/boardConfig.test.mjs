@@ -9,7 +9,11 @@ import {
     toFirestoreBoard,
 } from './boardConfig.js';
 
-/** Et dokument slik det ser ut i Firestore for dagens Bergen-tavle. */
+/**
+ * Et dokument slik det ser ut i Firestore for dagens Bergen-tavle. `staffImage`
+ * ligger her bevisst inne i greeting-modulen, på formen fra før migreringen
+ * til toppnivå — det gjør at mange tester treffer migreringsveien gratis.
+ */
 function bergenDocument() {
     return {
         name: 'Bergen 3. etasje',

@@ -3,9 +3,9 @@
  *
  * Uten Firebase-importer og uten JSX, slik at det kan testes med `node --test`.
  *
- * Åpningstidene er lagt inn i et skjema, ikke som fritekst, og tavla viser dem
- * som de står. Det finnes ingen «åpent nå»-logikk — det ville krevd at vi tok
- * stilling til tidssone og helligdager, og ingen har bedt om det.
+ * Åpningstidene er lagt inn i et skjema, ikke som fritekst. Det finnes ingen
+ * «åpent nå»-logikk — det ville krevd at vi tok stilling til tidssone og
+ * helligdager, og ingen har bedt om det.
  */
 
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];

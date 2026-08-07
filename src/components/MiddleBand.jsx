@@ -60,15 +60,13 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
                     />
                 )}
                 {/* Overskriften står der uansett hvilke moduler tavla har. */}
-                <div style={{ marginLeft: staffImageSrc ? '2rem' : 0 }}>
-                    <Heading2>{heading}</Heading2>
-                    {greetingText && <LeadParagraph>{greetingText}</LeadParagraph>}
-                    {openingHoursDays && (
-                        <ErrorBoundary>
-                            <OpeningHours days={openingHoursDays} />
-                        </ErrorBoundary>
-                    )}
-                </div>
+                <ErrorBoundary>
+                    <div style={{ marginLeft: staffImageSrc ? '2rem' : 0 }}>
+                        <Heading2>{heading}</Heading2>
+                        {greetingText && <LeadParagraph>{greetingText}</LeadParagraph>}
+                        {openingHoursDays?.length > 0 && <OpeningHours days={openingHoursDays} />}
+                    </div>
+                </ErrorBoundary>
             </div>
         </>
     );

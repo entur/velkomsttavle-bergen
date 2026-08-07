@@ -146,7 +146,7 @@ yarn deploy:firebase
 
 ## Varsler og admin-side
 
-Tavla kan vise tidsstyrte meldinger øverst i det mørkeblå feltet. Meldingene
+Tavla kan vise tidsstyrte meldinger øverst i midtfeltet. Meldingene
 legges inn på `/admin` og lagres i Firestore i `ent-tavleber-prd`.
 
 Hver melding har tittel, tekst, nivå, et tidsrom og en av/på-bryter. Nivået

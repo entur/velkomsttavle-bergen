@@ -17,8 +17,13 @@ export const TOP_KINDS = ['video', 'logo'];
 /** Fargen på toppfeltet og midtfeltet. Fargeverdiene ligger i boardTheme.js. */
 export const THEMES = ['dark', 'light'];
 
-/** Rekkefølgen her er rekkefølgen på skjermen. */
+/**
+ * Midtfeltet rendrer disse typene eksplisitt i `MiddleBand.jsx`, ikke ved å
+ * iterere over listen. En ny type må derfor også legges inn der.
+ */
 export const MIDDLE_TYPES = ['greeting', 'openingHours'];
+
+/** Rekkefølgen her er rekkefølgen på skjermen. */
 export const CAROUSEL_TYPES = ['weather', 'floorplan'];
 
 /** `departures` kommer i fase 3. Katalogen står klar; modulen finnes ikke. */
