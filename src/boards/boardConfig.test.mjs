@@ -134,6 +134,7 @@ describe('normalizeBoardConfig', () => {
             middle: [{ type: 'greeting' }],
         });
         assert.deepEqual(config.middle, [{ type: 'greeting', text: 'auto' }]);
+        assert.equal(config.staffImage, true);
     });
 
     it('trimmer og beholder en fast hilsen-tekst', () => {
