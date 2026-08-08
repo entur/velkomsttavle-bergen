@@ -27,7 +27,7 @@
 		"@entur/form": "9.3.8",
 		"@entur/grid": "^0.3.70",
 		"@entur/icons": "^9.0.4",
-		"@entur/layout": "^3.3.1",
+		"@entur/layout": "^4.0.0",
 		"@entur/table": "4.10.16",
 		"@entur/tokens": "^3.21.1",
 		"@entur/tooltip": "^5.3.1",
