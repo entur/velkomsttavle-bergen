@@ -55,12 +55,15 @@ describe('hourlyForecast', () => {
 });
 
 describe('dailyForecast', () => {
-    const now = new Date('2026-08-10T09:00:00Z');
+    // Bruker lokal tid (uten Z) slik at ukedagen og datogrupperingen blir
+    // konsistent uavhengig av tidssone. MET-data kommer i UTC, men disse
+    // testene verifiserer lokal-dato-gruppering.
+    const now = new Date('2026-08-10T09:00:00');
 
     it('hopper over resten av dagen now peker på', () => {
         const series = [
-            entry('2026-08-10T12:00:00Z', { temp: 20 }),
-            entry('2026-08-11T12:00:00Z', { temp: 15 }),
+            entry('2026-08-10T12:00:00', { temp: 20 }),
+            entry('2026-08-11T12:00:00', { temp: 15 }),
         ];
         const result = dailyForecast(series, 4, now);
         assert.equal(result.length, 1);
@@ -69,9 +72,9 @@ describe('dailyForecast', () => {
 
     it('gir min og max for hele dagen, og ukedagen på norsk', () => {
         const series = [
-            entry('2026-08-11T06:00:00Z', { temp: 9 }),
-            entry('2026-08-11T12:00:00Z', { temp: 21 }),
-            entry('2026-08-11T18:00:00Z', { temp: 14 }),
+            entry('2026-08-11T06:00:00', { temp: 9 }),
+            entry('2026-08-11T12:00:00', { temp: 21 }),
+            entry('2026-08-11T18:00:00', { temp: 14 }),
         ];
         const [dag] = dailyForecast(series, 4, now);
         assert.equal(dag.min, 9);
@@ -81,13 +84,13 @@ describe('dailyForecast', () => {
 
     it('respekterer antallet dager', () => {
         const series = Array.from({ length: 8 }, (_, i) =>
-            entry(`2026-08-${String(11 + i).padStart(2, '0')}T12:00:00Z`));
+            entry(`2026-08-${String(11 + i).padStart(2, '0')}T12:00:00`));
         assert.equal(dailyForecast(series, 4, now).length, 4);
     });
 
     // Sent på kvelden finnes det bare data for i dag. Stripa faller da tilbake
     // til bare timesvisningen, og det er denne tomme lista som utløser det.
     it('gir tom liste når det bare finnes data for i dag', () => {
-        assert.deepEqual(dailyForecast([entry('2026-08-10T23:00:00Z')], 4, now), []);
+        assert.deepEqual(dailyForecast([entry('2026-08-10T23:00:00')], 4, now), []);
     });
 });

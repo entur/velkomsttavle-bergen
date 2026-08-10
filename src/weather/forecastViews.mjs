@@ -16,11 +16,6 @@ function symbolOf(entry) {
         || null;
 }
 
-/** Løst fra Date-objektet til UTC-datostrengen "YYYY-MM-DD", invariant mot tidssone. */
-function getUTCDateKey(date) {
-    return date.toISOString().split('T')[0];
-}
-
 /**
  * Været akkurat nå, eller null når det ikke finnes data.
  *
@@ -67,17 +62,17 @@ export function dailyForecast(timeseries, days = 4, now = new Date()) {
     const byDate = new Map();
     for (const entry of list) {
         const date = new Date(entry.time);
-        const key = getUTCDateKey(date);
+        const key = date.toDateString();
         if (!byDate.has(key)) {
             byDate.set(key, { date, entries: [] });
         }
         byDate.get(key).entries.push(entry);
     }
 
-    const todayKey = getUTCDateKey(now);
+    const todayKey = now.toDateString();
     const result = [];
     for (const { date, entries } of byDate.values()) {
-        if (getUTCDateKey(date) === todayKey) {
+        if (date.toDateString() === todayKey) {
             continue;
         }
         const temps = entries.map((entry) => entry.data.instant.details.air_temperature);
