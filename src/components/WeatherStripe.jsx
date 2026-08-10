@@ -3,6 +3,7 @@ import { UmbrellaIcon, WindIcon } from '@entur/icons';
 import { base } from '@entur/tokens';
 import { Label } from '@entur/typography';
 
+import { formatNumber } from '../ts/main';
 import ProgressBar from './ProgressBar';
 import { advance } from './rotation.mjs';
 import { dailyForecast, hourlyForecast, nowSummary } from '../weather/forecastViews.mjs';
@@ -80,17 +81,17 @@ function NowCard({ now, palette }) {
                 <img src={`/yrSymbols/${now.symbol}.svg`} alt={now.symbol} style={{ width: '64px', height: '64px', display: 'block' }} />
             )}
             <div style={{ fontSize: '2.5rem', fontWeight: 700, lineHeight: 1 }}>
-                {now ? `${Math.round(now.temperature)}°` : '–'}
+                {now ? formatNumber(now.temperature, 'celsius') : '–'}
             </div>
             {now && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <WindIcon size={20} color={palette.text} />
-                        <Label style={{ margin: 0, color: palette.text }}>{now.wind} m/s</Label>
+                        <Label style={{ margin: 0, color: palette.text }}>{formatNumber(now.wind, 'meter-per-second')}</Label>
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <UmbrellaIcon size={20} color={palette.text} />
-                        <Label style={{ margin: 0, color: palette.text }}>{now.precipitation} mm</Label>
+                        <Label style={{ margin: 0, color: palette.text }}>{formatNumber(now.precipitation, 'millimeter')}</Label>
                     </span>
                 </div>
             )}
@@ -105,10 +106,10 @@ function HourCell({ hour }) {
             {hour.symbol && (
                 <img src={`/yrSymbols/${hour.symbol}.svg`} alt={hour.symbol} style={{ width: '44px', height: '44px', display: 'block' }} />
             )}
-            <span style={{ fontSize: '1.4rem', fontWeight: 700, lineHeight: 1 }}>{Math.round(hour.temperature)}°</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 700, lineHeight: 1 }}>{formatNumber(hour.temperature, 'celsius')}</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: HIGHLIGHT, fontSize: '0.95rem' }}>
                 <UmbrellaIcon size={14} />
-                {hour.precipitation} mm
+                {formatNumber(hour.precipitation, 'millimeter')}
             </span>
         </div>
     );
@@ -122,7 +123,7 @@ function DayCell({ day }) {
                 <img src={`/yrSymbols/${day.symbol}.svg`} alt={day.symbol} style={{ width: '44px', height: '44px', display: 'block' }} />
             )}
             <span style={{ fontSize: '1.4rem', fontWeight: 700, lineHeight: 1, whiteSpace: 'nowrap' }}>
-                {Math.round(day.max)}° / {Math.round(day.min)}°
+                {formatNumber(day.max, 'celsius')} / {formatNumber(day.min, 'celsius')}
             </span>
         </div>
     );
