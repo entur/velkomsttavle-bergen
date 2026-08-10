@@ -12,7 +12,7 @@ import { startDeparturePolling } from './departures/enturDepartures';
 import { subscribeToBoard } from './boards/boardsRepository';
 import { GREETING_AUTO, boardHeading, findModule } from './boards/boardConfig';
 import { DEFAULT_BOARD_ID } from './routing/parseRoute';
-import { ClockIcon, SunCloudIcon, MapIcon } from '@entur/icons';
+import { surfacePalette } from './boards/surfaces';
 
 const STAFF_IMAGES = ['/staff_woman.svg', '/staff_man.svg'];
 const GREETING_REFRESH_MS = 15 * 60 * 1000;
@@ -45,6 +45,7 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     }, []);
 
     const config = board.status === 'ready' ? board.config : null;
+    const carouselPalette = config ? surfacePalette(config.carouselSurface) : null;
     const weatherModule = config ? findModule(config.carousel, 'weather') : undefined;
 
     // Avhengighetene er tall, ikke modul-objektet. onSnapshot gir et nytt objekt
@@ -91,29 +92,24 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
         if (module.type === 'weather') {
             return {
                 key: 'weather',
-                Icon: SunCloudIcon,
-                node: <ErrorBoundary><Weather weather={weather} theme={config.carouselTheme} /></ErrorBoundary>,
+                node: <ErrorBoundary><Weather weather={weather} palette={carouselPalette} /></ErrorBoundary>,
             };
         }
         if (module.type === 'floorplan') {
             return {
                 key: 'floorplan',
-                Icon: MapIcon,
-                node: <ErrorBoundary><OfficeMap theme={config.carouselTheme} /></ErrorBoundary>,
+                node: <ErrorBoundary><OfficeMap palette={carouselPalette} /></ErrorBoundary>,
             };
         }
         if (module.type === 'departures') {
             return {
                 key: 'departures',
-                // ClockIcon, ikke TrainIcon: modulen tar hvilket som helst
-                // stoppested, og et togikon ville løyet på en bussterminal.
-                Icon: ClockIcon,
                 node: (
                     <ErrorBoundary>
                         <Departures
                             departures={departures}
                             stopPlaceName={module.stopPlaceName}
-                            theme={config.carouselTheme}
+                            palette={carouselPalette}
                         />
                     </ErrorBoundary>
                 ),
@@ -138,7 +134,7 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
                 staffImageSrc={config.staffImage ? staffImage : null}
                 hasCarousel={hasCarousel}
             />
-            {hasCarousel && <Carousel slides={slides} theme={config.carouselTheme} />}
+            {hasCarousel && <Carousel slides={slides} palette={carouselPalette} />}
         </div>
     );
 }

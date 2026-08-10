@@ -3,10 +3,9 @@ import { UmbrellaIcon, WindIcon } from "@entur/icons";
 import { base } from "@entur/tokens";
 import { Heading3, Label } from "@entur/typography";
 
-import { carouselPalette } from '../boards/carouselTheme';
+import { dailyForecast, hourlyForecast, nowSummary } from '../weather/forecastViews.mjs';
 
 const HIGHLIGHT = base.light.baseColors.shape.highlight;
-const PEACH = base.light.baseColors.frame.highlightalt;
 
 // En rad «ikon + verdi» brukt i nå-kortet (hvit tekst på mørkeblått kort)
 function DetailRow({ icon, children }) {
@@ -18,41 +17,6 @@ function DetailRow({ icon, children }) {
     );
 }
 
-const WEEKDAYS = ['søn', 'man', 'tir', 'ons', 'tor', 'fre', 'lør'];
-
-// Grupperer timeseriene per lokale dato og bygger et sammendrag per dag
-function buildDailyForecast(timeseries, days = 4) {
-    const byDate = new Map();
-    for (const entry of timeseries) {
-        const d = new Date(entry.time);
-        const key = d.toDateString();
-        if (!byDate.has(key)) byDate.set(key, { date: d, entries: [] });
-        byDate.get(key).entries.push(entry);
-    }
-
-    const todayKey = new Date().toDateString();
-    const result = [];
-    for (const { date, entries } of byDate.values()) {
-        if (date.toDateString() === todayKey) continue; // hopp over resten av i dag – dekkes av nå-kortet
-        const temps = entries.map((e) => e.data.instant.details.air_temperature);
-        const max = Math.max(...temps);
-        const min = Math.min(...temps);
-
-        // Velg symbol fra oppføringen nærmest kl. 12
-        const midday = entries.reduce((best, e) =>
-            Math.abs(new Date(e.time).getHours() - 12) < Math.abs(new Date(best.time).getHours() - 12) ? e : best
-        );
-        const symbol =
-            midday.data.next_6_hours?.summary?.symbol_code ||
-            midday.data.next_12_hours?.summary?.symbol_code ||
-            midday.data.next_1_hours?.summary?.symbol_code;
-
-        result.push({ date, weekday: WEEKDAYS[date.getDay()], max, min, symbol });
-        if (result.length >= days) break;
-    }
-    return result;
-}
-
 /**
  * Rendrer værvarselet. Henter ingenting selv: karusellen avmonterer og
  * remonterer denne komponenten omtrent hvert 60. sekund, så hentingen bor i
@@ -60,22 +24,16 @@ function buildDailyForecast(timeseries, days = 4) {
  *
  * @param {{ weather: unknown|null }} props Rått svar fra locationforecast
  */
-export default function Weather({ weather, theme }) {
+export default function Weather({ weather, palette }) {
     if (!weather || !weather.properties || !weather.properties.timeseries) {
         return <div className="w-full">laster inn...</div>;
     }
 
     const timeSeries = weather.properties.timeseries;
-    const now = timeSeries[0];
-    const nowDetails = now.data.instant.details;
-    const nowSymbol = now.data.next_1_hours?.summary?.symbol_code || now.data.next_6_hours?.summary?.symbol_code;
-    const nowPrecip = now.data.next_1_hours?.details?.precipitation_amount ?? 0;
-
-    // De neste 6 timene (hopp over inneværende time som vises i nå-kortet)
-    const hourly = timeSeries.slice(1, 7);
-    const daily = buildDailyForecast(timeSeries, 4);
-    const palette = carouselPalette(theme);
-    const dark = palette.theme === 'dark';
+    const now = nowSummary(timeSeries);
+    const hourly = hourlyForecast(timeSeries, 6);
+    const daily = dailyForecast(timeSeries, 4);
+    const dark = palette.mode === 'dark';
 
     return (
         <div style={{
@@ -110,55 +68,67 @@ export default function Weather({ weather, theme }) {
                     overflow: 'hidden'
                 }}>
                     <Heading3 style={{ margin: 0, color: HIGHLIGHT, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Nå</Heading3>
-                    {nowSymbol && (
+                    {now.symbol && (
                         <img
-                            src={`/yrSymbols/${nowSymbol}.svg`}
-                            alt={nowSymbol}
+                            src={`/yrSymbols/${now.symbol}.svg`}
+                            alt={now.symbol}
                             style={{ width: '120px', height: '120px', display: 'block' }}
                         />
                     )}
                     <div style={{ fontSize: '3.5rem', fontWeight: 700, lineHeight: 1, color: '#ffffff', margin: '0.25rem 0 1rem' }}>
-                        {formatNumber(nowDetails.air_temperature, 'celsius')}
+                        {formatNumber(now.temperature, 'celsius')}
                     </div>
                     <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                         <DetailRow icon={<WindIcon size={24} color="#ffffff" />}>
-                            {formatNumber(nowDetails.wind_speed, 'meter-per-second')}
+                            {formatNumber(now.wind, 'meter-per-second')}
                         </DetailRow>
                         <DetailRow icon={<UmbrellaIcon size={24} color="#ffffff" />}>
-                            {formatNumber(nowPrecip, 'millimeter')}
+                            {formatNumber(now.precipitation, 'millimeter')}
                         </DetailRow>
                     </div>
                 </div>
 
-                {/* Høyre kolonne: timesstripe over, dagsrad under – hver i sitt peach-kort */}
+                {/* Høyre kolonne: timesstripe over, dagsrad under – hver i sitt panelkort */}
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, gap: '1.5rem' }}>
                     {/* Timesstripe */}
-                    <div style={{ display: 'flex', flex: 1, minHeight: 0, justifyContent: 'space-around', alignItems: 'center', minWidth: 0, backgroundColor: dark ? palette.panel : PEACH, color: dark ? '#ffffff' : undefined, borderRadius: '16px', padding: '1rem 1.5rem', overflow: 'hidden' }}>
-                        {hourly.map((weather) => {
-                            const symbolCode = weather.data.next_1_hours?.summary?.symbol_code || weather.data.next_6_hours?.summary?.symbol_code;
-                            const precip = weather.data.next_1_hours?.details?.precipitation_amount ?? 0;
-                            return (
-                                <div key={weather.time} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                                    <Heading3 style={{ margin: 0 }}>{weather.time.substring(11, 16)}</Heading3>
-                                    {symbolCode && (
-                                        <img
-                                            src={`/yrSymbols/${symbolCode}.svg`}
-                                            alt={symbolCode}
-                                            style={{ width: '70px', height: '70px', display: 'block' }}
-                                        />
-                                    )}
-                                    <div style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1 }}>{formatNumber(weather.data.instant.details.air_temperature, 'celsius')}</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: HIGHLIGHT }}>
-                                        <UmbrellaIcon size={16} />
-                                        <Label style={{ margin: 0 }}>{formatNumber(precip, 'millimeter')}</Label>
-                                    </div>
+                    <div style={{
+                        display: 'flex', flex: 1, minHeight: 0, justifyContent: 'space-around', alignItems: 'center', minWidth: 0,
+                        // palette.panel, ikke en fast fersken: «fersken» er selv en mulig
+                        // bakgrunn, og et ferskent kort på ferskent felt er usynlig.
+                        // surfaces.test.mjs holder panelet synlig mot hver bakgrunn.
+                        backgroundColor: palette.panel,
+                        color: palette.text,
+                        borderRadius: '16px', padding: '1rem 1.5rem', overflow: 'hidden'
+                    }}>
+                        {hourly.map(({ time, symbol, temperature, precipitation }) => (
+                            <div key={time} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                <Heading3 style={{ margin: 0 }}>{time.substring(11, 16)}</Heading3>
+                                {symbol && (
+                                    <img
+                                        src={`/yrSymbols/${symbol}.svg`}
+                                        alt={symbol}
+                                        style={{ width: '70px', height: '70px', display: 'block' }}
+                                    />
+                                )}
+                                <div style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1 }}>{formatNumber(temperature, 'celsius')}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: HIGHLIGHT }}>
+                                    <UmbrellaIcon size={16} />
+                                    <Label style={{ margin: 0 }}>{formatNumber(precipitation, 'millimeter')}</Label>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
 
                     {/* Dagsrad */}
-                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', flex: '0 0 auto', backgroundColor: dark ? palette.panel : PEACH, color: dark ? '#ffffff' : undefined, borderRadius: '16px', padding: '1rem 1.5rem' }}>
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-around', alignItems: 'center', flex: '0 0 auto',
+                        // palette.panel, ikke en fast fersken: «fersken» er selv en mulig
+                        // bakgrunn, og et ferskent kort på ferskent felt er usynlig.
+                        // surfaces.test.mjs holder panelet synlig mot hver bakgrunn.
+                        backgroundColor: palette.panel,
+                        color: palette.text,
+                        borderRadius: '16px', padding: '1rem 1.5rem'
+                    }}>
                         {daily.map((day) => (
                             <div key={day.date.toDateString()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
                                 <Heading3 style={{ margin: 0, textTransform: 'capitalize' }}>{day.weekday}</Heading3>

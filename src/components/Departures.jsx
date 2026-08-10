@@ -2,7 +2,6 @@ import { Fragment, useEffect, useState } from 'react';
 import { Heading3, Paragraph } from '@entur/typography';
 import { colors } from '@entur/tokens';
 
-import { carouselPalette } from '../boards/carouselTheme';
 import { lineAppearance } from '../departures/lineAppearance';
 import { countdownLabel } from '../departures/departureCountdown';
 import { isDelayed } from '../departures/departureMapper';
@@ -69,8 +68,7 @@ function Melding({ palette, children }) {
     );
 }
 
-function Departures({ departures, stopPlaceName, theme }) {
-    const palette = carouselPalette(theme);
+function Departures({ departures, stopPlaceName, palette }) {
     const [now, setNow] = useState(() => new Date());
 
     useEffect(() => {
@@ -101,7 +99,7 @@ function Departures({ departures, stopPlaceName, theme }) {
                     const forsinket = isDelayed(departure);
                     return (
                         <Fragment key={`${departure.lineCode}-${departure.aimedAt?.toISOString() ?? index}`}>
-                            <LineBadge lineCode={departure.lineCode} transportMode={departure.transportMode} theme={theme} />
+                            <LineBadge lineCode={departure.lineCode} transportMode={departure.transportMode} theme={palette.mode} />
                             <span>
                                 {departure.destination}
                                 {departure.situation && (
@@ -114,8 +112,8 @@ function Departures({ departures, stopPlaceName, theme }) {
                                 {departure.platform ? `Spor ${departure.platform}` : ''}
                             </span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
-                                {departure.cancelled && <Chip label="Innstilt" tone="cancelled" theme={theme} />}
-                                {!departure.cancelled && nedtelling && <Chip label={nedtelling} tone="delayed" theme={theme} />}
+                                {departure.cancelled && <Chip label="Innstilt" tone="cancelled" theme={palette.mode} />}
+                                {!departure.cancelled && nedtelling && <Chip label={nedtelling} tone="delayed" theme={palette.mode} />}
                                 {(departure.cancelled || forsinket) && (
                                     <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>{tid(departure.aimedAt)}</span>
                                 )}
