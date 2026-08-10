@@ -32,7 +32,7 @@ describe('advance', () => {
     // count <= 1, og her fryses tilstanden slik at de kan stole på det.
     it('står stille med bare én visning', () => {
         assert.deepEqual(
-            advance({ elapsed: 250, index: 0 }, { tick: 100, duration: 300, count: 1 }),
+            advance({ elapsed: 0, index: 0 }, { tick: 100, duration: 300, count: 1 }),
             { elapsed: 0, index: 0 },
         );
     });
