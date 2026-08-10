@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Weather from './components/Weather';
 import OfficeMap from './floorplan/OfficeMap';
 import Carousel from './components/Carousel';
+import BottomBand from './components/BottomBand';
 import ErrorBoundary from './components/ErrorBoundary';
 import TopBand from './components/TopBand';
 import MiddleBand from './components/MiddleBand';
@@ -46,7 +47,13 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
 
     const config = board.status === 'ready' ? board.config : null;
     const carouselPalette = config ? surfacePalette(config.carouselSurface) : null;
-    const weatherModule = config ? findModule(config.carousel, 'weather') : undefined;
+    const bottomPalette = config ? surfacePalette(config.bottomSurface) : null;
+    // Været kan stå i karusellen eller i stripa, aldri begge: normaliseringen
+    // lar bottom vinne. Oppslaget må derfor lete begge steder, men finner
+    // høyst ett treff — og pollingen under startes bare én gang.
+    const weatherModule = config
+        ? (findModule(config.bottom, 'weather') ?? findModule(config.carousel, 'weather'))
+        : undefined;
 
     // Avhengighetene er tall, ikke modul-objektet. onSnapshot gir et nytt objekt
     // for hver eneste oppdatering av tavle-dokumentet, og et objekt her ville
@@ -119,6 +126,7 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     }).filter(Boolean);
 
     const hasCarousel = slides.length > 0;
+    const hasBottom = config.bottom.length > 0;
     const greeting = findModule(config.middle, 'greeting');
     const openingHours = findModule(config.middle, 'openingHours');
 
@@ -133,8 +141,12 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
                 openingHoursDays={openingHours ? openingHours.days : null}
                 staffImageSrc={config.staffImage ? staffImage : null}
                 hasCarousel={hasCarousel}
+                hasBottom={hasBottom}
             />
             {hasCarousel && <Carousel slides={slides} palette={carouselPalette} />}
+            {hasBottom && (
+                <BottomBand modules={config.bottom} palette={bottomPalette} weather={weather} />
+            )}
         </div>
     );
 }

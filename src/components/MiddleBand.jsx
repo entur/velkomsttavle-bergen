@@ -29,7 +29,7 @@ import { bandTheme } from '../boards/boardTheme';
  * Uten karusell-moduler får feltet plassen karusellen ellers hadde
  * hatt (flex: 1 i stedet for maxHeight), men klippes fortsatt nedenfra.
  */
-function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, staffImageSrc, hasCarousel }) {
+function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, staffImageSrc, hasCarousel, hasBottom }) {
     const { background, color, contrast } = bandTheme(theme);
     const style = {
         width: '100vw',
@@ -41,7 +41,7 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
         flexDirection: 'column',
         padding: '1.5rem 0',
         overflow: 'hidden',
-        ...(hasCarousel ? { maxHeight: '45vh' } : { flex: 1, minHeight: 0 }),
+        ...middleHeight(hasCarousel, hasBottom),
     };
 
     const content = (
@@ -72,6 +72,23 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
     );
 
     return contrast ? <Contrast style={style}>{content}</Contrast> : <div style={style}>{content}</div>;
+}
+
+/**
+ * Hvor mye plass midtfeltet får.
+ *
+ * Toppen er faste 40vh og stripa faste 20vh, så taket må ned når begge feltene
+ * under er der — ellers har karusellen ingenting igjen. Uten karusell tar
+ * midtfeltet resten, med eller uten stripe.
+ *
+ * Tallene er justert mot skjerm, ikke utledet. Endrer du dem, se på en tavle med
+ * varsel, hilsen og åpningstider oppe samtidig.
+ */
+function middleHeight(hasCarousel, hasBottom) {
+    if (!hasCarousel) {
+        return { flex: 1, minHeight: 0 };
+    }
+    return { maxHeight: hasBottom ? '35vh' : '45vh' };
 }
 
 export default MiddleBand;
