@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { hasErrors, validateBoardInput } from './boardValidation.js';
+import { SURFACES } from './surfaces.js';
 
 function validDraft(overrides = {}) {
     return {
@@ -220,5 +221,14 @@ describe('flater og plassering av været', () => {
     it('avviser ukjente flatenavn i begge feltene', () => {
         assert.ok(validateBoardInput(draft({ carouselSurface: 'lilla' })).carouselSurface);
         assert.ok(validateBoardInput(draft({ bottomSurface: 'lilla' })).bottomSurface);
+    });
+
+    // Listemedlemskap, ikke likhet mot standardverdien: hver av de seks
+    // flatene skal godtas, ikke bare 'lys-lavendel'/'morkebla'.
+    it('godtar alle definerte flatenavn i begge feltene', () => {
+        for (const surface of SURFACES) {
+            assert.deepEqual(validateBoardInput(draft({ carouselSurface: surface })), {}, surface);
+            assert.deepEqual(validateBoardInput(draft({ bottomSurface: surface })), {}, surface);
+        }
     });
 });
