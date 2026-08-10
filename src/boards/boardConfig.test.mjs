@@ -330,6 +330,16 @@ describe('flater', () => {
         );
     });
 
+    // Et dokument redigert for hånd kan ha et gammelt carouselTheme-navn som
+    // aldri fantes i den to-verdis lista. Da skal migreringen falle til
+    // standarden, ikke kaste eller la tullverdien lekke gjennom.
+    it('faller på standarden for et ukjent carouselTheme-navn', () => {
+        assert.equal(
+            normalizeBoardConfig('x', { carouselTheme: 'sunset' }).carouselSurface,
+            'lys-lavendel',
+        );
+    });
+
     it('slutter å eksponere carouselTheme', () => {
         assert.equal(normalizeBoardConfig('x', { carouselTheme: 'dark' }).carouselTheme, undefined);
     });
