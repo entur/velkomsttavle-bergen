@@ -111,8 +111,17 @@ Samme mønster som `staffImageFrom`:
 `bottomSurface` har ingen gammel plassering og faller på standarden `morkebla` —
 stripa skal skille seg fra karusellen, som oftest er lys.
 
-`toFirestoreBoard` slutter å skrive `carouselTheme`. Eksisterende dokumenter ser
-identiske ut ved lesing og ryddes ved første lagring fra admin. Ingen batch-jobb.
+`toFirestoreBoard` slutter å skrive `carouselTheme` og skriver `carouselSurface` i
+stedet. Eksisterende dokumenter ser identiske ut ved lesing. Ingen batch-jobb.
+
+Det gamle feltet blir liggende: `saveBoardConfig` bruker `{ merge: true }`, så et
+felt vi slutter å skrive blir ikke slettet. Det er greit — normaliseringen leser
+`carouselSurface` først, og `carouselTheme` blir da et dødt felt uten virkning. Vi
+bruker ikke `deleteField()` for å rydde det; en ekstra skriveoperasjon for å fjerne
+et felt ingen leser er ikke verdt risikoen. **Konsekvens for reglene:** siden feltet
+blir liggende, og `request.resource.data` ved en merge-skriving er det
+sammenslåtte dokumentet, må `isValidBoard` beholde dagens `carouselTheme`-klausul.
+Fjernes den, avvises hver eneste lagring på en gammel tavle.
 
 ## Flatetabellen
 
@@ -219,6 +228,28 @@ sent på kvelden kan lista bli tom. Da faller `days`-visningen bort, `hours` st�
 alene, og progress-baren rendres ikke — det er samme regel som for én slide i
 karusellen.
 
+### Delte værutregninger
+
+`Weather` og `WeatherStripe` trenger de samme avledningene fra timeseriene.
+`buildDailyForecast` (i dag en lokal funksjon i `Weather.jsx:24`) flyttes derfor
+sammen med de to andre til `src/weather/forecastViews.mjs`:
+
+```js
+export function nowSummary(timeseries)
+// → { symbol, temperature, wind, precipitation } | null
+export function hourlyForecast(timeseries, hours = 6)
+// → [{ time, symbol, temperature, precipitation }]
+export function dailyForecast(timeseries, days = 4, now = new Date())
+// → [{ date, weekday, max, min, symbol }]
+```
+
+`now` er en parameter og ikke `new Date()` inni funksjonen, slik at «hopp over
+resten av i dag»-regelen kan testes uten å vente til midnatt.
+
+Rene funksjoner uten JSX — det er slik `playbackWatchdog.mjs` og
+`videoBlobLoader.mjs` allerede skiller testbar logikk fra komponentene i dette
+repoet. `Weather` bytter til de samme funksjonene, med uendret oppførsel.
+
 ### Delt veksling
 
 Timeren trekkes ut av `Carousel` til `src/components/rotation.mjs` som en ren
@@ -287,6 +318,10 @@ dag — feltene finnes ikke i eksisterende dokumenter:
 && (!d.keys().hasAny(['bottomSurface']) || d.bottomSurface in SURFACE_NAMES)
 ```
 
+Dagens `carouselTheme`-klausul blir stående, av grunnen migreringsavsnittet
+forklarer: feltet ligger igjen i gamle dokumenter og er med i den sammenslåtte
+`request.resource.data`.
+
 der `SURFACE_NAMES` skrives ut som literal liste — regler kan ikke importere.
 Listen finnes altså to steder, i `surfaces.js` og i `firestore.rules`. Det står som
 kommentar begge steder, på linje med hvordan `theme` og `top.kind` allerede er
@@ -307,7 +342,12 @@ mot gamle regler.
   Ukjent navn og `undefined` gir standardflaten. `mode` er `'dark'` eller
   `'light'`.
 - **`rotation.test.mjs`** (ny) — vekslingen teller opp og går rundt, `count === 1`
-  og `count === 0` står stille, og `elapsed` nullstilles ved bytte.
+  og `count === 0` står stille, `elapsed` nullstilles ved bytte, og en `index`
+  utenfor rekkevidde faller tilbake til 0 når lista krymper.
+- **`forecastViews.test.mjs`** (ny) — `nowSummary` med og uten `next_1_hours`,
+  `hourlyForecast` hopper over inneværende time og respekterer antallet,
+  `dailyForecast` hopper over resten av dagen `now` peker på, grupperer riktig
+  min/max, og gir tom liste når det bare finnes data for i dag.
 - **`boardConfig.test.mjs`** — `bottom` normaliseres som de andre listene, ukjente
   typer faller bort, vær uten koordinater faller bort, vær i både `carousel` og
   `bottom` gir bare `bottom`, migrering fra `carouselTheme` begge veier, ukjent
