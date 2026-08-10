@@ -132,6 +132,11 @@ const BergenThird = ({ labels }) => {
         <g className="room-labels">
           {labels.map((label) => {
             const lines = label.lines ?? [label.name]
+            const rotated = label.rotation !== undefined
+            const labelX =
+              rotated && label.rotatedX !== undefined ? label.rotatedX : label.x
+            const labelY =
+              rotated && label.rotatedY !== undefined ? label.rotatedY : label.y
             return (
               <text
                 key={label.id}
@@ -148,22 +153,24 @@ const BergenThird = ({ labels }) => {
                 textAnchor={lines.length > 1 ? 'middle' : undefined}
                 style={
                   {
-                    '--label-x': `${label.x}px`,
-                    '--label-y': `${label.y}px`,
+                    '--label-x': `${labelX}px`,
+                    '--label-y': `${labelY}px`,
                   }
                 }
-                ref={measureLabelOrigin}
+                ref={(el) =>
+                  measureLabelOrigin(el, label.rotatedX, label.rotatedY)
+                }
                 transform={
                   label.rotation !== undefined
-                    ? `rotate(${label.rotation}, ${label.x}, ${label.y})`
+                    ? `rotate(${label.rotation}, ${labelX}, ${labelY})`
                     : undefined
                 }
               >
                 {lines.map((line, i) => (
                   <tspan
                     key={line}
-                    x={label.x}
-                    y={label.y + i * (label.isMeetingRoom ? 22 : 17)}
+                    x={labelX}
+                    y={labelY + i * (label.isMeetingRoom ? 22 : 17)}
                   >
                     {line}
                   </tspan>
