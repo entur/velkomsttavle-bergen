@@ -14,6 +14,14 @@
  * Derfor en oppslagstabell og ikke en passthrough med unntak: det som ikke står
  * her blir `none`, som `TravelTag` håndterer med et tomt ikon. En ny verdi i
  * Enturs enum gir da et merke uten ikon, ikke en tom karusellslide.
+ *
+ * `none` gir ikke bare et tomt ikon, men også en grå bakgrunn: det finnes
+ * ingen `--components-travel-traveltag-*-fill-none`, så `TravelTag` faller
+ * til `var(--basecolors-shape-disabled)` (`#6e6f73`). Navy tekst på den er
+ * kontrast 3.12 — over WCAG large-text-grensa 3.0, men under normalgrensa
+ * 4.5. Akseptabelt for et «vi vet ikke»-merke, som `none` er ment å være, men
+ * verdt å sjekke på nytt om noen senere lar `none` dekke flere tilfeller enn
+ * i dag.
  */
 const TRANSPORT = {
     air: 'air',

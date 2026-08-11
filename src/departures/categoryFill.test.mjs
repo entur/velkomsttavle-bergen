@@ -54,8 +54,11 @@ describe('badgeText', () => {
 
 describe('categoryFill — kant', () => {
     it('har kant bare i lyst tema', () => {
-        // I lyst tema er fyllet bare 2.1–3.4 mot lavendel og fersken, så
-        // formen forsvinner uten kant. I mørkt tema er det 4.3–7.4.
+        // I lyst tema er fyllet 2.10–3.84 mot lavendel, lys-lavendel og
+        // fersken — på eller under 3.0 for de fleste, så formen forsvinner
+        // uten kant. Mot hvit er det 4.13–5.33, der kanten strengt tatt ikke
+        // er nødvendig, men beholdes for at merket skal se likt ut på alle
+        // lyse flater. I mørkt tema er det 4.3–7.4 og trenger ingen.
         assert.ok(categoryFill('L4', 'light').border.startsWith('2px'));
         assert.equal(categoryFill('L4', 'dark').border, 'none');
     });

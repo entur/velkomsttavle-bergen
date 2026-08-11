@@ -35,9 +35,12 @@ export function categoryFill(lineCode, theme) {
     const dark = theme === 'dark';
     return {
         background: CATEGORY[match[1].toUpperCase()][dark ? 'dark' : 'light'],
-        // Kanten finnes bare i lyst tema. Der er fyllet 2.1–3.4 mot lavendel og
-        // fersken, altså under 3.0 der formen skal leses. I mørkt tema er det
-        // 4.3–7.4 mot flata og trenger ingen.
+        // Kanten finnes bare i lyst tema. Mot lavendel, lys-lavendel (som er
+        // DEFAULT_CAROUSEL_SURFACE) og fersken er fyllet 2.10–3.84 — på eller
+        // under 3.0 for de fleste av dem, der formen ellers ville forsvunnet.
+        // Mot hvit er det 4.13–5.33, og kanten er da strengt tatt ikke
+        // nødvendig, men beholdes slik at merket ser likt ut på alle lyse
+        // flater. I mørkt tema er fyllet 4.3–7.4 mot flata og trenger ingen.
         border: dark ? 'none' : `2px solid ${colors.brand.blue}`,
     };
 }
@@ -46,13 +49,23 @@ export function categoryFill(lineCode, theme) {
  * Tekstfargen på linjemerket.
  *
  * Skilt fra `categoryFill` fordi regelen er den samme enten fyllet kommer fra
- * Bane NOR-kategorien eller fra `TravelTag` sin egen transportpalett. Målt over
- * hele paletten ligger kontrasten på 4.5–12.1 med denne regelen.
+ * Bane NOR-kategorien eller fra `TravelTag` sin egen transportpalett. Målt
+ * mot Bane NOR-kategoriene ligger kontrasten på 4.13–7.40 (hvit tekst: 4.13
+ * mint, 4.29 sky, 5.33 lava; navy på kontrastvariantene: 6.83–7.40). Mot
+ * TravelTags egen transportpalett er den 4.53–12.12. Merket er 1.75rem/700 —
+ * 28px halvfet, altså WCAG large text med grense 3.0 — så selv det laveste
+ * tallet her ligger godt over kravet.
  *
- * Den må settes inline av kallstedet i ALLE tilfeller. Overlater vi den til
- * stilarket, kommer den fra `:where(.eds-contrast) .eds-travel-tag`, og
- * `:where()` kom i Chromium 88 — Samsung-skjermen ligger på 85 og forkaster
- * regelen. Da ville merket fått én tekstfarge på skjermen og en annen i Chrome.
+ * Den må settes inline av kallstedet i ALLE tilfeller. Grunnen er IKKE at
+ * `:where()`-varianter forkastes på Tizen: en regel som `:where(.eds-contrast)
+ * .eds-travel-tag` krever forfaren-klassen `eds-contrast`, som denne appen
+ * aldri setter — vi bruker bare `ContrastContext.Provider`, ikke `<Contrast>`
+ * (se `LineBadge` i `Departures.jsx`). Den grunnen er derfor egentlig at
+ * `TravelTag` selv bare setter `--text-color` når `alert === 'error'` eller
+ * `transport === 'walk'`. I alle andre tilfeller, uten vår inline-verdi,
+ * kommer fargen fra `.eds-travel-tag{--text-color:var(--components-travel-
+ * traveltag-standard-text-default)}` = `#ffffff` — også i mørkt tema. Uten
+ * denne funksjonen ville mørkt tema fått hvit tekst der den skal ha navy.
  */
 export function badgeText(theme) {
     return theme === 'dark' ? colors.brand.blue : '#ffffff';

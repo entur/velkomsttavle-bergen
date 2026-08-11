@@ -43,10 +43,16 @@ function tid(date) {
  * konteksten, ikke `<Contrast>` selv, som også ville satt bakgrunn og
  * tekstfarge på griden rundt.
  *
- * `--text-color` settes i ALLE tilfeller, også uten kategorifyll. Overlater vi
- * den til stilarket, kommer den fra `:where(.eds-contrast) .eds-travel-tag` —
- * en av reglene Tizen forkaster — og merket ville sett ulikt ut på skjermen og
- * i Chrome.
+ * `--text-color` settes i ALLE tilfeller, også uten kategorifyll — ikke fordi
+ * en `:where()`-variant ellers ville forkastet av Tizen (den ville ikke
+ * matchet i det hele tatt: `:where(.eds-contrast) .eds-travel-tag` krever
+ * klassen `eds-contrast`, og vi setter bare React-konteksten, ikke
+ * `<Contrast>`). Den ekte grunnen er at `TravelTag` selv bare setter
+ * `--text-color` når `alert === 'error'` eller `transport === 'walk'`. Uten
+ * vår verdi ville fargen kommet fra `.eds-travel-tag{--text-color:var(
+ * --components-travel-traveltag-standard-text-default)}` = `#ffffff` — og
+ * mørkt tema ville fått hvit tekst i stedet for navy. Se `badgeText` i
+ * `categoryFill.js` for tallene.
  */
 function LineBadge({ lineCode, transportMode, theme }) {
     const dark = theme === 'dark';
@@ -103,7 +109,8 @@ function Chip({ label, tone, theme }) {
  * med mørkeblå tekst på lyse. Ikonet arver `color`, så det bytter med teksten.
  *
  * Ingen `opacity` her, i motsetning til den gamle `↳`-linja: kontrasten er målt
- * til 10.25, og en gjennomsiktighet på 0.85 ville spist av den uten å gi noe.
+ * til 10.25, og 6.48 på morkebla-lys, og en gjennomsiktighet på 0.85 ville
+ * spist av den uten å gi noe.
  */
 function Avviksmelding({ text, theme }) {
     return (
