@@ -35,5 +35,13 @@ export function travelTagTransport(transportMode) {
     if (typeof transportMode !== 'string') {
         return 'none';
     }
-    return TRANSPORT[transportMode] ?? 'none';
+    // hasOwnProperty.call, ikke `TRANSPORT[transportMode]` direkte: TRANSPORT er
+    // en vanlig objekt-literal, så et oppslag som «constructor» eller «toString»
+    // treffer prototypekjeden og gir en funksjon i stedet for `none`, som så
+    // kastes urørt inn i TravelTag — nøyaktig krasjet denne modulen finnes for å
+    // hindre. `Object.hasOwn` er ikke et alternativ: den kom i Chromium 93, og
+    // tavla kjører på en Samsung-skjerm med eldre motor. Se `browserBaseline.test.mjs`.
+    return Object.prototype.hasOwnProperty.call(TRANSPORT, transportMode)
+        ? TRANSPORT[transportMode]
+        : 'none';
 }

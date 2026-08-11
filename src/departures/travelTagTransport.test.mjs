@@ -72,4 +72,15 @@ describe('travelTagTransport — oversettelsen', () => {
             assert.equal(travelTagTransport(utgaatt), 'none');
         }
     });
+
+    it('lekker ikke prototypekjeden fra oppslagstabellen', () => {
+        // TRANSPORT er en objekt-literal. Et oppslag med «constructor» eller
+        // «toString» uten hasOwnProperty-sjekk gir en funksjon fra
+        // Object.prototype tilbake, som TravelTag så kaster på urørt — det
+        // krasjet modulen finnes for å hindre.
+        for (const arvet of ['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__']) {
+            assert.equal(travelTagTransport(arvet), 'none', `${arvet} skal ikke treffe prototypekjeden`);
+            assert.doesNotThrow(() => rendrer(travelTagTransport(arvet)), `verdi ${arvet}`);
+        }
+    });
 });
