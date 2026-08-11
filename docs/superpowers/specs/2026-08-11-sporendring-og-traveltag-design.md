@@ -64,15 +64,35 @@ sondert mot pakkene i `node_modules`, ikke antatt.
   ...style }`, altså spres vår `style` sist. `--background-color` og
   `--text-color` fra oss slår komponentens egne. Lest i kilden, ikke antatt.
 
-**`:where()` — femten regler, to som betyr noe.** Selektoren kom i Chromium 88,
-så reglene forkastes på skjermen. Regelvis, ikke hele arket: CSS-feilhåndtering
-forkaster til blokka er slutt. Av de femten gjelder elleve `:where(.eds-contrast)`,
-og de er **irrelevante her**: `Contrast` brukes bare i `MiddleBand`, mens
-karusellen er et søskenfelt, så `useContrast()` gir `false` og klassen finnes
-ikke over `Departures`. To til gjelder `__alert`, `__label`, `__details` og
-`__close-button`, som vi ikke bruker; det samme gjelder den ene `:has()`-regelen.
+**`Contrast` styrer fargevalget, og `Departures` ligger utenfor den.**
+`TravelTag` velger palett med `useContrast()` fra `@entur/layout`:
+`colorTheme = isContrast ? 'contrast' : 'standard'`. `<Contrast>` er bare
+`ContrastContext.Provider value={true}` pluss klassen `eds-contrast`, og den
+brukes i denne appen kun i `MiddleBand.jsx:75`. Karusellen er et søskenfelt.
 
-Igjen står to, begge om ikonet inni merket:
+Det har en målbar konsekvens for linjer uten kategorikode, der `TravelTag`
+fargelegger selv. Effektive `:root`-verdier, siden appen aldri setter
+`data-color-mode`:
+
+| Bussfyll | Verdi | Mot `#181c56` | Mot `#393d79` |
+|---|---|---|---|
+| `standard` | `#c5044e` | 2.61 | 1.65 |
+| `contrast` | `#ff6392` | 5.56 | 3.52 |
+
+Uten tiltak forsvinner bussmerket i bakgrunnen på mørke tavler. Løsningen er
+`ContrastContext.Provider value={theme === 'dark'}` rundt merket — bare
+konteksten, ikke `<Contrast>`, som også ville satt bakgrunn og tekstfarge på
+griden rundt.
+
+**`:where()` — femten regler, tre som betyr noe.** Selektoren kom i Chromium 88,
+så reglene forkastes på skjermen. Regelvis, ikke hele arket: CSS-feilhåndtering
+forkaster til blokka er slutt. Ti av de femten gjelder `__alert`, `__label`,
+`__details`, `__close-button` og kontrastvarianter av dem — alt vi ikke bruker.
+Det samme gjelder den ene `:has()`-regelen.
+
+Igjen står tre. Den ene er `:where(.eds-contrast) .eds-travel-tag`, som setter
+tekstfargen i kontrastmodus; den håndteres ved å sette `--text-color` inline i
+alle tilfeller, slik at stilarket aldri er kilden. De to andre gjelder ikonet:
 
 | Regel | Setter |
 |---|---|
@@ -163,8 +183,10 @@ innebygd varselboks. På mørke flater er både ikon og tekst gule uten fyll.
 ### 4. `LineBadge` blir `TravelTag`
 
 `lineAppearance` erstattes av `categoryFill(lineCode, theme)`, som gir Bane NORs
-farge for L/R/F-koder og `null` for alt annet. `lineAppearance` og testene dens
-slettes; ingen andre kaller den.
+farge for L/R/F-koder og `null` for alt annet, pluss `badgeText(theme)` for
+tekstfargen. De to er skilt fordi tekstregelen er den samme enten fyllet kommer
+fra oss eller fra `TravelTag`. `lineAppearance` og testene dens slettes; ingen
+andre kaller den.
 
 `Departures.jsx` rendrer:
 

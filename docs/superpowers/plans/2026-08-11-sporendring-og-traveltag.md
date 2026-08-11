@@ -421,7 +421,11 @@ git commit -m "feat: warningStyle eier den gule avviksfargen"
 
 **Interfaces:**
 - Consumes: ingenting fra tidligere oppgaver.
-- Produces: `categoryFill(lineCode, theme) → { background, text, border } | null`. `null` betyr «la TravelTag fargelegge selv». Oppgave 6 bruker den.
+- Produces: to eksporter fra `categoryFill.js`:
+  - `categoryFill(lineCode, theme) → { background, border } | null`. `null` betyr «la TravelTag fargelegge selv».
+  - `badgeText(theme) → string`. Tekstfargen på merket, uavhengig av om fyllet kommer fra oss eller fra TravelTag.
+
+  Oppgave 6 bruker begge. `badgeText` er skilt ut fordi regelen er den samme enten linja har kategorikode eller ikke, og fordi den må settes inline i alle tilfeller — se oppgave 6.
 
 - [ ] **Step 1: Skriv den feilende testen**
 
@@ -432,7 +436,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { colors } from '@entur/tokens';
 
-import { categoryFill } from './categoryFill.js';
+import { badgeText, categoryFill } from './categoryFill.js';
 
 describe('categoryFill — togkategori', () => {
     it('gir lokaltog grønt, regiontog rødt og fjerntog blått i lyst tema', () => {
@@ -470,12 +474,19 @@ describe('categoryFill — når TravelTag skal fargelegge selv', () => {
     });
 });
 
-describe('categoryFill — tekst og kant', () => {
+describe('badgeText', () => {
     it('setter hvit tekst i lyst tema og mørkeblå i mørkt', () => {
-        assert.equal(categoryFill('L4', 'light').text, '#ffffff');
-        assert.equal(categoryFill('L4', 'dark').text, colors.brand.blue);
+        assert.equal(badgeText('light'), '#ffffff');
+        assert.equal(badgeText('dark'), colors.brand.blue);
     });
 
+    it('gir den lyse varianten for ukjent modus', () => {
+        assert.equal(badgeText(undefined), '#ffffff');
+        assert.equal(badgeText('lilla'), '#ffffff');
+    });
+});
+
+describe('categoryFill — kant', () => {
     it('har kant bare i lyst tema', () => {
         // I lyst tema er fyllet bare 2.1–3.4 mot lavendel og fersken, så
         // formen forsvinner uten kant. I mørkt tema er det 4.3–7.4.
@@ -535,12 +546,27 @@ export function categoryFill(lineCode, theme) {
     const dark = theme === 'dark';
     return {
         background: CATEGORY[match[1].toUpperCase()][dark ? 'dark' : 'light'],
-        text: dark ? colors.brand.blue : '#ffffff',
         // Kanten finnes bare i lyst tema. Der er fyllet 2.1–3.4 mot lavendel og
         // fersken, altså under 3.0 der formen skal leses. I mørkt tema er det
         // 4.3–7.4 mot flata og trenger ingen.
         border: dark ? 'none' : `2px solid ${colors.brand.blue}`,
     };
+}
+
+/**
+ * Tekstfargen på linjemerket.
+ *
+ * Skilt fra `categoryFill` fordi regelen er den samme enten fyllet kommer fra
+ * Bane NOR-kategorien eller fra `TravelTag` sin egen transportpalett. Målt over
+ * hele paletten ligger kontrasten på 4.5–12.1 med denne regelen.
+ *
+ * Den må settes inline av kallstedet i ALLE tilfeller. Overlater vi den til
+ * stilarket, kommer den fra `:where(.eds-contrast) .eds-travel-tag`, og
+ * `:where()` kom i Chromium 88 — Samsung-skjermen ligger på 85 og forkaster
+ * regelen. Da ville merket fått én tekstfarge på skjermen og en annen i Chrome.
+ */
+export function badgeText(theme) {
+    return theme === 'dark' ? colors.brand.blue : '#ffffff';
 }
 ```
 
@@ -878,8 +904,14 @@ git commit -m "feat: gul utheving av sporendring og avviksmelding"
 - Delete: `src/departures/lineAppearance.js`, `src/departures/lineAppearance.test.mjs`
 
 **Interfaces:**
-- Consumes: `categoryFill(lineCode, theme)` fra oppgave 3, `travelTagTransport(transportMode)` fra oppgave 4.
+- Consumes: `categoryFill(lineCode, theme)` og `badgeText(theme)` fra oppgave 3, `travelTagTransport(transportMode)` fra oppgave 4.
 - Produces: ingenting for senere oppgaver.
+
+**Bakgrunn du trenger for steg 4.** `TravelTag` velger fargepalett med `useContrast()` fra `@entur/layout` — `colorTheme = isContrast ? 'contrast' : 'standard'`. `<Contrast>` er bare `ContrastContext.Provider value={true}` pluss klassen `eds-contrast`, og den brukes i denne appen kun i `MiddleBand.jsx:75`. Karusellen er et søskenfelt, så `Departures` ligger utenfor: uten tiltak får merket alltid *standard*-paletten, også på mørke flater.
+
+Det er ikke kosmetikk. Bussfyllet er `#c5044e` i standard og `#ff6392` i contrast. Mot flata `morkebla` `#181c56` gir de henholdsvis **2.61** og **5.56**; mot `morkebla-lys` `#393d79` **1.65** og **3.52**. Uten contrast forsvinner bussmerket i bakgrunnen på mørke tavler.
+
+Derfor to grep i steg 4: provideren, og `--text-color` satt inline i alle tilfeller.
 
 - [ ] **Step 1: Importer travel-stilarket**
 
@@ -951,10 +983,11 @@ Legg dette nederst i `src/css/main.css`:
 import { Fragment, useEffect, useState } from 'react';
 import { Heading3, Paragraph } from '@entur/typography';
 import { colors } from '@entur/tokens';
+import { ContrastContext } from '@entur/layout';
 import { TravelTag } from '@entur/travel';
 import { ValidationExclamationCircleFilledIcon } from '@entur/icons';
 
-import { categoryFill } from '../departures/categoryFill';
+import { badgeText, categoryFill } from '../departures/categoryFill';
 import { travelTagTransport } from '../departures/travelTagTransport';
 import { countdownLabel } from '../departures/departureCountdown';
 import { isDelayed } from '../departures/departureMapper';
@@ -976,23 +1009,41 @@ Erstatt hele komponenten:
  * `{ ...dynamicCssVars, ...style }` — vår `style` spres sist og vinner. Verifisert
  * i kilden til @entur/travel@8.
  *
- * Uten kategorikode sender vi ingen overstyring, og `TravelTag` fargelegger
- * etter transportmiddel. Den logikken eier Entur; vi kopierer den ikke.
+ * Uten kategorikode sender vi ingen fyll, og `TravelTag` fargelegger etter
+ * transportmiddel. Den logikken eier Entur; vi kopierer den ikke.
+ *
+ * `ContrastContext.Provider` er nødvendig nettopp for det tilfellet: TravelTag
+ * velger mellom standard- og contrast-paletten med `useContrast()`, og
+ * `Departures` ligger utenfor `<Contrast>`-wrapperen i `MiddleBand`. Uten
+ * provideren får bussmerket standardfyllet `#c5044e`, som er kontrast 2.61 mot
+ * mørkeblå flate og 1.65 mot den lysere — altså borte. Vi setter bare
+ * konteksten, ikke `<Contrast>` selv, som også ville satt bakgrunn og
+ * tekstfarge på griden rundt.
+ *
+ * `--text-color` settes i ALLE tilfeller, også uten kategorifyll. Overlater vi
+ * den til stilarket, kommer den fra `:where(.eds-contrast) .eds-travel-tag` —
+ * en av reglene Tizen forkaster — og merket ville sett ulikt ut på skjermen og
+ * i Chrome.
  */
 function LineBadge({ lineCode, transportMode, theme }) {
+    const dark = theme === 'dark';
     const fill = categoryFill(lineCode, theme);
     return (
-        <TravelTag
-            className="avgangstavle-traveltag"
-            transport={travelTagTransport(transportMode)}
-            style={fill ? {
-                '--background-color': fill.background,
-                '--text-color': fill.text,
-                border: fill.border,
-            } : undefined}
-        >
-            {lineCode || '–'}
-        </TravelTag>
+        <ContrastContext.Provider value={dark}>
+            <TravelTag
+                className="avgangstavle-traveltag"
+                transport={travelTagTransport(transportMode)}
+                style={{
+                    '--text-color': badgeText(theme),
+                    ...(fill && {
+                        '--background-color': fill.background,
+                        border: fill.border,
+                    }),
+                }}
+            >
+                {lineCode || '–'}
+            </TravelTag>
+        </ContrastContext.Provider>
     );
 }
 ```
@@ -1022,6 +1073,7 @@ Start dev-serveren og åpne en tavle med avgangsmodulen.
 Sjekkliste:
 - Togmerkene har Bane NOR-fargene: L grønn, R rød, F blå. Ikonet er synlig oppå fyllet.
 - Bussmerker har Enturs egen bussfarge, ikke en Bane NOR-farge.
+- **På mørk flate er bussmerket den lyse rosa `#ff6392`, ikke den mørke `#c5044e`.** Er det mørkerødt, virker ikke `ContrastContext.Provider`. Sjekk i devtools at `--background-color` peker på `…-contrast-fill-bus`.
 - Merket er omtrent like stort som før — 1.75rem skrift.
 - Kant på lys flate, ingen kant på mørk.
 
