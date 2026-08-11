@@ -684,6 +684,15 @@ describe('travelTagTransport — oversettelsen', () => {
             assert.equal(travelTagTransport(utgaatt), 'none');
         }
     });
+
+    it('lekker ikke arvede egenskaper fra Object.prototype', () => {
+        // Et bart `TRANSPORT[mode]` gir funksjonen `Object` for «constructor».
+        // Den er ikke en gyldig transport, og TravelTag kaster på den.
+        for (const arvet of ['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__']) {
+            assert.equal(travelTagTransport(arvet), 'none', arvet);
+            assert.doesNotThrow(() => rendrer(travelTagTransport(arvet)), arvet);
+        }
+    });
 });
 ```
 
@@ -737,7 +746,16 @@ export function travelTagTransport(transportMode) {
     if (typeof transportMode !== 'string') {
         return 'none';
     }
-    return TRANSPORT[transportMode] ?? 'none';
+    // `hasOwnProperty.call` og ikke bare `TRANSPORT[transportMode]`: et bart
+    // oppslag treffer prototypekjeden, så «constructor» ville gitt funksjonen
+    // `Object` i stedet for `none` — og den kaster i TravelTag, altså nøyaktig
+    // krasjet sperra finnes for å hindre.
+    //
+    // `Object.hasOwn` er kortere, men kom i Chromium 93 og står på lista i
+    // `browserBaseline.test.mjs`. Samme avveining som i `surfaces.js`.
+    return Object.prototype.hasOwnProperty.call(TRANSPORT, transportMode)
+        ? TRANSPORT[transportMode]
+        : 'none';
 }
 ```
 
