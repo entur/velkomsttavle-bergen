@@ -35,7 +35,7 @@
 		"@entur/typography": "^2.1.1",
 		"@tailwindcss/vite": "^4.1.18",
 		"date-fns": "^4.1.0",
-		"firebase": "12.17.0",
+		"firebase": "12.17.1",
 		"pnpm": "^11.18.0",
 		"react": "^19.2.3",
 		"react-dom": "^19.2.3"
