@@ -56,9 +56,10 @@ service cloud.firestore {
         && d.staffImage is bool
         && d.top is map && d.top.kind in ['video', 'logo']
         && (!d.keys().hasAny(['carouselTheme']) || d.carouselTheme in ['light', 'dark'])
-        // Flatenavnene står også i src/boards/surfaces.js. Regler kan ikke
-        // importere, så lista finnes to steder — endrer du den ene, endre den
-        // andre. Samme duplisering som theme og top.kind allerede har.
+        // Flatenavnene står også i src/boards/surfaces.js, og gjentas her for
+        // både carouselSurface og bottomSurface — tre steder i alt, ikke to.
+        // Regler kan ikke importere, så alle tre må endres sammen. Samme
+        // duplisering som theme og top.kind allerede har.
         && (!d.keys().hasAny(['carouselSurface'])
             || d.carouselSurface in ['morkebla', 'morkebla-lys', 'lavendel', 'lys-lavendel', 'hvit', 'fersken'])
         && (!d.keys().hasAny(['bottomSurface'])

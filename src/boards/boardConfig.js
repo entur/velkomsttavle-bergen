@@ -6,9 +6,9 @@
  * `node --test`.
  *
  * Normaliseringen er kiosken sitt vern. Firestore-reglene kan ikke iterere over
- * en liste og validerer derfor bare grovformen på `middle` og `carousel`; et
- * dokument skrevet for hånd i konsollet kan altså inneholde tull. Alt som ikke
- * går an å rendre blir derfor kastet her, ikke i komponentene.
+ * en liste og validerer derfor bare grovformen på `middle`, `carousel` og
+ * `bottom`; et dokument skrevet for hånd i konsollet kan altså inneholde tull.
+ * Alt som ikke går an å rendre blir derfor kastet her, ikke i komponentene.
  */
 import { normalizeDays } from './openingHours.js';
 import {
@@ -36,7 +36,7 @@ export const CAROUSEL_TYPES = ['weather', 'floorplan', 'departures'];
  * iterere over listen. En ny type må derfor også legges inn der.
  *
  * Bare vær foreløpig. Plantegningen hører ikke hjemme her: kartet trenger
- * høyde, og etikettene blir ubrukelige på 20vh.
+ * høyde, og etikettene blir ubrukelige på 16vh.
  */
 export const BOTTOM_TYPES = ['weather'];
 
@@ -162,7 +162,8 @@ const MIDDLE_NORMALIZERS = {
 /** Delt av karusellen og bunnstripa. Middle har sin egen tabell. */
 const MODULE_NORMALIZERS = {
     // Vær uten koordinater kan ikke hente noe. Da er det bedre å la modulen
-    // falle bort enn å vise en tom slide karusellen bruker 30 sekunder på.
+    // falle bort enn å vise et tomt felt — en slide karusellen står 30
+    // sekunder på, eller en stripe som aldri får noe å vise.
     weather: (module) => {
         const lat = Number(module.lat);
         const lng = Number(module.lng);
@@ -175,7 +176,9 @@ const MODULE_NORMALIZERS = {
         FLOORPLAN_PLANS.includes(module.plan) ? { type: 'floorplan', plan: module.plan } : null
     ),
     // Uten et brukbart stoppested kan modulen ikke slå opp noe. Da er det bedre
-    // å la den falle bort enn å vise en tom slide karusellen bruker 30 sekunder på.
+    // å la den falle bort enn å vise en tom slide karusellen står 30 sekunder på.
+    // (Avganger finnes bare i CAROUSEL_TYPES, ikke BOTTOM_TYPES — «slide» er
+    // derfor riktig her, i motsetning til i vær-normalisatoren over.)
     departures: (module) => (
         isValidStopPlaceId(module.stopPlaceId)
             ? {

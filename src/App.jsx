@@ -98,19 +98,16 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     const slides = config.carousel.map((module) => {
         if (module.type === 'weather') {
             return {
-                key: 'weather',
                 node: <ErrorBoundary><Weather weather={weather} palette={carouselPalette} /></ErrorBoundary>,
             };
         }
         if (module.type === 'floorplan') {
             return {
-                key: 'floorplan',
                 node: <ErrorBoundary><OfficeMap palette={carouselPalette} /></ErrorBoundary>,
             };
         }
         if (module.type === 'departures') {
             return {
-                key: 'departures',
                 node: (
                     <ErrorBoundary>
                         <Departures

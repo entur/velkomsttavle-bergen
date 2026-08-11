@@ -31,6 +31,13 @@ export default function Weather({ weather, palette }) {
 
     const timeSeries = weather.properties.timeseries;
     const now = nowSummary(timeSeries);
+    // `nowSummary` gir null når timeseries er tom (dokumentert i
+    // forecastViews.mjs). `WeatherStripe` vokter for det samme; uten vakten
+    // her ville de to forbrukerne av samme hjelpefunksjon ikke lenger vært
+    // like trygge mot det den selv sier den kan returnere.
+    if (!now) {
+        return <div className="w-full">laster inn...</div>;
+    }
     const hourly = hourlyForecast(timeSeries, 6);
     const daily = dailyForecast(timeSeries, 4);
     const dark = palette.mode === 'dark';

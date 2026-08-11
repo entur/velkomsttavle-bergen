@@ -18,7 +18,8 @@ import { bandTheme } from '../boards/boardTheme';
  *
  * justifyContent: 'flex-start' er bevisst, ikke 'center'. Feltet har
  * maxHeight + overflow: hidden, så noe MÅ klippes bort når stacken
- * (varsler + hilsen) er høyere enn 45vh. Med 'center' klippes det
+ * (varsler + hilsen) er høyere enn taket `middleHeight` setter under
+ * (45vh uten bunnstripe, 28vh med). Med 'center' klippes det
  * symmetrisk fra begge kanter, og siden selectVisibleAlerts sorterer
  * alvorligste varsel øverst, er det nettopp det alvorligste varselet
  * som forsvinner over den øvre kanten først. Med 'flex-start' klippes
@@ -77,9 +78,9 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
 /**
  * Hvor mye plass midtfeltet får.
  *
- * Toppen er faste 40vh og stripa faste 16vh, så taket må ned når begge feltene
- * under er der — ellers har karusellen ingenting igjen. Uten karusell tar
- * midtfeltet resten, med eller uten stripe.
+ * Toppen er faste 40vh og stripa faste `HEIGHT` fra BottomBand.jsx (16vh), så
+ * taket må ned når begge feltene under er der — ellers har karusellen
+ * ingenting igjen. Uten karusell tar midtfeltet resten, med eller uten stripe.
  *
  * Tallene er målt på 1920×1080, ikke utledet. 28vh er ikke pent valgt: med varsel,
  * hilsen og åpningstider oppe vil midtfeltet ha 42vh, og 40 + 42 + 16 lar det stå
@@ -89,6 +90,8 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
  * kritiske raden. Et tak på 35vh ga karusellen 5vh og en plantegning på 22 piksler.
  *
  * Endrer du tallet, se på en tavle med varsel, hilsen og åpningstider samtidig.
+ * Endrer du HEIGHT i BottomBand.jsx, må 28vh regnes ut på nytt — det er ikke en
+ * formel i koden, bare et mål tatt med den høyden.
  */
 function middleHeight(hasCarousel, hasBottom) {
     if (!hasCarousel) {

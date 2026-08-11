@@ -71,6 +71,9 @@ function configFrom(draft) {
         middle.push({ type: 'openingHours', days: draft.days });
     }
 
+    // Bygges uansett plassering, også når `weatherPlacement` er 'av' — den
+    // brukes bare bak de to plasseringssjekkene under, og forkastes stille
+    // (Number('') === 0 slipper aldri ut, den skrives aldri til noen liste).
     const weatherModule = {
         type: 'weather',
         name: draft.weatherName.trim(),
@@ -201,7 +204,7 @@ function BoardConfigForm({ board, userEmail }) {
                     onChange={(event) => update('theme', event.target.value)}
                 >
                     <Radio value="dark">Mørk blå</Radio>
-                    <Radio value="light">Lys lavendel</Radio>
+                    <Radio value="light">Lavendel</Radio>
                 </RadioGroup>
             </section>
 
