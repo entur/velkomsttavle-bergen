@@ -28,6 +28,8 @@ Disse gjelder implisitt i **hver** oppgave under.
 | `src/departures/enturDepartures.js` | *Endres.* GraphQL-spørringa henter planlagt kvai |
 | `src/departures/departureMapper.js` | *Endres.* `isPlatformChanged` + feltet `platformChanged` |
 | `src/departures/departureMapper.test.mjs` | *Endres.* Tester for sporendring |
+| `src/testing/contrast.mjs` | *Ny.* WCAG-regning, delt mellom to testfiler |
+| `src/boards/surfaces.test.mjs` | *Endres.* Bruker den delte hjelperen |
 | `src/departures/warningStyle.js` | *Ny.* Eier den gule avviksfargen, lys og mørk |
 | `src/departures/warningStyle.test.mjs` | *Ny.* Kontrastmåling mot alle seks flatene |
 | `src/departures/categoryFill.js` | *Ny.* Bane NOR-fargen for L/R/F, `null` ellers |
@@ -239,27 +241,35 @@ git commit -m "feat: utled sporendring fra planlagt mot faktisk kvai"
 Gul brukes som **tekst** på mørke flater og som **fyll** på lyse. Canary mot lys lavendel er kontrast 1.10, altså usynlig; mørkeblå på canary er 10.25.
 
 **Files:**
+- Create: `src/testing/contrast.mjs` (delt WCAG-hjelper)
+- Modify: `src/boards/surfaces.test.mjs:12-23` (bruk den delte hjelperen)
 - Create: `src/departures/warningStyle.js`
 - Test: `src/departures/warningStyle.test.mjs`
 
 **Interfaces:**
 - Consumes: `SURFACES` og `surfacePalette` fra `src/boards/surfaces.js` (bare i testen).
-- Produces: `warningStyle(theme) → { color, backgroundColor, border }`. `theme` er `'dark'` eller hva som helst annet. Oppgave 5 kaller den med `palette.mode`.
+- Produces: `warningStyle(theme) → { color, backgroundColor, border }`. `theme` er `'dark'` eller hva som helst annet. Oppgave 5 kaller den med `palette.mode`. Og `contrast(a, b) → number` fra `src/testing/contrast.mjs`.
 
-- [ ] **Step 1: Skriv den feilende testen**
+- [ ] **Step 1: Trekk ut kontrasthjelperen**
 
-Opprett `src/departures/warningStyle.test.mjs`:
+`surfaces.test.mjs` har allerede WCAG-regninga. To testfiler som trenger den skal dele den, ikke ha hver sin kopi.
+
+Opprett `src/testing/contrast.mjs`:
 
 ```js
-import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
-import { colors } from '@entur/tokens';
-
-import { SURFACES, surfacePalette } from '../boards/surfaces.js';
-import { warningStyle } from './warningStyle.js';
-
-/** WCAG-kontrast mellom to hex-farger. Samme hjelper som i surfaces.test.mjs. */
-function contrast(a, b) {
+/**
+ * WCAG-kontrast mellom to hex-farger.
+ *
+ * Bor utenfor testfilene fordi to av dem trenger den: `surfaces.test.mjs`
+ * måler de seks flatene, `warningStyle.test.mjs` måler den gule uthevinga mot
+ * de samme flatene. Én formel, ett sted.
+ *
+ * Fila blir lest av `browserBaseline.test.mjs` som en hvilken som helst
+ * kildefil, siden navnet ikke inneholder `.test.`. Det er greit — den holder
+ * seg til `parseInt`, `Math` og `String.replace`, som alle er eldre enn
+ * grensa. Vite bunter den ikke, for ingenting i appen importerer den.
+ */
+export function contrast(a, b) {
     const lum = (hex) => {
         const c = hex.replace('#', '').match(/../g)
             .map((x) => parseInt(x, 16) / 255)
@@ -269,6 +279,28 @@ function contrast(a, b) {
     const [l1, l2] = [lum(a), lum(b)];
     return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
+```
+
+I `src/boards/surfaces.test.mjs`, slett den lokale `contrast`-funksjonen med JSDoc-kommentaren over (linje 12–23) og legg til importen i stedet, etter de andre importene:
+
+```js
+import { contrast } from '../testing/contrast.mjs';
+```
+
+Kjør `node --test src/boards/surfaces.test.mjs` og se at den fortsatt er grønn før du går videre. Blir den rød, har uttrekket endret oppførsel — rett det før du fortsetter.
+
+- [ ] **Step 2: Skriv den feilende testen**
+
+Opprett `src/departures/warningStyle.test.mjs`:
+
+```js
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { colors } from '@entur/tokens';
+
+import { SURFACES, surfacePalette } from '../boards/surfaces.js';
+import { contrast } from '../testing/contrast.mjs';
+import { warningStyle } from './warningStyle.js';
 
 describe('warningStyle', () => {
     it('er lesbar på alle seks flatene tavla kan ha', () => {
@@ -309,7 +341,7 @@ describe('warningStyle', () => {
 });
 ```
 
-- [ ] **Step 2: Kjør testen og se at den feiler**
+- [ ] **Step 3: Kjør testen og se at den feiler**
 
 ```bash
 node --test src/departures/warningStyle.test.mjs
@@ -317,7 +349,7 @@ node --test src/departures/warningStyle.test.mjs
 
 Forventet: FAIL — `Cannot find module` for `./warningStyle.js`.
 
-- [ ] **Step 3: Implementer `warningStyle`**
+- [ ] **Step 4: Implementer `warningStyle`**
 
 Opprett `src/departures/warningStyle.js`:
 
@@ -354,7 +386,7 @@ export function warningStyle(theme) {
 }
 ```
 
-- [ ] **Step 4: Kjør testen og se at den passerer**
+- [ ] **Step 5: Kjør testen og se at den passerer**
 
 ```bash
 node --test src/departures/warningStyle.test.mjs
@@ -362,11 +394,16 @@ node --test src/departures/warningStyle.test.mjs
 
 Forventet: PASS, fire tester.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 npm test
-git add src/departures/warningStyle.js src/departures/warningStyle.test.mjs
+```
+
+Forventet: PASS på hele suiten, inkludert `surfaces.test.mjs` med den delte hjelperen.
+
+```bash
+git add src/testing/contrast.mjs src/boards/surfaces.test.mjs src/departures/warningStyle.js src/departures/warningStyle.test.mjs
 git commit -m "feat: warningStyle eier den gule avviksfargen"
 ```
 
