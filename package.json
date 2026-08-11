@@ -25,7 +25,7 @@
 		"@entur/button": "4.0.11",
 		"@entur/datepicker": "11.8.1",
 		"@entur/form": "9.3.8",
-		"@entur/grid": "^0.3.70",
+		"@entur/grid": "^0.4.1",
 		"@entur/icons": "^9.0.4",
 		"@entur/layout": "^4.0.0",
 		"@entur/table": "4.10.16",

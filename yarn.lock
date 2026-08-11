@@ -178,13 +178,13 @@
     "@entur/utils" "^0.13.6"
     classnames "^2.5.1"
 
-"@entur/grid@^0.3.70":
-  version "0.3.79"
-  resolved "https://registry.npmjs.org/@entur/grid/-/grid-0.3.79.tgz"
-  integrity sha512-yZ6+5AOeF/H0oHpdkTsR4Y64Vb+7sqBDNq5VGWAK3VxAItB5afWIIZRCcR+n1nG6RE8NVQ1NXZiswoZV/5ER3g==
+"@entur/grid@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@entur/grid/-/grid-0.4.1.tgz#f23c9d4c44a85d5fc7b0a1f4ff5e7ebeb8c3b489"
+  integrity sha512-/vBtTP3D32h6AmWUV5dpeGShDKVyz6+2anEjE4hvIyM0VggJ7OpYJx6/Gimf0sNDylntG8gQkAX0k9AXoV9Yog==
   dependencies:
-    "@entur/tokens" "^3.24.0"
-    "@entur/utils" "^0.13.6"
+    "@entur/tokens" "^4.0.1"
+    "@entur/utils" "^0.14.1"
     classnames "^2.5.1"
 
 "@entur/icons@^10.0.0", "@entur/icons@^10.0.1":
