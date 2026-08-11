@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { UmbrellaIcon, WindIcon } from '@entur/icons';
 import { base } from '@entur/tokens';
 import { Label } from '@entur/typography';
@@ -30,12 +30,16 @@ const TICK = 100;
  */
 function WeatherStripe({ weather, palette }) {
     const timeseries = weather?.properties?.timeseries;
-    const now = nowSummary(timeseries);
-    const hourly = hourlyForecast(timeseries, 6);
+    // Memoisert på `weather`: uten dette regnes alle tre om på hvert 100
+    // ms-tick fra intervallet under, selv om varselet bare skiftes hvert 15.
+    // minutt — en stripe med ~90 MET-oppføringer og flere hundre Date-objekter
+    // allokert på nytt ti ganger i sekundet, i uker.
+    const now = useMemo(() => nowSummary(timeseries), [weather]);
+    const hourly = useMemo(() => hourlyForecast(timeseries, 6), [weather]);
     // Sent på kvelden finnes det ikke flere hele dager. Da faller
     // dagsvisningen bort og timesvisningen står alene — samme regel som
     // karusellen har for én slide.
-    const daily = dailyForecast(timeseries, 4);
+    const daily = useMemo(() => dailyForecast(timeseries, 4), [weather]);
     const views = daily.length > 0 ? ['hours', 'days'] : ['hours'];
 
     const [state, setState] = useState({ elapsed: 0, index: 0 });
@@ -43,12 +47,21 @@ function WeatherStripe({ weather, palette }) {
 
     useEffect(() => {
         const id = setInterval(() => {
-            stateRef.current = advance(stateRef.current, {
+            const next = advance(stateRef.current, {
                 tick: TICK,
                 duration: VIEW_DURATION,
                 count: views.length,
             });
-            setState(stateRef.current);
+            // `advance` fryser tilstanden (count <= 1, eller før første
+            // henting) ved å gi en FERSK { elapsed: 0, index: 0 } hvert kall —
+            // aldri det samme objektet tilbake. Uten denne sjekken ville
+            // setState kjørt 10 ganger i sekundet i evigheten uten at noe på
+            // skjermen endrer seg.
+            if (next.elapsed === stateRef.current.elapsed && next.index === stateRef.current.index) {
+                return;
+            }
+            stateRef.current = next;
+            setState(next);
         }, TICK);
         return () => clearInterval(id);
     }, [views.length]);
