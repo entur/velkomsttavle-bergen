@@ -36,6 +36,7 @@ export function toDeparture(estimatedCall) {
         transportMode: asText(line.transportMode),
         destination: asText(estimatedCall?.destinationDisplay?.frontText),
         platform: asText(estimatedCall?.quay?.publicCode),
+        platformChanged: isPlatformChanged(estimatedCall),
         aimedAt,
         expectedAt: toDate(estimatedCall?.expectedDepartureTime) ?? aimedAt,
         realtime: estimatedCall?.realtime === true,
@@ -56,6 +57,34 @@ export function isDelayed(departure) {
         return false;
     }
     return expectedAt.getTime() > aimedAt.getTime();
+}
+
+/**
+ * Sant når toget går fra et annet spor enn planlagt.
+ *
+ * Journey Planner v3 har ikke noe felt for dette — hverken `platformChanged`
+ * eller liknende finnes på `EstimatedCall`. Sondert mot skjemaet.
+ *
+ * Utledningen: `serviceJourney.quays` er kvaiene i rutemønsteret, altså
+ * planverket, og `stopPositionInPattern` peker inn i den lista.
+ * `estimatedCall.quay` er den sanntid faktisk gir. Er de ulike, er sporet endret.
+ *
+ * Ulikhet er det ENESTE som utløser gult. Mangler rutemønsteret, peker
+ * posisjonen utenfor lista, eller er en av id-ene tom, er svaret `false`. En
+ * tavle som ikke vet, skal ikke rope.
+ *
+ * Merk at sammenlikninga går på kvai-id og ikke `publicCode`: to ulike kvaier
+ * kan ha samme spornummer på hvert sitt stoppested.
+ */
+export function isPlatformChanged(estimatedCall) {
+    const quays = estimatedCall?.serviceJourney?.quays;
+    const position = estimatedCall?.stopPositionInPattern;
+    if (!Array.isArray(quays) || !Number.isInteger(position)) {
+        return false;
+    }
+    const planned = asText(quays[position]?.id);
+    const actual = asText(estimatedCall?.quay?.id);
+    return planned !== '' && actual !== '' && planned !== actual;
 }
 
 function toDate(value) {
