@@ -1,6 +1,5 @@
 import BergenThird from './BergenThird';
 import labels from './bergenThirdLabels.json';
-import { carouselPalette } from '../boards/carouselTheme';
 
 /**
  * Plantegningen står alltid på lys flate.
@@ -10,8 +9,8 @@ import { carouselPalette } from '../boards/carouselTheme';
  * Romfargene er lyse pasteller som fungerer på hvitt; panelet gjør at de
  * fortsetter å gjøre det også når karusellen er mørk.
  */
-function OfficeMap({ theme }) {
-    const dark = carouselPalette(theme).theme === 'dark';
+function OfficeMap({ palette }) {
+    const dark = palette.mode === 'dark';
     return (
         <div style={{ width: '100%', height: '100%', backgroundColor: 'transparent', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1rem 0' }}>
             <div style={{

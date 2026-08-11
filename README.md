@@ -11,32 +11,36 @@ Hva som står på en tavle bestemmes av et dokument i Firestore-collectionen
 dokumentet, og en endring i admin slår ut på skjermen innen sekunder uten at
 noen laster siden på nytt.
 
-Layouten er den samme på alle tavler — tre felt ovenfra og ned — men innholdet i
-hvert felt velges per tavle:
+Layouten er den samme på alle tavler — fire felt ovenfra og ned — men innholdet
+i hvert felt velges per tavle:
 
 | Felt | Moduler |
 |---|---|
-| Farger | `theme`: `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet. Karusellen har sitt eget valg, se under |
+| Farger | `theme`: `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet. Karusellen og bunnstripa velger hver sin flate fra en tabell med seks navngitte farger, se under |
 | Toppen | `video` (intro-videoen) eller `logo` (Entur-logoen) |
 | Midten | `greeting` (hilsen, automatisk eller fast tekst) og `openingHours` (åpningstider lagt inn dag for dag). Ansatt-illustrasjonen (`staffImage`) er et eget valg, uavhengig av begge |
 | Karusellen | `weather` (værmelding for valgte koordinater), `floorplan` (plantegning) og `departures` (avgangstider fra ett stoppested) |
+| Bunnstripa | `weather` i en kompakt visning — samme værmodul kan stå i karusellen eller i stripa, aldri begge på én gang |
 
 Overskriften «Velkommen til Entur `<stedsnavn>`» og eventuelle **varsler** står
 alltid i midtfeltet, uansett hvilke moduler tavla har. Ukjente modultyper hoppes
 over, så en skjerm som ikke er lastet på nytt svartner ikke av at noen legger
 til en modul den ikke kjenner. Er karusellen tom, faller feltet bort og
-midtfeltet får plassen.
+midtfeltet får plassen; er bunnstripa tom, faller den bort på samme måte.
 
-Karusellen kan settes **lys eller mørk** per tavle (`carouselTheme`). Temaet
-gjelder hele karusellen, ikke enkeltmoduler — en karusell som skifter bakgrunn
-mellom slides er en feil, ikke et design. Fargene ligger i
-[`src/boards/carouselTheme.js`](src/boards/carouselTheme.js), som har en test som
+Karusellen og bunnstripa velger hver sin **flate** fra en lukket liste med seks
+navngitte farger (`carouselSurface` og `bottomSurface`) — ikke en fri
+fargevelger, slik at kontrasten kan måles for alle seks på én gang. Flaten
+gjelder hele feltet, ikke enkeltmoduler — et felt som skifter bakgrunn mellom
+slides er en feil, ikke et design. Tabellen ligger i
+[`src/boards/surfaces.js`](src/boards/surfaces.js), som har en test som
 kontrastmåler seg selv.
 
-Tavla har altså **to uavhengige fargevalg**: `theme` for toppen og midten
-([`src/boards/boardTheme.js`](src/boards/boardTheme.js)) og `carouselTheme` for
-karusellen. De kom fra hver sin endring og er ikke koblet — en tavle kan settes
-lys øverst og mørk nederst. Om de bør slås sammen til ett valg er ikke avgjort.
+Tavla har altså **tre uavhengige fargevalg**: `theme` for toppen og midten
+([`src/boards/boardTheme.js`](src/boards/boardTheme.js)), og `carouselSurface`
+og `bottomSurface` for karusellen og bunnstripa. De kom fra hver sin endring og
+er ikke koblet — en tavle kan settes mørk øverst og lys i stripa. Om de bør
+slås sammen til ett valg er ikke avgjort.
 
 Modulkatalogen ligger i [`src/boards/boardConfig.js`](src/boards/boardConfig.js).
 Der ligger også normaliseringen som gjør et dokument om til noe kiosken trygt
@@ -81,6 +85,20 @@ Modulene i detalj:
      etiketter. Plantegningen synkes automatisk fra `entur/plantegning` (se
      [Synk av plantegning](#synk-av-plantegning)). Det finnes bare én
      plantegning, `bergen-3`, så `plan`-parameteren har én lovlig verdi i dag.
+4. **Bunnstripe** (`bottom: weather`) – en lav stripe nederst med en kompakt
+   værvisning (`WeatherStripe.jsx`). «Nå»-kortet står fast til venstre med
+   symbol, temperatur, vind og nedbør; til høyre veksler feltet hvert 15.
+   sekund mellom de neste seks timene og de neste fire dagene. Henter
+   ingenting selv — samme polling som karusellværet over. Vekslingen
+   (`src/components/rotation.mjs`) og værutregningene
+   (`src/weather/forecastViews.mjs`) er delt med karusellen, som ren og
+   testbar logikk uten JSX.
+
+   Bare været har fått en kompakt visning; katalogen (`BOTTOM_TYPES` i
+   `boardConfig.js`) er generisk, men ingen andre moduler har flyttet ned. En
+   værmodul bor ett sted: settes den til stripa i admin, forsvinner den fra
+   karusellen, og normaliseringen håndhever det samme for et dokument
+   redigert for hånd i Firestore-konsollet.
 
 ## Ruter
 
@@ -332,10 +350,13 @@ For avganger dekkes mapping fra GraphQL-svaret
 (`src/departures/departureMapper.test.mjs`), nedtellingen
 (`departureCountdown.test.mjs`), linjefargene (`lineAppearance.test.mjs`),
 henting og polling (`enturDepartures.test.mjs`) og stoppestedssøket
-(`stopPlaceSearch.test.mjs`). Karusell-paletten
-(`src/boards/carouselTheme.test.mjs`) kontrastmåler seg selv — den låser
-rettelsen av inaktive karusellikoner, som lå på 1.39 mot lavendel og dermed var
-usynlige.
+(`stopPlaceSearch.test.mjs`).
+
+Flatetabellen (`src/boards/surfaces.test.mjs`) kontrastmåler seg selv, for alle
+seks flatene på én gang, både mot bakgrunn og panel. Vekslingen mellom flere
+visninger — delt av karusellen og bunnstripa — er en ren funksjon
+(`src/components/rotation.test.mjs`), og det samme gjelder værutregningene
+begge værvisningene bygger på (`src/weather/forecastViews.test.mjs`).
 
 Firestore-reglene har egne tester:
 

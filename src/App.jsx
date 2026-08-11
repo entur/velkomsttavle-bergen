@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Weather from './components/Weather';
 import OfficeMap from './floorplan/OfficeMap';
 import Carousel from './components/Carousel';
+import BottomBand from './components/BottomBand';
 import ErrorBoundary from './components/ErrorBoundary';
 import TopBand from './components/TopBand';
 import MiddleBand from './components/MiddleBand';
@@ -12,7 +13,7 @@ import { startDeparturePolling } from './departures/enturDepartures';
 import { subscribeToBoard } from './boards/boardsRepository';
 import { GREETING_AUTO, boardHeading, findModule } from './boards/boardConfig';
 import { DEFAULT_BOARD_ID } from './routing/parseRoute';
-import { ClockIcon, SunCloudIcon, MapIcon } from '@entur/icons';
+import { surfacePalette } from './boards/surfaces';
 
 const STAFF_IMAGES = ['/staff_woman.svg', '/staff_man.svg'];
 const GREETING_REFRESH_MS = 15 * 60 * 1000;
@@ -45,7 +46,14 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     }, []);
 
     const config = board.status === 'ready' ? board.config : null;
-    const weatherModule = config ? findModule(config.carousel, 'weather') : undefined;
+    const carouselPalette = config ? surfacePalette(config.carouselSurface) : null;
+    const bottomPalette = config ? surfacePalette(config.bottomSurface) : null;
+    // Været kan stå i karusellen eller i stripa, aldri begge: normaliseringen
+    // lar bottom vinne. Oppslaget må derfor lete begge steder, men finner
+    // høyst ett treff — og pollingen under startes bare én gang.
+    const weatherModule = config
+        ? (findModule(config.bottom, 'weather') ?? findModule(config.carousel, 'weather'))
+        : undefined;
 
     // Avhengighetene er tall, ikke modul-objektet. onSnapshot gir et nytt objekt
     // for hver eneste oppdatering av tavle-dokumentet, og et objekt her ville
@@ -90,30 +98,22 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     const slides = config.carousel.map((module) => {
         if (module.type === 'weather') {
             return {
-                key: 'weather',
-                Icon: SunCloudIcon,
-                node: <ErrorBoundary><Weather weather={weather} theme={config.carouselTheme} /></ErrorBoundary>,
+                node: <ErrorBoundary><Weather weather={weather} palette={carouselPalette} /></ErrorBoundary>,
             };
         }
         if (module.type === 'floorplan') {
             return {
-                key: 'floorplan',
-                Icon: MapIcon,
-                node: <ErrorBoundary><OfficeMap theme={config.carouselTheme} /></ErrorBoundary>,
+                node: <ErrorBoundary><OfficeMap palette={carouselPalette} /></ErrorBoundary>,
             };
         }
         if (module.type === 'departures') {
             return {
-                key: 'departures',
-                // ClockIcon, ikke TrainIcon: modulen tar hvilket som helst
-                // stoppested, og et togikon ville løyet på en bussterminal.
-                Icon: ClockIcon,
                 node: (
                     <ErrorBoundary>
                         <Departures
                             departures={departures}
                             stopPlaceName={module.stopPlaceName}
-                            theme={config.carouselTheme}
+                            palette={carouselPalette}
                         />
                     </ErrorBoundary>
                 ),
@@ -123,6 +123,7 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     }).filter(Boolean);
 
     const hasCarousel = slides.length > 0;
+    const hasBottom = config.bottom.length > 0;
     const greeting = findModule(config.middle, 'greeting');
     const openingHours = findModule(config.middle, 'openingHours');
 
@@ -137,8 +138,12 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
                 openingHoursDays={openingHours ? openingHours.days : null}
                 staffImageSrc={config.staffImage ? staffImage : null}
                 hasCarousel={hasCarousel}
+                hasBottom={hasBottom}
             />
-            {hasCarousel && <Carousel slides={slides} theme={config.carouselTheme} />}
+            {hasCarousel && <Carousel slides={slides} palette={carouselPalette} />}
+            {hasBottom && (
+                <BottomBand modules={config.bottom} palette={bottomPalette} weather={weather} />
+            )}
         </div>
     );
 }

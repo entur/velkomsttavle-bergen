@@ -12,6 +12,7 @@ import {
     PLACE_NAME_MAX_LENGTH,
     findModule,
 } from '../boards/boardConfig';
+import { SURFACES, SURFACE_LABELS } from '../boards/surfaces';
 import StopPlaceField from './StopPlaceField';
 import { DAY_LABELS, normalizeDays } from '../boards/openingHours';
 import { hasErrors, validateBoardInput } from '../boards/boardValidation';
@@ -22,6 +23,8 @@ function draftFrom(board) {
     const greeting = findModule(board.middle, 'greeting');
     const openingHours = findModule(board.middle, 'openingHours');
     const weather = findModule(board.carousel, 'weather');
+    const bottomWeather = findModule(board.bottom, 'weather');
+    const weatherModule = bottomWeather ?? weather;
     const floorplan = findModule(board.carousel, 'floorplan');
     const departures = findModule(board.carousel, 'departures');
     return {
@@ -36,18 +39,22 @@ function draftFrom(board) {
         greetingText: greeting && greeting.text !== GREETING_AUTO ? greeting.text : '',
         openingHoursEnabled: Boolean(openingHours),
         days: normalizeDays(openingHours ? openingHours.days : []),
-        weatherEnabled: Boolean(weather),
-        weatherName: weather ? weather.name : '',
+        // Været bor ett sted. Ett felt med tre verdier gjør regelen synlig i
+        // skjemaet, i stedet for en valideringsfeil du oppdager etter å ha
+        // trykket lagre.
+        weatherPlacement: bottomWeather ? 'stripe' : (weather ? 'karusell' : 'av'),
+        weatherName: weatherModule ? weatherModule.name : '',
         // Koordinatene er strenger i skjemaet: et halvskrevet «60.» er ikke et
         // tall, og feltet skal ikke hoppe mens man skriver.
-        weatherLat: weather ? String(weather.lat) : '',
-        weatherLng: weather ? String(weather.lng) : '',
+        weatherLat: weatherModule ? String(weatherModule.lat) : '',
+        weatherLng: weatherModule ? String(weatherModule.lng) : '',
         floorplanEnabled: Boolean(floorplan),
         floorplanPlan: floorplan ? floorplan.plan : FLOORPLAN_PLANS[0],
         departuresEnabled: Boolean(departures),
         stopPlaceId: departures ? departures.stopPlaceId : '',
         stopPlaceName: departures ? departures.stopPlaceName : '',
-        carouselTheme: board.carouselTheme,
+        carouselSurface: board.carouselSurface,
+        bottomSurface: board.bottomSurface,
     };
 }
 
@@ -64,14 +71,19 @@ function configFrom(draft) {
         middle.push({ type: 'openingHours', days: draft.days });
     }
 
+    // Bygges uansett plassering, også når `weatherPlacement` er 'av' — den
+    // brukes bare bak de to plasseringssjekkene under, og forkastes stille
+    // (Number('') === 0 slipper aldri ut, den skrives aldri til noen liste).
+    const weatherModule = {
+        type: 'weather',
+        name: draft.weatherName.trim(),
+        lat: Number(draft.weatherLat),
+        lng: Number(draft.weatherLng),
+    };
+
     const carousel = [];
-    if (draft.weatherEnabled) {
-        carousel.push({
-            type: 'weather',
-            name: draft.weatherName.trim(),
-            lat: Number(draft.weatherLat),
-            lng: Number(draft.weatherLng),
-        });
+    if (draft.weatherPlacement === 'karusell') {
+        carousel.push(weatherModule);
     }
     if (draft.floorplanEnabled) {
         carousel.push({ type: 'floorplan', plan: draft.floorplanPlan });
@@ -84,6 +96,8 @@ function configFrom(draft) {
         });
     }
 
+    const bottom = draft.weatherPlacement === 'stripe' ? [weatherModule] : [];
+
     return {
         id: draft.id,
         name: draft.name.trim(),
@@ -91,9 +105,11 @@ function configFrom(draft) {
         theme: draft.theme,
         staffImage: draft.staffImage,
         top: { kind: draft.topKind },
-        carouselTheme: draft.carouselTheme,
+        carouselSurface: draft.carouselSurface,
+        bottomSurface: draft.bottomSurface,
         middle,
         carousel,
+        bottom,
     };
 }
 
@@ -188,7 +204,7 @@ function BoardConfigForm({ board, userEmail }) {
                     onChange={(event) => update('theme', event.target.value)}
                 >
                     <Radio value="dark">Mørk blå</Radio>
-                    <Radio value="light">Lys lavendel</Radio>
+                    <Radio value="light">Lavendel</Radio>
                 </RadioGroup>
             </section>
 
@@ -282,25 +298,30 @@ function BoardConfigForm({ board, userEmail }) {
             <section>
                 <Heading3>Karusellen</Heading3>
                 <RadioGroup
-                    name="carouselTheme"
+                    name="carouselSurface"
                     label="Bakgrunn"
-                    value={draft.carouselTheme}
-                    onChange={(event) => update('carouselTheme', event.target.value)}
+                    value={draft.carouselSurface}
+                    onChange={(event) => update('carouselSurface', event.target.value)}
                 >
-                    <Radio value="light">Lys</Radio>
-                    <Radio value="dark">Mørk</Radio>
+                    {SURFACES.map((name) => (
+                        <Radio key={name} value={name}>{SURFACE_LABELS[name]}</Radio>
+                    ))}
                 </RadioGroup>
-                {errors.carouselTheme && (
-                    <SmallAlertBox variant="negative">{errors.carouselTheme}</SmallAlertBox>
+                {errors.carouselSurface && (
+                    <SmallAlertBox variant="negative">{errors.carouselSurface}</SmallAlertBox>
                 )}
 
-                <Checkbox
-                    checked={draft.weatherEnabled}
-                    onChange={(event) => update('weatherEnabled', event.target.checked)}
+                <RadioGroup
+                    name="weatherPlacement"
+                    label="Værmelding"
+                    value={draft.weatherPlacement}
+                    onChange={(event) => update('weatherPlacement', event.target.value)}
                 >
-                    Værmelding
-                </Checkbox>
-                {draft.weatherEnabled && (
+                    <Radio value="av">Av</Radio>
+                    <Radio value="karusell">I karusellen</Radio>
+                    <Radio value="stripe">I bunnstripa</Radio>
+                </RadioGroup>
+                {draft.weatherPlacement !== 'av' && (
                     <div style={{ margin: '0.75rem 0 1.5rem 2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                         <div style={{ flex: '1 1 12rem' }}>
                             <TextField
@@ -367,6 +388,27 @@ function BoardConfigForm({ board, userEmail }) {
                             error={errors.stopPlace}
                         />
                     </div>
+                )}
+            </section>
+
+            <section>
+                <Heading3>Bunnstripa</Heading3>
+                <Paragraph>
+                    Et lavt felt nederst på skjermen. Velg «I bunnstripa» over for å
+                    vise været her i stedet for i karusellen.
+                </Paragraph>
+                <RadioGroup
+                    name="bottomSurface"
+                    label="Bakgrunn"
+                    value={draft.bottomSurface}
+                    onChange={(event) => update('bottomSurface', event.target.value)}
+                >
+                    {SURFACES.map((name) => (
+                        <Radio key={name} value={name}>{SURFACE_LABELS[name]}</Radio>
+                    ))}
+                </RadioGroup>
+                {errors.bottomSurface && (
+                    <SmallAlertBox variant="negative">{errors.bottomSurface}</SmallAlertBox>
                 )}
             </section>
 

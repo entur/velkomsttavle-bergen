@@ -14,7 +14,7 @@ import {
     PLACE_NAME_MAX_LENGTH,
     isValidStopPlaceId,
 } from './boardConfig.js';
-import { CAROUSEL_THEMES } from './carouselTheme.js';
+import { SURFACES } from './surfaces.js';
 import { DAY_LABELS, isTimeOfDay } from './openingHours.js';
 
 export function validateBoardInput(draft) {
@@ -50,7 +50,9 @@ export function validateBoardInput(draft) {
         }
     }
 
-    if (draft.weatherEnabled) {
+    // Samme krav uansett hvilket felt været står i: det er de samme
+    // koordinatene som sendes til api.met.no.
+    if (draft.weatherPlacement === 'karusell' || draft.weatherPlacement === 'stripe') {
         if (trimmed(draft.weatherName).length === 0) {
             errors.weatherName = 'Stedsnavn for været er påkrevd';
         }
@@ -70,8 +72,12 @@ export function validateBoardInput(draft) {
         errors.stopPlace = 'Søk opp og velg et stoppested';
     }
 
-    if (!CAROUSEL_THEMES.includes(draft.carouselTheme)) {
-        errors.carouselTheme = 'Velg lyst eller mørkt';
+    if (!SURFACES.includes(draft.carouselSurface)) {
+        errors.carouselSurface = 'Velg en farge for karusellen';
+    }
+
+    if (!SURFACES.includes(draft.bottomSurface)) {
+        errors.bottomSurface = 'Velg en farge for bunnstripa';
     }
 
     return errors;

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
+    BOTTOM_TYPES,
     THEMES,
     boardHeading,
     findModule,
@@ -192,16 +193,6 @@ describe('normalizeBoardConfig', () => {
         assert.deepEqual(config.carousel.map((m) => m.type), ['weather', 'departures']);
     });
 
-    it('leser karusell-temaet', () => {
-        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), carouselTheme: 'dark' }).carouselTheme, 'dark');
-        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), carouselTheme: 'light' }).carouselTheme, 'light');
-    });
-
-    it('faller til lyst tema når feltet mangler eller er ukjent', () => {
-        assert.equal(normalizeBoardConfig('x', bergenDocument()).carouselTheme, 'light');
-        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), carouselTheme: 'lilla' }).carouselTheme, 'light');
-    });
-
     it('godtar tomme felt', () => {
         const config = normalizeBoardConfig('x', { name: 'Tom', placeName: 'Bergen', middle: [], carousel: [] });
         assert.deepEqual(config.middle, []);
@@ -244,15 +235,126 @@ describe('toFirestoreBoard', () => {
         assert.equal(data.staffImage, true);
         assert.equal('id' in data, false);
     });
-
-    it('skriver med karusell-temaet', () => {
-        const config = normalizeBoardConfig('bergen-3', { ...bergenDocument(), carouselTheme: 'dark' });
-        assert.equal(toFirestoreBoard(config, 'ola@entur.org').carouselTheme, 'dark');
-    });
 });
 
 describe('THEMES', () => {
     it('har nøyaktig de to temaene', () => {
         assert.deepEqual(THEMES, ['dark', 'light']);
+    });
+});
+
+describe('bunnstripa', () => {
+    it('kjenner bare vær foreløpig', () => {
+        assert.deepEqual(BOTTOM_TYPES, ['weather']);
+    });
+
+    it('normaliserer bottom som de andre listene', () => {
+        const config = normalizeBoardConfig('x', {
+            bottom: [{ type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 }],
+        });
+        assert.deepEqual(config.bottom, [
+            { type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 },
+        ]);
+    });
+
+    it('gir tom liste når feltet mangler', () => {
+        assert.deepEqual(normalizeBoardConfig('x', {}).bottom, []);
+    });
+
+    it('kaster ukjente typer og vær uten koordinater', () => {
+        const config = normalizeBoardConfig('x', {
+            bottom: [
+                { type: 'floorplan', plan: 'bergen-3' },
+                { type: 'weather', name: 'Bergen' },
+            ],
+        });
+        assert.deepEqual(config.bottom, []);
+    });
+
+    // Regelen «en modul bor ett sted» håndheves her, ikke bare i admin: et
+    // dokument redigert for hånd i konsollet skal ikke kunne gi to værmoduler
+    // og dermed to pollinger mot api.met.no.
+    it('lar bottom vinne når været står begge steder', () => {
+        const config = normalizeBoardConfig('x', {
+            carousel: [
+                { type: 'weather', name: 'Oslo', lat: 59.9, lng: 10.7 },
+                { type: 'floorplan', plan: 'bergen-3' },
+            ],
+            bottom: [{ type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 }],
+        });
+        assert.deepEqual(config.carousel, [{ type: 'floorplan', plan: 'bergen-3' }]);
+        assert.equal(config.bottom.length, 1);
+        assert.equal(config.bottom[0].name, 'Bergen');
+    });
+});
+
+describe('flater', () => {
+    it('leser flatenavnene når de finnes', () => {
+        const config = normalizeBoardConfig('x', {
+            carouselSurface: 'fersken',
+            bottomSurface: 'hvit',
+        });
+        assert.equal(config.carouselSurface, 'fersken');
+        assert.equal(config.bottomSurface, 'hvit');
+    });
+
+    it('migrerer fra carouselTheme begge veier', () => {
+        assert.equal(
+            normalizeBoardConfig('x', { carouselTheme: 'dark' }).carouselSurface,
+            'morkebla',
+        );
+        assert.equal(
+            normalizeBoardConfig('x', { carouselTheme: 'light' }).carouselSurface,
+            'lys-lavendel',
+        );
+    });
+
+    it('lar carouselSurface vinne over det gamle feltet', () => {
+        const config = normalizeBoardConfig('x', {
+            carouselTheme: 'dark',
+            carouselSurface: 'fersken',
+        });
+        assert.equal(config.carouselSurface, 'fersken');
+    });
+
+    it('faller på standardene uten felt og for ukjent navn', () => {
+        assert.equal(normalizeBoardConfig('x', {}).carouselSurface, 'lys-lavendel');
+        assert.equal(normalizeBoardConfig('x', {}).bottomSurface, 'morkebla');
+        assert.equal(
+            normalizeBoardConfig('x', { carouselSurface: 'lilla' }).carouselSurface,
+            'lys-lavendel',
+        );
+        assert.equal(
+            normalizeBoardConfig('x', { bottomSurface: 'lilla' }).bottomSurface,
+            'morkebla',
+        );
+    });
+
+    // Et dokument redigert for hånd kan ha et gammelt carouselTheme-navn som
+    // aldri fantes i den to-verdis lista. Da skal migreringen falle til
+    // standarden, ikke kaste eller la tullverdien lekke gjennom.
+    it('faller på standarden for et ukjent carouselTheme-navn', () => {
+        assert.equal(
+            normalizeBoardConfig('x', { carouselTheme: 'sunset' }).carouselSurface,
+            'lys-lavendel',
+        );
+    });
+
+    it('slutter å eksponere carouselTheme', () => {
+        assert.equal(normalizeBoardConfig('x', { carouselTheme: 'dark' }).carouselTheme, undefined);
+    });
+});
+
+describe('toFirestoreBoard', () => {
+    it('skriver de nye feltene og ikke det gamle', () => {
+        const config = normalizeBoardConfig('x', {
+            name: 'Tavla', placeName: 'Bergen', carouselTheme: 'dark',
+            bottom: [{ type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 }],
+        });
+        const document = toFirestoreBoard(config, 'ola@entur.org');
+        assert.equal(document.carouselSurface, 'morkebla');
+        assert.equal(document.bottomSurface, 'morkebla');
+        assert.equal(document.bottom.length, 1);
+        assert.equal('carouselTheme' in document, false);
     });
 });

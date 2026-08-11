@@ -1,37 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
-import { base } from '@entur/tokens';
 
-import { carouselPalette } from '../boards/carouselTheme';
+import ProgressBar from './ProgressBar';
+import { advance } from './rotation.mjs';
 
-const CORAL = base.light.baseColors.shape.highlight; // #ff5959
 const SLIDE_DURATION = 30000; // 30 sek per slide
 const TICK = 100; // ms mellom hver progress-oppdatering
 
 /**
- * Karusell som bytter mellom flere slides på et fast intervall.
- * Øverst i lavendel-feltet, i skillet mot den mørkeblå seksjonen, ligger en
- * full-bredde progress-bar som fylles fram til neste bytte. Under den en
- * ikon-rad der aktivt ikon er koral og inaktive tar farge fra temaet.
+ * Karusell som bytter mellom flere slides på et fast intervall, med en
+ * full-bredde progress-bar øverst som fylles fram til neste bytte.
  *
- * Bakgrunn og ikonfarger kommer fra `carouselPalette`. Inaktive ikoner var
- * tidligere `#ffffff` uansett tema, altså hvitt på lavendel med kontrast 1.39 —
- * praktisk talt usynlig. Paletten har en test som holder den feilen borte.
+ * Bakgrunn og tekstfarge kommer inn som `palette` fra `App`. Komponenten slår
+ * den ikke opp selv: `Weather` rendres nå i to felt med hver sin flate, og da
+ * må flaten følge med ovenfra.
  *
- * slides: Array<{ key: string, Icon: React.ComponentType, node: React.ReactNode }>
+ * slides: Array<{ node: React.ReactNode }>
  */
-function Carousel({ slides, theme }) {
-    const [index, setIndex] = useState(0);
-    const [elapsed, setElapsed] = useState(0);
-    const elapsedRef = useRef(0);
+function Carousel({ slides, palette }) {
+    const [state, setState] = useState({ elapsed: 0, index: 0 });
+    const stateRef = useRef(state);
 
     useEffect(() => {
         const id = setInterval(() => {
-            elapsedRef.current += TICK;
-            if (elapsedRef.current >= SLIDE_DURATION) {
-                elapsedRef.current = 0;
-                setIndex((i) => (i + 1) % slides.length);
+            const next = advance(stateRef.current, {
+                tick: TICK,
+                duration: SLIDE_DURATION,
+                count: slides.length,
+            });
+            // `advance` fryser tilstanden (count <= 1) ved å gi en FERSK
+            // { elapsed: 0, index: 0 } hvert kall — aldri det samme objektet
+            // tilbake. Uten denne sjekken ville setState kjørt 10 ganger i
+            // sekundet i evigheten på en tavle med bare én slide.
+            if (next.elapsed === stateRef.current.elapsed && next.index === stateRef.current.index) {
+                return;
             }
-            setElapsed(elapsedRef.current);
+            stateRef.current = next;
+            setState(next);
         }, TICK);
         return () => clearInterval(id);
     }, [slides.length]);
@@ -44,16 +48,15 @@ function Carousel({ slides, theme }) {
         return null;
     }
 
-    const palette = carouselPalette(theme);
-    const progress = elapsed / SLIDE_DURATION;
+    // `advance` fryser indeksen på 0 når lista krymper, men tilstanden kan være
+    // ett tick gammel her. Klemmen gjør at renderingen aldri ser utenfor lista.
+    const index = Math.min(state.index, slides.length - 1);
 
     return (
         <div style={{ flex: 1, minHeight: 0, width: '100vw', backgroundColor: palette.background, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {slides.map(() => {
-            <div style={{ width: '100%', height: '6px', backgroundColor: palette.background, flex: '0 0 auto' }}>
-                <div style={{ width: `${progress * 100}%`, height: '100%', backgroundColor: CORAL }} />
-            </div>
-            })}
+            {slides.length > 1 && (
+                <ProgressBar progress={state.elapsed / SLIDE_DURATION} palette={palette} />
+            )}
             <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {slides[index].node}
             </div>

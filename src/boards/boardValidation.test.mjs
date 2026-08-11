@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { hasErrors, validateBoardInput } from './boardValidation.js';
+import { SURFACES } from './surfaces.js';
 
 function validDraft(overrides = {}) {
     return {
@@ -23,7 +24,7 @@ function validDraft(overrides = {}) {
             { day: 'sat', closed: true },
             { day: 'sun', closed: true },
         ],
-        weatherEnabled: true,
+        weatherPlacement: 'karusell',
         weatherName: 'Bergen',
         weatherLat: '60.39299',
         weatherLng: '5.32415',
@@ -32,7 +33,8 @@ function validDraft(overrides = {}) {
         departuresEnabled: false,
         stopPlaceId: '',
         stopPlaceName: '',
-        carouselTheme: 'light',
+        carouselSurface: 'lys-lavendel',
+        bottomSurface: 'morkebla',
         ...overrides,
     };
 }
@@ -89,7 +91,7 @@ describe('validateBoardInput', () => {
     });
 
     it('ser bort fra været når modulen er slått av', () => {
-        const errors = validateBoardInput(validDraft({ weatherEnabled: false, weatherLat: 'nord', weatherName: '' }));
+        const errors = validateBoardInput(validDraft({ weatherPlacement: 'av', weatherLat: 'nord', weatherName: '' }));
         assert.equal(errors.weatherLat, undefined);
         assert.equal(errors.weatherName, undefined);
     });
@@ -142,7 +144,7 @@ describe('validateBoardInput', () => {
     });
 });
 
-describe('validateBoardInput — avganger og tema', () => {
+describe('validateBoardInput — avganger', () => {
     it('godtar en avgangsmodul med valgt stoppested', () => {
         const errors = validateBoardInput(validDraft({
             departuresEnabled: true,
@@ -169,9 +171,64 @@ describe('validateBoardInput — avganger og tema', () => {
     it('ser bort fra stoppestedet når modulen er slått av', () => {
         assert.equal(validateBoardInput(validDraft({ stopPlaceId: 'tull' })).stopPlace, undefined);
     });
+});
 
-    it('avviser et ukjent tema', () => {
-        assert.equal(validateBoardInput(validDraft({ carouselTheme: 'lilla' })).carouselTheme, 'Velg lyst eller mørkt');
-        assert.equal(validateBoardInput(validDraft({ carouselTheme: 'dark' })).carouselTheme, undefined);
+describe('flater og plassering av været', () => {
+    /** Et minimalt gyldig utkast, slik at testene bare måler det de handler om. */
+    function draft(overrides = {}) {
+        return {
+            name: 'Tavla',
+            placeName: 'Bergen',
+            weatherPlacement: 'av',
+            carouselSurface: 'lys-lavendel',
+            bottomSurface: 'morkebla',
+            ...overrides,
+        };
+    }
+
+    it('godtar et utkast uten vær', () => {
+        assert.deepEqual(validateBoardInput(draft()), {});
+    });
+
+    it('krever sted og koordinater når været står i karusellen', () => {
+        const errors = validateBoardInput(draft({ weatherPlacement: 'karusell' }));
+        assert.ok(errors.weatherName);
+        assert.ok(errors.weatherLat);
+        assert.ok(errors.weatherLng);
+    });
+
+    // Samme krav uansett hvilket felt været står i: det er de samme
+    // koordinatene som sendes til api.met.no.
+    it('krever det samme når været står i stripa', () => {
+        const errors = validateBoardInput(draft({ weatherPlacement: 'stripe' }));
+        assert.ok(errors.weatherName);
+        assert.ok(errors.weatherLat);
+        assert.ok(errors.weatherLng);
+    });
+
+    it('godtar gyldige koordinater i begge feltene', () => {
+        for (const placement of ['karusell', 'stripe']) {
+            const errors = validateBoardInput(draft({
+                weatherPlacement: placement,
+                weatherName: 'Bergen',
+                weatherLat: '60.39299',
+                weatherLng: '5.32415',
+            }));
+            assert.deepEqual(errors, {}, placement);
+        }
+    });
+
+    it('avviser ukjente flatenavn i begge feltene', () => {
+        assert.ok(validateBoardInput(draft({ carouselSurface: 'lilla' })).carouselSurface);
+        assert.ok(validateBoardInput(draft({ bottomSurface: 'lilla' })).bottomSurface);
+    });
+
+    // Listemedlemskap, ikke likhet mot standardverdien: hver av de seks
+    // flatene skal godtas, ikke bare 'lys-lavendel'/'morkebla'.
+    it('godtar alle definerte flatenavn i begge feltene', () => {
+        for (const surface of SURFACES) {
+            assert.deepEqual(validateBoardInput(draft({ carouselSurface: surface })), {}, surface);
+            assert.deepEqual(validateBoardInput(draft({ bottomSurface: surface })), {}, surface);
+        }
     });
 });

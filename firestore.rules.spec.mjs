@@ -158,6 +158,49 @@ describe('boards', () => {
         await assertFails(deleteDoc(doc(as('kari@entur.org'), 'boards/bergen-3')));
         await assertSucceeds(deleteDoc(doc(as('ola@entur.org'), 'boards/bergen-3')));
     });
+
+    it('godtar en tavle med bunnstripe og begge flatefeltene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            carouselSurface: 'fersken',
+            bottomSurface: 'morkebla',
+            bottom: [{ type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 }],
+        }), { merge: true }));
+    });
+
+    // Gamle dokumenter beholder carouselTheme fordi saveBoardConfig skriver med
+    // merge. Klausulen for det feltet må derfor bli stående i reglene — uten
+    // den avvises hver eneste lagring på en tavle som finnes fra før.
+    it('godtar en tavle som fortsatt har det gamle carouselTheme', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            carouselTheme: 'dark',
+            carouselSurface: 'morkebla',
+        }), { merge: true }));
+    });
+
+    it('godtar en tavle helt uten de nye feltene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board(), { merge: true }));
+    });
+
+    it('avviser ukjent flatenavn', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            carouselSurface: 'lilla',
+        }), { merge: true }));
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            bottomSurface: 'lilla',
+        }), { merge: true }));
+    });
+
+    it('avviser bottom som ikke er en liste', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            bottom: 'vær',
+        }), { merge: true }));
+    });
+
+    it('avviser en bottom-liste med for mange moduler', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            bottom: [1, 2, 3, 4, 5, 6],
+        }), { merge: true }));
+    });
 });
 
 describe('memberships', () => {
