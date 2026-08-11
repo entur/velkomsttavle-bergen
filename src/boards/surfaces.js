@@ -15,8 +15,8 @@
  * uendret når hver flate bærer sin egen modus.
  *
  * Paletten holder seg til flater, tekst og accent. Fargen på merkene —
- * linjemerket og avviks-brikkene — eies av `lineAppearance` og `Chip`, som
- * begge har sin egen logikk for fyll og tekst.
+ * linjemerket og avviks-brikkene — eies av `categoryFill`/`badgeText` og
+ * `Chip`, som begge har sin egen logikk for fyll og tekst.
  */
 import { base, colors, semantic } from '@entur/tokens';
 

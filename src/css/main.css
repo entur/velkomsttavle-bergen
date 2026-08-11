@@ -44,6 +44,20 @@
     color: var(--text-color);
 }
 
+/*
+ * Ikonet skal ha samme farge som linjenummeret, ikke sin egen. SVG-en har
+ * `fill` som presentasjonsattributt (på hver `<path>` for togikonet, på en
+ * omsluttende `<g>` for bussikonet), og et slikt attributt overstyrer
+ * `color` — uten dette ville ikonet blitt hardkodet mørkeblått/mørk rosa og
+ * usynlig mot fyll i nær samme farge (bussikonet målt til kontrast 1.00 mot
+ * eget merkefyll i lyst tema). `currentColor` arver fra `.eds-icon { color }`
+ * over, og etterkommer-selektoren treffer stiene inni `<g>`-en også.
+ */
+.avgangstavle-traveltag > .eds-icon,
+.avgangstavle-traveltag > .eds-icon * {
+    fill: currentColor;
+}
+
 .avgangstavle-traveltag.eds-travel-tag--icon-and-text > .eds-icon {
     margin-right: 1rem;
 }
