@@ -1,14 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { UmbrellaIcon, WindIcon } from '@entur/icons';
-import { base } from '@entur/tokens';
 import { Label } from '@entur/typography';
 
 import { formatNumber } from '../ts/main';
 import ProgressBar from './ProgressBar';
 import { advance } from './rotation.mjs';
 import { dailyForecast, hourlyForecast, nowSummary } from '../weather/forecastViews.mjs';
-
-const HIGHLIGHT = base.light.baseColors.shape.highlight;
 
 /**
  * 15 sekunder, ikke karusellens 30: hver visning er liten og lest på tre
@@ -79,8 +76,8 @@ function WeatherStripe({ weather, palette }) {
                 <ProgressBar progress={state.elapsed / VIEW_DURATION} palette={palette} />
             )}
             <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'stretch', gap: '1.5rem', padding: '0.75rem 2rem' }}>
-                <NowCard now={now} palette={palette} />
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-around', backgroundColor: palette.panel, borderRadius: '12px', padding: '0.5rem 1.5rem', overflow: 'hidden' }}>
+                <NowBlock now={now} palette={palette} />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0.5rem 1.5rem', overflow: 'hidden' }}>
                     {views[Math.min(state.index, views.length - 1)] === 'hours'
                         ? hourly.map((hour) => <HourCell key={hour.time} hour={hour} />)
                         : daily.map((day) => <DayCell key={day.date.toDateString()} day={day} />)}
@@ -91,12 +88,12 @@ function WeatherStripe({ weather, palette }) {
 }
 
 /**
- * Nå-kortet står fast. Uten data viser det «–» framfor å forsvinne: feltet skal
+ * Nå-blokka står fast. Uten data viser den «–» framfor å forsvinne: feltet skal
  * beholde høyden, slik at layouten ikke hopper når varselet kommer.
  */
-function NowCard({ now, palette }) {
+function NowBlock({ now, palette }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '0 0 auto', backgroundColor: palette.panel, borderRadius: '12px', padding: '0.5rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '0 0 auto', padding: '0.5rem 1.5rem' }}>
             {now?.symbol && (
                 <img src={`/yrSymbols/${now.symbol}.svg`} alt={now.symbol} style={{ width: '64px', height: '64px', display: 'block' }} />
             )}
@@ -127,7 +124,10 @@ function HourCell({ hour }) {
                 <img src={`/yrSymbols/${hour.symbol}.svg`} alt={hour.symbol} style={{ width: '44px', height: '44px', display: 'block' }} />
             )}
             <span style={{ fontSize: '1.4rem', fontWeight: 700, lineHeight: 1 }}>{formatNumber(hour.temperature, 'celsius')}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: HIGHLIGHT, fontSize: '0.95rem' }}>
+            {/* Arver farge fra stripa. Nedbøren var korall mot det hvite panelet;
+                uten panelet står den på flaten selv, og korall mot lavendel er
+                kontrast 1.56 — paraplyen får skille den ut i stedet. */}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.95rem' }}>
                 <UmbrellaIcon size={14} />
                 {formatNumber(hour.precipitation, 'millimeter')}
             </span>

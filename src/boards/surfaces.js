@@ -54,34 +54,26 @@ const TABLE = {
     'morkebla': {
         mode: 'dark',
         background: base.light.baseColors.frame.contrast,
-        panel: base.light.baseColors.frame.contrastalt,
     },
     'morkebla-lys': {
         mode: 'dark',
         background: base.light.baseColors.frame.contrastalt,
-        // Panelet er mørkere enn bakgrunnen her, motsatt av de andre mørke
-        // flatene. Retningen spiller ingen rolle; separasjonen gjør det.
-        panel: base.light.baseColors.frame.contrastalt2,
     },
     'lavendel': {
         mode: 'light',
         background: colors.brand.lavender,
-        panel: WHITE,
     },
     'lys-lavendel': {
         mode: 'light',
         background: semantic.fill.background.subdued.light,
-        panel: WHITE,
     },
     'hvit': {
         mode: 'light',
         background: WHITE,
-        panel: semantic.fill.background.subdued.light,
     },
     'fersken': {
         mode: 'light',
         background: colors.brand.peach,
-        panel: WHITE,
     },
 };
 
@@ -98,12 +90,11 @@ const TABLE = {
  */
 export function surfacePalette(name) {
     const key = SURFACES.includes(name) ? name : DEFAULT_CAROUSEL_SURFACE;
-    const { mode, background, panel } = TABLE[key];
+    const { mode, background } = TABLE[key];
     return {
         name: key,
         mode,
         background,
-        panel,
         text: mode === 'dark' ? WHITE : BLUE,
         accent: CORAL,
     };

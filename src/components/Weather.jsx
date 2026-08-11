@@ -1,18 +1,16 @@
 import { formatNumber } from '../ts/main';
 import { UmbrellaIcon, WindIcon } from "@entur/icons";
-import { base } from "@entur/tokens";
 import { Heading3, Label } from "@entur/typography";
 
 import { dailyForecast, hourlyForecast, nowSummary } from '../weather/forecastViews.mjs';
 
-const HIGHLIGHT = base.light.baseColors.shape.highlight;
-
-// En rad «ikon + verdi» brukt i nå-kortet (hvit tekst på mørkeblått kort)
-function DetailRow({ icon, children }) {
+// En rad «ikon + verdi» i nå-blokka. Fargen kommer utenfra: blokka har ingen
+// egen flate lenger, så teksten står på flaten feltet har valgt.
+function DetailRow({ icon, color, children }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#ffffff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color }}>
             {icon}
-            <Label style={{ margin: 0, color: '#ffffff' }}>{children}</Label>
+            <Label style={{ margin: 0, color }}>{children}</Label>
         </div>
     );
 }
@@ -40,7 +38,6 @@ export default function Weather({ weather, palette }) {
     }
     const hourly = hourlyForecast(timeSeries, 6);
     const daily = dailyForecast(timeSeries, 4);
-    const dark = palette.mode === 'dark';
 
     return (
         <div style={{
@@ -53,28 +50,29 @@ export default function Weather({ weather, palette }) {
             gap: '1.5rem',
             // Ingen egen bakgrunn: den hører til karusellen. Maler modulen sin
             // egen, blir været et lavendelpanel som svever på mørk bunn.
+            //
+            // Arv rekker ikke for Entur-typografien: `.eds-h3` og `.eds-label`
+            // setter `color: #181c56` i sin egen regel, og en arvet farge taper
+            // mot den. Hver Heading3 og Label under må få `palette.text`
+            // eksplisitt — ellers står klokkeslettene mørkeblå på mørkeblå.
             color: palette.text,
         }}>
-            {/* Nå-kort til venstre, timesstripe + dagsrad stablet til høyre */}
+            {/* Nå til venstre, timesstripe + dagsrad stablet til høyre */}
             <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: '2rem', alignItems: 'stretch' }}>
-                {/* Nå-kort */}
+                {/* Nå */}
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    // Paddingen er luft mellom blokkene, ikke kortkant: ingen av
+                    // de tre blokkene har egen flate.
                     padding: '1.5rem 3rem',
-                    borderRadius: '16px',
-                    background: `linear-gradient(160deg, ${base.light.baseColors.frame.contrastalt} 0%, ${base.light.baseColors.frame.contrast} 100%)`,
-                    boxShadow: '0 8px 24px rgba(24,28,86,0.25)',
-                    // Kortet er mørkeblått og forsvinner mot en mørk karusell.
-                    // Kanten er det eneste som skiller dem i mørkt tema.
-                    border: dark ? `2px solid ${palette.panel}` : 'none',
                     flex: '0 0 auto',
                     minHeight: 0,
                     overflow: 'hidden'
                 }}>
-                    <Heading3 style={{ margin: 0, color: HIGHLIGHT, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Nå</Heading3>
+                    <Heading3 style={{ margin: 0, color: palette.text, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Nå</Heading3>
                     {now.symbol && (
                         <img
                             src={`/yrSymbols/${now.symbol}.svg`}
@@ -82,34 +80,29 @@ export default function Weather({ weather, palette }) {
                             style={{ width: '120px', height: '120px', display: 'block' }}
                         />
                     )}
-                    <div style={{ fontSize: '3.5rem', fontWeight: 700, lineHeight: 1, color: '#ffffff', margin: '0.25rem 0 1rem' }}>
+                    <div style={{ fontSize: '3.5rem', fontWeight: 700, lineHeight: 1, margin: '0.25rem 0 1rem' }}>
                         {formatNumber(now.temperature, 'celsius')}
                     </div>
                     <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                        <DetailRow icon={<WindIcon size={24} color="#ffffff" />}>
+                        <DetailRow color={palette.text} icon={<WindIcon size={24} color={palette.text} />}>
                             {formatNumber(now.wind, 'meter-per-second')}
                         </DetailRow>
-                        <DetailRow icon={<UmbrellaIcon size={24} color="#ffffff" />}>
+                        <DetailRow color={palette.text} icon={<UmbrellaIcon size={24} color={palette.text} />}>
                             {formatNumber(now.precipitation, 'millimeter')}
                         </DetailRow>
                     </div>
                 </div>
 
-                {/* Høyre kolonne: timesstripe over, dagsrad under – hver i sitt panelkort */}
+                {/* Høyre kolonne: timesstripe over, dagsrad under */}
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, gap: '1.5rem' }}>
                     {/* Timesstripe */}
                     <div style={{
                         display: 'flex', flex: 1, minHeight: 0, justifyContent: 'space-around', alignItems: 'center', minWidth: 0,
-                        // palette.panel, ikke en fast fersken: «fersken» er selv en mulig
-                        // bakgrunn, og et ferskent kort på ferskent felt er usynlig.
-                        // surfaces.test.mjs holder panelet synlig mot hver bakgrunn.
-                        backgroundColor: palette.panel,
-                        color: palette.text,
-                        borderRadius: '16px', padding: '1rem 1.5rem', overflow: 'hidden'
+                        padding: '1rem 1.5rem', overflow: 'hidden'
                     }}>
                         {hourly.map(({ time, symbol, temperature, precipitation }) => (
                             <div key={time} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                                <Heading3 style={{ margin: 0 }}>{time.substring(11, 16)}</Heading3>
+                                <Heading3 style={{ margin: 0, color: palette.text }}>{time.substring(11, 16)}</Heading3>
                                 {symbol && (
                                     <img
                                         src={`/yrSymbols/${symbol}.svg`}
@@ -118,9 +111,12 @@ export default function Weather({ weather, palette }) {
                                     />
                                 )}
                                 <div style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1 }}>{formatNumber(temperature, 'celsius')}</div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: HIGHLIGHT }}>
-                                    <UmbrellaIcon size={16} />
-                                    <Label style={{ margin: 0 }}>{formatNumber(precipitation, 'millimeter')}</Label>
+                                {/* Nedbøren var korall mot det hvite panelet. Uten panelet
+                                    står den på flaten selv, og korall mot lavendel er
+                                    kontrast 1.56 — paraplyen får skille den ut i stedet. */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <UmbrellaIcon size={16} color={palette.text} />
+                                    <Label style={{ margin: 0, color: palette.text }}>{formatNumber(precipitation, 'millimeter')}</Label>
                                 </div>
                             </div>
                         ))}
@@ -129,16 +125,11 @@ export default function Weather({ weather, palette }) {
                     {/* Dagsrad */}
                     <div style={{
                         display: 'flex', justifyContent: 'space-around', alignItems: 'center', flex: '0 0 auto',
-                        // palette.panel, ikke en fast fersken: «fersken» er selv en mulig
-                        // bakgrunn, og et ferskent kort på ferskent felt er usynlig.
-                        // surfaces.test.mjs holder panelet synlig mot hver bakgrunn.
-                        backgroundColor: palette.panel,
-                        color: palette.text,
-                        borderRadius: '16px', padding: '1rem 1.5rem'
+                        padding: '1rem 1.5rem'
                     }}>
                         {daily.map((day) => (
                             <div key={day.date.toDateString()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
-                                <Heading3 style={{ margin: 0, textTransform: 'capitalize' }}>{day.weekday}</Heading3>
+                                <Heading3 style={{ margin: 0, color: palette.text, textTransform: 'capitalize' }}>{day.weekday}</Heading3>
                                 {day.symbol && (
                                     <img
                                         src={`/yrSymbols/${day.symbol}.svg`}
