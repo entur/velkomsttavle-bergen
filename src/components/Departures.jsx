@@ -1,9 +1,12 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Heading3, Paragraph } from '@entur/typography';
 import { colors } from '@entur/tokens';
+import { ContrastContext } from '@entur/layout';
+import { TravelTag } from '@entur/travel';
 import { ValidationExclamationCircleFilledIcon } from '@entur/icons';
 
-import { lineAppearance } from '../departures/lineAppearance';
+import { badgeText, categoryFill } from '../departures/categoryFill';
+import { travelTagTransport } from '../departures/travelTagTransport';
 import { countdownLabel } from '../departures/departureCountdown';
 import { isDelayed } from '../departures/departureMapper';
 import { warningStyle } from '../departures/warningStyle';
@@ -21,18 +24,49 @@ function tid(date) {
     return date instanceof Date ? klokke.format(date) : '';
 }
 
-/** Merket med linjekoden. Farge fra kategori, ellers transportmiddel. */
+/**
+ * Linjemerket. Ikonet forteller transportmiddelet, fargen linjekategorien.
+ *
+ * Bane NOR-fargen settes som CSS-variabler og ikke som `backgroundColor`, fordi
+ * det er dem `TravelTag` selv leser. Komponenten bygger sin egen stil som
+ * `{ ...dynamicCssVars, ...style }` — vår `style` spres sist og vinner. Verifisert
+ * i kilden til @entur/travel@8.
+ *
+ * Uten kategorikode sender vi ingen fyll, og `TravelTag` fargelegger etter
+ * transportmiddel. Den logikken eier Entur; vi kopierer den ikke.
+ *
+ * `ContrastContext.Provider` er nødvendig nettopp for det tilfellet: TravelTag
+ * velger mellom standard- og contrast-paletten med `useContrast()`, og
+ * `Departures` ligger utenfor `<Contrast>`-wrapperen i `MiddleBand`. Uten
+ * provideren får bussmerket standardfyllet `#c5044e`, som er kontrast 2.61 mot
+ * mørkeblå flate og 1.65 mot den lysere — altså borte. Vi setter bare
+ * konteksten, ikke `<Contrast>` selv, som også ville satt bakgrunn og
+ * tekstfarge på griden rundt.
+ *
+ * `--text-color` settes i ALLE tilfeller, også uten kategorifyll. Overlater vi
+ * den til stilarket, kommer den fra `:where(.eds-contrast) .eds-travel-tag` —
+ * en av reglene Tizen forkaster — og merket ville sett ulikt ut på skjermen og
+ * i Chrome.
+ */
 function LineBadge({ lineCode, transportMode, theme }) {
-    const { fill, text, border } = lineAppearance(lineCode, transportMode, theme);
+    const dark = theme === 'dark';
+    const fill = categoryFill(lineCode, theme);
     return (
-        <span style={{
-            display: 'inline-block', minWidth: '3.5rem', textAlign: 'center',
-            backgroundColor: fill, color: text, border,
-            borderRadius: '8px', padding: '0.25rem 0.6rem',
-            fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1,
-        }}>
-            {lineCode || '–'}
-        </span>
+        <ContrastContext.Provider value={dark}>
+            <TravelTag
+                className="avgangstavle-traveltag"
+                transport={travelTagTransport(transportMode)}
+                style={{
+                    '--text-color': badgeText(theme),
+                    ...(fill && {
+                        '--background-color': fill.background,
+                        border: fill.border,
+                    }),
+                }}
+            >
+                {lineCode || '–'}
+            </TravelTag>
+        </ContrastContext.Provider>
     );
 }
 
