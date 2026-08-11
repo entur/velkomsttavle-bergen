@@ -39,7 +39,14 @@ function WeatherStripe({ weather, palette }) {
     // Sent på kvelden finnes det ikke flere hele dager. Da faller
     // dagsvisningen bort og timesvisningen står alene — samme regel som
     // karusellen har for én slide.
-    const daily = useMemo(() => dailyForecast(timeseries, 4), [weather]);
+    // `dailyForecast` avgjør «i dag» ved kalltidspunktet, ikke ved
+    // varseltidspunktet. En nøkkel med bare `weather` ville fryse dagsgrensa
+    // til forrige henting — dagen ville stå oppført som en av de fire
+    // kommende helt til neste polling, gjerne et døgn for sent. `dayKey`
+    // holder grensa levende mellom hver henting, til prisen av ett
+    // `Date`-objekt per rendring.
+    const dayKey = new Date().toDateString();
+    const daily = useMemo(() => dailyForecast(timeseries, 4), [weather, dayKey]);
     const views = daily.length > 0 ? ['hours', 'days'] : ['hours'];
 
     const [state, setState] = useState({ elapsed: 0, index: 0 });
