@@ -45,13 +45,49 @@ linjemerket skal bruke Enturs egen komponent i stedet for en håndlaget brikke.
   `--text-color` som CSS-variabler på `.eds-travel-tag`. De kan settes inline.
   Komponenten er dimensjonert for laptop: `height: 2rem`, `font-size: 0.875rem`,
   `padding: 0.25rem 0.5rem`. Dagens `LineBadge` bruker `font-size: 1.75rem`.
-- **`@entur/travel/dist/styles.css` bruker `:where()` femten steder.**
-  `browserBaseline.test.mjs` fastslår at tavla kjører på Tizen med Chromium 85;
-  `:where()` kom i Chromium 88. Reglene forkastes altså på skjermen — regelvis,
-  ikke hele arket. De som betyr noe for oss er `.eds-travel-tag > :where(.eds-icon)`
-  (ikonets størrelse og farge) og `:where(.eds-contrast) .eds-travel-tag`
-  (kontrast-temaets farger).
-- `@entur/button` sender allerede 56 slike regler, men brukes bare i admin.
+### Samsung-skjermen — gjennomgang av hele kjeden
+
+`browserBaseline.test.mjs` setter grensa til Tizen med Chromium 85. Alt under er
+sondert mot pakkene i `node_modules`, ikke antatt.
+
+**Holder uten tiltak:**
+
+- Ingen post-85 innebygde metoder i `@entur/travel` eller `@entur/icons`.
+  Sveip etter `Object.hasOwn`, `structuredClone`, `.at(`, `.findLast`,
+  `.toSorted`, `Array.fromAsync` og `withResolvers` gir null treff i begge.
+- `build.target` er allerede `chrome85` i `vite.config.js`, så syntaks dekkes.
+- CSS-variabler er Chromium 49. Definisjonene av
+  `--components-travel-traveltag-*` bor i `@entur/travel/dist/styles.css` selv —
+  ikke i `@entur/tokens` — under vanlige `:root` og `[data-color-mode=light]`.
+  Begge parses på 85. Stilarket må derfor importeres, og det er nok.
+- **Overstyringa vår vinner.** `TravelTag` bygger `style: { ...dynamicCssVars,
+  ...style }`, altså spres vår `style` sist. `--background-color` og
+  `--text-color` fra oss slår komponentens egne. Lest i kilden, ikke antatt.
+
+**`:where()` — femten regler, to som betyr noe.** Selektoren kom i Chromium 88,
+så reglene forkastes på skjermen. Regelvis, ikke hele arket: CSS-feilhåndtering
+forkaster til blokka er slutt. Av de femten gjelder elleve `:where(.eds-contrast)`,
+og de er **irrelevante her**: `Contrast` brukes bare i `MiddleBand`, mens
+karusellen er et søskenfelt, så `useContrast()` gir `false` og klassen finnes
+ikke over `Departures`. To til gjelder `__alert`, `__label`, `__details` og
+`__close-button`, som vi ikke bruker; det samme gjelder den ene `:has()`-regelen.
+
+Igjen står to, begge om ikonet inni merket:
+
+| Regel | Setter |
+|---|---|
+| `.eds-travel-tag > :where(.eds-icon)` | `font-size: 1.5rem`, `color: var(--text-color)` |
+| `.eds-travel-tag--icon-and-text > :where(.eds-icon)` | `margin-right: 0.5rem` |
+
+**`getTransportStyle` kaster på ukjent transportmiddel.** `default:` gir
+`throw Error("Please select a transport for the Travel component.")`, og
+`scooter`, `bike`, `car` og `foot` kaster hver for seg som utgåtte. Enturs
+`transportMode` inneholder `trolleybus`, `monorail` og `lift`, som ingen av de
+25 `case`-etikettene dekker. Sendt rett inn tar de ned komponenten.
+`Departures` ligger inne i `ErrorBoundary` (`App.jsx:112`), så det gir ikke hvit
+skjerm — men avgangstavla forsvinner fra karusellen.
+
+- `@entur/button` sender allerede 56 `:where()`-regler, men brukes bare i admin.
   Kiosken har ikke hatt `:where()` i CSS-en sin før.
 
 ## Løsning
@@ -150,16 +186,22 @@ Tekstfargen på Bane NOR-fyllene følger dagens regel: mørkeblå på mørkt tem
 hvit på lyst — de tre fyllene er mettede nok til begge deler.
 
 `travelTagTransport(transportMode)` oversetter Enturs `transportMode` til
-`TravelTag` sin `Transport`-union. De to listene overlapper, men ikke helt:
+`TravelTag` sin `Transport`. Den er en **hviteliste, ikke en passthrough** — det
+er en krasjsperre, ikke pynt, fordi `getTransportStyle` kaster på alt den ikke
+kjenner:
 
 | `transportMode` | `Transport` | Hvorfor |
 |---|---|---|
-| `rail`, `bus`, `tram`, `metro`, `water`, `air`, `funicular`, `cableway`, `taxi` | uendret | Finnes i begge listene |
+| `rail`, `bus`, `tram`, `metro`, `water`, `air`, `funicular`, `cableway`, `taxi` | uendret | Egen `case` i `getTransportStyle` |
 | `coach` | `bus` | Turbuss er buss for ikonets del |
-| `trolleybus` | `bus` | Samme |
-| `monorail` | `metro` | Nærmeste bane |
-| `lift` | `cableway` | Nærmeste taubane |
-| alt annet, tomt eller ukjent | `none` | Ingen gjetting |
+| `trolleybus` | `bus` | Ingen egen `case`; kaster ellers |
+| `monorail` | `metro` | Ingen egen `case`; nærmeste bane |
+| `lift` | `cableway` | Ingen egen `case`; nærmeste taubane |
+| alt annet, tomt, `null`, ikke-streng | `none` | Egen `case` som gir tomt ikon uten å kaste |
+
+Verdiene `scooter`, `bike`, `car` og `foot` skal **aldri** sendes: de har egne
+`case`-grener som kaster med utgåtte-melding. Hvitelista utelukker dem ved å
+være en oppslagstabell — det som ikke står i tabellen blir `none`.
 
 ### 5. Opp­skalering og Tizen i én CSS-klasse
 
@@ -168,10 +210,17 @@ Klassen `.avgangstavle-traveltag` gjør to jobber samtidig:
 
 1. **Skalerer** merket til vegg-skjerm: høyde, `font-size`, `padding`,
    `min-width`, hjørneradius.
-2. **Erstatter reglene Tizen forkaster.** De samme egenskapene som
-   `.eds-travel-tag > :where(.eds-icon)` setter — ikonets `font-size` og `color` —
-   skrives om uten `:where()`, slik at ikonet ser likt ut på Chromium 85 og på
-   utviklermaskinen.
+2. **Erstatter de to reglene Tizen forkaster**, skrevet uten `:where()`:
+
+```css
+.avgangstavle-traveltag > .eds-icon { font-size: …; color: var(--text-color); }
+.avgangstavle-traveltag.eds-travel-tag--icon-and-text > .eds-icon { margin-right: …; }
+```
+
+Spesifisiteten er (0,2,0) mot originalens (0,1,0) — `:where()` teller null — så
+vår regel vinner også på en motor som støtter selektoren. Resultatet blir
+identisk begge veier, og det er poenget: ingen andre kodevei å teste, ingen
+`@supports`-forgrening.
 
 Dette er grunnen til at eksplisitt CSS ble valgt framfor `zoom`: `zoom` skalerer,
 men reparerer ikke de forkastede reglene.
@@ -191,14 +240,20 @@ Alt kjører under `npm test` (`node --test`), som resten av repoet.
 - **`lineAppearance.test.mjs` → `categoryFill.test.mjs`:** L/R/F gir Bane NOR-
   fargene i begge temaer, små bokstaver godtas, `L` uten tall og bussnumre gir
   `null`.
-- **`travelTagTransport.test.mjs`:** hver rad i tabellen over, og at ingen
-  returverdi faller utenfor `Transport`-unionen.
+- **`travelTagTransport.test.mjs`:** hver rad i tabellen over, og — viktigst —
+  at ingen inndata i det hele tatt kan gi en verdi `getTransportStyle` kaster på.
+  Testen kaller den ekte `getTransportStyle` fra `@entur/travel` med resultatet
+  av `travelTagTransport` for hver `transportMode` Entur kan sende, pluss
+  `scooter`, `bike`, `car`, `foot`, tom streng, `null`, `undefined` og et tall.
+  Kaster den, feiler testen. Det er den eneste sjekken som faktisk beviser at
+  avgangstavla ikke forsvinner på et ukjent transportmiddel.
 - **`browserBaseline.test.mjs`:** kjører uendret over de nye filene og fanger
   eventuell for ny JS-syntaks.
 
 I tillegg verifiseres `TravelTag` visuelt i preview — at merket er lesbart i
-begge temaer, og at ikonet får riktig størrelse gjennom vår egen CSS-regel og
-ikke gjennom `:where()`-regelen.
+begge temaer, og at ikonet får riktig størrelse gjennom vår egen CSS-regel. Det
+siste testes ved å slå av `@entur/travel`-regelen i devtools: ser merket likt ut
+med og uten, er Tizen dekket.
 
 ## Utenfor omfang
 
@@ -208,3 +263,8 @@ ikke gjennom `:where()`-regelen.
   formidler allerede innstilling med ord.
 - Å vise det gamle spornummeret ved siden av det nye.
 - Toppfelt, bunnstripe og admin.
+- Å måle den faktiske Chromium-versjonen på skjermen. Grensa i
+  `browserBaseline.test.mjs` er fortsatt utledet, ikke observert. Denne
+  endringen holder seg under 85 uansett, så den er dekket — men neste gang noen
+  vurderer et nyere API, står de på samme gjetning. Bevisst valgt bort her for å
+  holde omfanget rent.
