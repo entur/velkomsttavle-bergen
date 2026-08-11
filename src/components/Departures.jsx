@@ -1,10 +1,12 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Heading3, Paragraph } from '@entur/typography';
 import { colors } from '@entur/tokens';
+import { ValidationExclamationCircleFilledIcon } from '@entur/icons';
 
 import { lineAppearance } from '../departures/lineAppearance';
 import { countdownLabel } from '../departures/departureCountdown';
 import { isDelayed } from '../departures/departureMapper';
+import { warningStyle } from '../departures/warningStyle';
 
 /**
  * Hvor ofte nedtellingen regnes om. Ingen nettverkskall — det er ren regning
@@ -60,6 +62,55 @@ function Chip({ label, tone, theme }) {
     );
 }
 
+/**
+ * Avvikstekst fra Journey Planner, med varselikon.
+ *
+ * Formen følger `warningStyle`: gul tekst uten fyll på mørke flater, gul boks
+ * med mørkeblå tekst på lyse. Ikonet arver `color`, så det bytter med teksten.
+ *
+ * Ingen `opacity` her, i motsetning til den gamle `↳`-linja: kontrasten er målt
+ * til 10.25, og en gjennomsiktighet på 0.85 ville spist av den uten å gi noe.
+ */
+function Avviksmelding({ text, theme }) {
+    return (
+        <span style={{ display: 'block', marginTop: '0.35rem' }}>
+            <span style={{
+                ...warningStyle(theme),
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                borderRadius: '8px', padding: '0.1rem 0.6rem',
+                fontSize: '1.25rem', lineHeight: 1.4,
+            }}>
+                <ValidationExclamationCircleFilledIcon aria-hidden="true" />
+                {text}
+            </span>
+        </span>
+    );
+}
+
+/**
+ * Spornummeret. Uthevet når toget er flyttet fra planlagt spor.
+ *
+ * Pilleformen er den samme `Chip` bruker, slik at et endret spor leses som en
+ * markering og ikke som en annen skrifttype.
+ */
+function Spor({ platform, changed, theme }) {
+    if (!platform) {
+        return <span />;
+    }
+    if (!changed) {
+        return <span style={{ whiteSpace: 'nowrap' }}>Spor {platform}</span>;
+    }
+    return (
+        <span style={{
+            ...warningStyle(theme),
+            whiteSpace: 'nowrap', borderRadius: '999px',
+            padding: '0.15rem 0.75rem', fontWeight: 700,
+        }}>
+            Spor {platform}
+        </span>
+    );
+}
+
 function Melding({ palette, children }) {
     return (
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -103,14 +154,14 @@ function Departures({ departures, stopPlaceName, palette }) {
                             <span>
                                 {departure.destination}
                                 {departure.situation && (
-                                    <span style={{ display: 'block', fontSize: '1.25rem', opacity: 0.85 }}>
-                                        ↳ {departure.situation}
-                                    </span>
+                                    <Avviksmelding text={departure.situation} theme={palette.mode} />
                                 )}
                             </span>
-                            <span style={{ whiteSpace: 'nowrap' }}>
-                                {departure.platform ? `Spor ${departure.platform}` : ''}
-                            </span>
+                            <Spor
+                                platform={departure.platform}
+                                changed={departure.platformChanged}
+                                theme={palette.mode}
+                            />
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
                                 {departure.cancelled && <Chip label="Innstilt" tone="cancelled" theme={palette.mode} />}
                                 {!departure.cancelled && nedtelling && <Chip label={nedtelling} tone="delayed" theme={palette.mode} />}
