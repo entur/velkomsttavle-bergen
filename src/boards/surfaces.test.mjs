@@ -96,4 +96,26 @@ describe('surfacePalette', () => {
             );
         }
     });
+
+    /**
+     * Tavla kjører på en Samsung-skjerm med Tizen, ikke i Chrome. Motoren der er
+     * flere år gammel, og `Object.hasOwn` (ES2022, Chromium 93+) finnes ikke.
+     *
+     * Denne funksjonen kalles fra `App` sin komponentkropp, utenfor enhver
+     * ErrorBoundary, så et kast her river ned hele React-treet og gir en helt
+     * hvit skjerm i resepsjonen. Testen kjører funksjonen under nøyaktig den
+     * betingelsen enheten har.
+     */
+    it('virker på en motor uten Object.hasOwn', () => {
+        const original = Object.hasOwn;
+        delete Object.hasOwn;
+        try {
+            assert.equal(surfacePalette('fersken').name, 'fersken');
+            assert.equal(surfacePalette('morkebla').name, 'morkebla');
+            assert.equal(surfacePalette('lilla').name, DEFAULT_CAROUSEL_SURFACE);
+            assert.equal(surfacePalette(undefined).name, DEFAULT_CAROUSEL_SURFACE);
+        } finally {
+            Object.hasOwn = original;
+        }
+    });
 });

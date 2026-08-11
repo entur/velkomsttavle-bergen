@@ -85,9 +85,19 @@ const TABLE = {
     },
 };
 
-/** Ukjent navn gir karusellens standard, slik at en tullverdi ikke krasjer tavla. */
+/**
+ * Ukjent navn gir karusellens standard, slik at en tullverdi ikke krasjer tavla.
+ *
+ * `SURFACES.includes`, ikke `Object.hasOwn`: tavla kjører på en Samsung-skjerm
+ * med Tizen, og motoren der er flere år eldre enn Chromium 93, som er der
+ * `Object.hasOwn` kom. Funksjonen kalles fra `App` sin komponentkropp, utenfor
+ * enhver ErrorBoundary, så et kast her tar ned hele treet og gir en hvit skjerm
+ * i resepsjonen. `includes` er ES2016 og finnes overalt der React 19 kjører.
+ * Se `browserBaseline.test.mjs`, som holder resten av kildekoden innenfor
+ * samme grense.
+ */
 export function surfacePalette(name) {
-    const key = Object.hasOwn(TABLE, name ?? '') ? name : DEFAULT_CAROUSEL_SURFACE;
+    const key = SURFACES.includes(name) ? name : DEFAULT_CAROUSEL_SURFACE;
     const { mode, background, panel } = TABLE[key];
     return {
         name: key,
