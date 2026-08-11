@@ -11,7 +11,7 @@ import WeatherStripe from './WeatherStripe';
  * Høyden er fast, ikke `flex: 1`: stripa skal være en stripe, og karusellen over
  * skal få resten. `MiddleBand` kjenner tallet gjennom `hasBottom`.
  */
-const HEIGHT = '20vh';
+const HEIGHT = '16vh';
 
 function BottomBand({ modules, palette, weather }) {
     if (modules.length === 0) {

@@ -77,18 +77,24 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
 /**
  * Hvor mye plass midtfeltet får.
  *
- * Toppen er faste 40vh og stripa faste 20vh, så taket må ned når begge feltene
+ * Toppen er faste 40vh og stripa faste 16vh, så taket må ned når begge feltene
  * under er der — ellers har karusellen ingenting igjen. Uten karusell tar
  * midtfeltet resten, med eller uten stripe.
  *
- * Tallene er justert mot skjerm, ikke utledet. Endrer du dem, se på en tavle med
- * varsel, hilsen og åpningstider oppe samtidig.
+ * Tallene er målt på 1920×1080, ikke utledet. 28vh er ikke pent valgt: med varsel,
+ * hilsen og åpningstider oppe vil midtfeltet ha 42vh, og 40 + 42 + 16 lar det stå
+ * 2vh igjen til karusellen. Noe MÅ klippes på en tavle med alle fire feltene, og
+ * taket avgjør hva. 28vh gir karusellen 16vh — nok til at en plantegning er til å
+ * kjenne igjen — og klipper åpningstidene nederst i midtfeltet, som er den minst
+ * kritiske raden. Et tak på 35vh ga karusellen 5vh og en plantegning på 22 piksler.
+ *
+ * Endrer du tallet, se på en tavle med varsel, hilsen og åpningstider samtidig.
  */
 function middleHeight(hasCarousel, hasBottom) {
     if (!hasCarousel) {
         return { flex: 1, minHeight: 0 };
     }
-    return { maxHeight: hasBottom ? '35vh' : '45vh' };
+    return { maxHeight: hasBottom ? '28vh' : '45vh' };
 }
 
 export default MiddleBand;
