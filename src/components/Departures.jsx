@@ -80,7 +80,9 @@ function Avviksmelding({ text, theme }) {
                 borderRadius: '8px', padding: '0.1rem 0.6rem',
                 fontSize: '1.25rem', lineHeight: 1.4,
             }}>
-                <ValidationExclamationCircleFilledIcon aria-hidden="true" />
+                {/* I en flex-container blir 1em tolket som flex-basis, ikke en låst
+                    størrelse — uten flexShrink: 0 klemmer teksten sirkelen til en oval. */}
+                <ValidationExclamationCircleFilledIcon aria-hidden="true" style={{ flexShrink: 0 }} />
                 {text}
             </span>
         </span>
