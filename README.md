@@ -73,8 +73,9 @@ Modulene i detalj:
    og en ikon-rad som viser hvilken slide som er aktiv:
    - **Vær** – værmelding for koordinatene i oppsettet, hentet direkte fra MET Norway / Yr sitt
      [locationforecast-API](https://api.met.no/weatherapi/locationforecast/2.0/).
-     Viser et «Nå»-kort (temperatur, vind, nedbør), en stripe med de neste 6
-     timene, og en rad med de 4 neste dagene. Værsymbolene ligger lokalt i
+     Viser en «Nå»-blokk (temperatur, vind, nedbør), en stripe med de neste 6
+     timene, og en rad med de 4 neste dagene — alle tre uten egen flate, rett på
+     bakgrunnen feltet har valgt. Værsymbolene ligger lokalt i
      `public/yrSymbols/`. Karusellen rendrer bare den aktive sliden, så
      værkomponenten avmonteres og remonteres hvert minutt — hentingen ligger
      derfor i `App` (`src/weather/metForecast.js`), som står montert hele tiden.
@@ -86,7 +87,7 @@ Modulene i detalj:
      [Synk av plantegning](#synk-av-plantegning)). Det finnes bare én
      plantegning, `bergen-3`, så `plan`-parameteren har én lovlig verdi i dag.
 4. **Bunnstripe** (`bottom: weather`) – en lav stripe nederst med en kompakt
-   værvisning (`WeatherStripe.jsx`). «Nå»-kortet står fast til venstre med
+   værvisning (`WeatherStripe.jsx`). «Nå»-blokka står fast til venstre med
    symbol, temperatur, vind og nedbør; til høyre veksler feltet hvert 15.
    sekund mellom de neste seks timene og de neste fire dagene. Henter
    ingenting selv — samme polling som karusellværet over. Vekslingen
@@ -353,7 +354,7 @@ henting og polling (`enturDepartures.test.mjs`) og stoppestedssøket
 (`stopPlaceSearch.test.mjs`).
 
 Flatetabellen (`src/boards/surfaces.test.mjs`) kontrastmåler seg selv, for alle
-seks flatene på én gang, både mot bakgrunn og panel. Vekslingen mellom flere
+seks flatene på én gang. Vekslingen mellom flere
 visninger — delt av karusellen og bunnstripa — er en ren funksjon
 (`src/components/rotation.test.mjs`), og det samme gjelder værutregningene
 begge værvisningene bygger på (`src/weather/forecastViews.test.mjs`).

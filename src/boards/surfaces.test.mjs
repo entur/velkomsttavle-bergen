@@ -34,7 +34,7 @@ describe('surfacePalette', () => {
     it('gir alle fargefeltene som gyldig hex, og en kjent modus', () => {
         for (const name of SURFACES) {
             const p = surfacePalette(name);
-            for (const key of ['background', 'panel', 'text', 'accent']) {
+            for (const key of ['background', 'text', 'accent']) {
                 assert.match(p[key], /^#[0-9a-fA-F]{6}$/, `${name}.${key}`);
             }
             assert.ok(p.mode === 'dark' || p.mode === 'light', `${name}.mode`);
@@ -47,35 +47,24 @@ describe('surfacePalette', () => {
     });
 
     // Hele grunnen til at tabellen er en egen fil: en ny farge skal ikke kunne
-    // snike inn uleselig tekst. Grensene er målt, ikke gjettet — laveste
-    // faktiske verdi per rad står i speccen.
-    it('gir teksten lesbar kontrast mot både bakgrunn og panel', () => {
+    // snike inn uleselig tekst. Grensene er målt, ikke gjettet.
+    //
+    // Bakgrunnen er den eneste flaten som finnes nå — værmodulene mistet
+    // panelkortene sine, så all tekst i dem står rett på den.
+    it('gir teksten lesbar kontrast mot bakgrunnen', () => {
         for (const name of SURFACES) {
             const p = surfacePalette(name);
             assert.ok(
                 contrast(p.text, p.background) >= 4.5,
                 `${name}: tekst mot bakgrunn er ${contrast(p.text, p.background).toFixed(2)}`,
             );
-            assert.ok(
-                contrast(p.text, p.panel) >= 4.5,
-                `${name}: tekst mot panel er ${contrast(p.text, p.panel).toFixed(2)}`,
-            );
         }
     });
 
-    // Panelet er flaten Weather maler times- og dagskortene med. Er den for lik
-    // bakgrunnen, forsvinner kortene — nøyaktig det som ville skjedd på
-    // «fersken» hvis PEACH hadde blitt stående i Weather.jsx.
-    it('gir panelet en synlig flate mot bakgrunnen', () => {
-        for (const name of SURFACES) {
-            const p = surfacePalette(name);
-            assert.ok(
-                contrast(p.panel, p.background) >= 1.2,
-                `${name}: panel mot bakgrunn er ${contrast(p.panel, p.background).toFixed(2)}`,
-            );
-        }
-    });
-
+    // Grensen er 1.5, ikke 4.5, og det er hele poenget: accent er en stripe som
+    // skal ses, ikke tekst som skal leses. Korall er 1.56 mot lavendel, så den
+    // tåler ikke å bli tekstfarge — værets nedbørslabel var det siste stedet den
+    // ble brukt slik, og den arver nå `text`.
     it('gir progress-baren synlig kontrast mot alle bakgrunner', () => {
         for (const name of SURFACES) {
             const p = surfacePalette(name);
