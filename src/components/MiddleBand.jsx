@@ -78,16 +78,22 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
 /**
  * Hvor mye plass midtfeltet får.
  *
- * Toppen er faste 40vh og stripa faste `HEIGHT` fra BottomBand.jsx (16vh), så
+ * Toppen er faste 40vh og stripa faste `HEIGHT` fra BottomBand.jsx (180px), så
  * taket må ned når begge feltene under er der — ellers har karusellen
  * ingenting igjen. Uten karusell tar midtfeltet resten, med eller uten stripe.
  *
  * Tallene er målt på 1920×1080, ikke utledet. 28vh er ikke pent valgt: med varsel,
- * hilsen og åpningstider oppe vil midtfeltet ha 42vh, og 40 + 42 + 16 lar det stå
- * 2vh igjen til karusellen. Noe MÅ klippes på en tavle med alle fire feltene, og
- * taket avgjør hva. 28vh gir karusellen 16vh — nok til at en plantegning er til å
- * kjenne igjen — og klipper åpningstidene nederst i midtfeltet, som er den minst
- * kritiske raden. Et tak på 35vh ga karusellen 5vh og en plantegning på 22 piksler.
+ * hilsen og åpningstider oppe vil midtfeltet ha 42vh, og 40 + 42 + stripa lar det
+ * stå nesten ingenting igjen til karusellen. Noe MÅ klippes på en tavle med alle
+ * fire feltene, og taket avgjør hva. 28vh gir karusellen rundt 16vh — nok til at
+ * en plantegning er til å kjenne igjen — og klipper åpningstidene nederst i
+ * midtfeltet, som er den minst kritiske raden. Et tak på 35vh ga karusellen 5vh
+ * og en plantegning på 22 piksler.
+ *
+ * Taket er i vh og stripa i piksler, og det er med vilje: stripa har et fysisk
+ * innhold som trenger en bestemt høyde uansett skjerm, mens dette er et tak på
+ * hvor mye av skjermen midtfeltet får lov å ta. På en høykantskjerm gir de to
+ * enhetene ulikt utslag — regn etter før du stoler på tallene der.
  *
  * Endrer du tallet, se på en tavle med varsel, hilsen og åpningstider samtidig.
  * Endrer du HEIGHT i BottomBand.jsx, må 28vh regnes ut på nytt — det er ikke en
