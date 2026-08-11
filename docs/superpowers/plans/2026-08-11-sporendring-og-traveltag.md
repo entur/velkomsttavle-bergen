@@ -829,7 +829,11 @@ function Avviksmelding({ text, theme }) {
                 borderRadius: '8px', padding: '0.1rem 0.6rem',
                 fontSize: '1.25rem', lineHeight: 1.4,
             }}>
-                <ValidationExclamationCircleFilledIcon aria-hidden="true" />
+                {/* flexShrink: 0 fordi `1em` bare er flex-basis her, ikke en
+                    låst størrelse. Uten den krymper flexboksen ikonet
+                    horisontalt når teksten trenger plass, og sirkelen blir en
+                    oval — målt til 11.8×20 px i stedet for 20×20. */}
+                <ValidationExclamationCircleFilledIcon aria-hidden="true" style={{ flexShrink: 0 }} />
                 {text}
             </span>
         </span>
