@@ -5,4 +5,78 @@
 @import '@entur/typography/dist/styles.css';
 @import '@entur/grid/dist/styles.css';
 @import '@entur/alert/dist/styles.css';
+@import '@entur/travel/dist/styles.css';
 @import "@entur/tokens/dist/base.css";
+
+/**
+ * Linjemerket i avgangstavla.
+ *
+ * To jobber i én klasse.
+ *
+ * Den ene er å skalere `TravelTag` fra laptop til vegg-skjerm. Komponenten er
+ * 2rem høy med 0.875rem skrift; tavla leses fra andre siden av resepsjonen.
+ * Den doble verdien treffer skriftstørrelsen det gamle håndlagde merket
+ * hadde for height, min-width, padding, font-size, line-height og
+ * border-radius. `font-weight: 700` er ikke doblet fra noe — basen setter
+ * ingen egen font-weight der, verdien er arvet direkte fra det gamle merket.
+ *
+ * Den andre er Samsung-skjermen. `@entur/travel` setter ikonets størrelse og
+ * farge gjennom `.eds-travel-tag > :where(.eds-icon)`, og `:where()` kom i
+ * Chromium 88. Skjermen kjører Tizen med Chromium 85 — se
+ * `src/browserBaseline.test.mjs` — og forkaster hele regelen. De tre reglene
+ * under dekker det den regelen skulle gjort: den første og den siste
+ * erstatter selve `:where()`-regelen (størrelse og avstand til teksten), og
+ * `fill: currentColor` mellom dem løser et separat problem — se kommentaren
+ * ved den regelen.
+ *
+ * Spesifisiteten til `.avgangstavle-traveltag > .eds-icon` er (0,2,0) mot
+ * originalens (0,1,0), siden `:where()` teller null. Den siste regelen,
+ * `.avgangstavle-traveltag.eds-travel-tag--icon-and-text > .eds-icon`, er
+ * (0,3,0) mot samme (0,1,0). Begge vinner derfor også på en motor som
+ * støtter selektoren, og resultatet blir identisk begge veier. Det er
+ * poenget: ingen andre kodevei å teste, ingen `@supports`-forgrening som
+ * bare den ene halvparten av verden ser.
+ */
+.avgangstavle-traveltag.eds-travel-tag {
+    /*
+     * Universalregelen `*, ::before, ::after { box-sizing: border-box }` fra
+     * @entur/typography ligger inne i `@layer core.reset{}`. `@layer` kom i
+     * Chromium 99; Tizen-skjermen kjører 85 og forkaster hele laget — også
+     * `*{box-sizing:inherit}` i samme lag. Bare `:root` sitter igjen med
+     * border-box, og box-sizing arves ikke ned til dette merket. Uten denne
+     * linja blir en fast `height: 4rem` på Tizen 84px i stedet for 64px, og
+     * min-width 100px i stedet for 64px — nok til å klippe siste avgang i en
+     * container med `overflow: hidden`. Kan ikke stole på reset-laget her.
+     */
+    box-sizing: border-box;
+    height: 4rem;
+    min-width: 4rem;
+    padding: 0.5rem 1rem;
+    font-size: 1.75rem;
+    line-height: 3rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+}
+
+.avgangstavle-traveltag > .eds-icon {
+    font-size: 3rem;
+    color: var(--text-color);
+}
+
+/*
+ * Ikonet skal ha samme farge som linjenummeret, ikke sin egen. SVG-en har
+ * `fill` som presentasjonsattributt (på hver `<path>` for togikonet, på en
+ * omsluttende `<g>` for bussikonet), og et slikt attributt overstyrer
+ * `color` — uten dette ville ikonet blitt hardkodet mørkeblått/mørk rosa og
+ * usynlig mot fyll i nær samme farge (bussikonet målt til kontrast 1.00 mot
+ * eget merkefyll i lyst tema). `currentColor` arver fra `.eds-icon { color }`
+ * over, og etterkommer-selektoren treffer stiene inni `<g>`-en også.
+ */
+.avgangstavle-traveltag > .eds-icon,
+.avgangstavle-traveltag > .eds-icon * {
+    fill: currentColor;
+}
+
+.avgangstavle-traveltag.eds-travel-tag--icon-and-text > .eds-icon {
+    margin-right: 1rem;
+}

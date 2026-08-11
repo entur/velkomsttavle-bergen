@@ -29,6 +29,11 @@ export const TIME_RANGE_SECONDS = 3 * 60 * 60;
 //
 // Feltet for innstilling heter `cancellation`. `cancelled` finnes ikke på
 // EstimatedCall i v3 og gir valideringsfeil fra APIet.
+//
+// `stopPositionInPattern` og `serviceJourney.quays` henter vi bare for å kunne
+// utlede sporendring: APIet har ikke noe felt for det. Se `isPlatformChanged`.
+// `quays` er hele rutemønsteret, 6–18 kvaier per avgang, som er billig nok for
+// seks avganger og det eneste stedet planlagt spor finnes.
 const QUERY = `
 query Avganger($stopPlaceId: String!, $count: Int!, $timeRange: Int!) {
   stopPlace(id: $stopPlaceId) {
@@ -39,10 +44,14 @@ query Avganger($stopPlaceId: String!, $count: Int!, $timeRange: Int!) {
       cancellation
       aimedDepartureTime
       expectedDepartureTime
+      stopPositionInPattern
       destinationDisplay { frontText }
-      quay { publicCode }
+      quay { id publicCode }
       situations { summary { value language } }
-      serviceJourney { line { publicCode transportMode } }
+      serviceJourney {
+        line { publicCode transportMode }
+        quays { id }
+      }
     }
   }
 }`;

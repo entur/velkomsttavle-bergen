@@ -1,10 +1,15 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Heading3, Paragraph } from '@entur/typography';
 import { colors } from '@entur/tokens';
+import { ContrastContext } from '@entur/layout';
+import { TravelTag } from '@entur/travel';
+import { ValidationExclamationCircleFilledIcon } from '@entur/icons';
 
-import { lineAppearance } from '../departures/lineAppearance';
+import { badgeText, categoryFill } from '../departures/categoryFill';
+import { travelTagTransport } from '../departures/travelTagTransport';
 import { countdownLabel } from '../departures/departureCountdown';
 import { isDelayed } from '../departures/departureMapper';
+import { warningStyle } from '../departures/warningStyle';
 
 /**
  * Hvor ofte nedtellingen regnes om. Ingen nettverkskall — det er ren regning
@@ -19,18 +24,55 @@ function tid(date) {
     return date instanceof Date ? klokke.format(date) : '';
 }
 
-/** Merket med linjekoden. Farge fra kategori, ellers transportmiddel. */
+/**
+ * Linjemerket. Ikonet forteller transportmiddelet, fargen linjekategorien.
+ *
+ * Bane NOR-fargen settes som CSS-variabler og ikke som `backgroundColor`, fordi
+ * det er dem `TravelTag` selv leser. Komponenten bygger sin egen stil som
+ * `{ ...dynamicCssVars, ...style }` — vår `style` spres sist og vinner. Verifisert
+ * i kilden til @entur/travel@8.
+ *
+ * Uten kategorikode sender vi ingen fyll, og `TravelTag` fargelegger etter
+ * transportmiddel. Den logikken eier Entur; vi kopierer den ikke.
+ *
+ * `ContrastContext.Provider` er nødvendig nettopp for det tilfellet: TravelTag
+ * velger mellom standard- og contrast-paletten med `useContrast()`, og
+ * `Departures` ligger utenfor `<Contrast>`-wrapperen i `MiddleBand`. Uten
+ * provideren får bussmerket standardfyllet `#c5044e`, som er kontrast 2.61 mot
+ * mørkeblå flate og 1.65 mot den lysere — altså borte. Vi setter bare
+ * konteksten, ikke `<Contrast>` selv, som også ville satt bakgrunn og
+ * tekstfarge på griden rundt.
+ *
+ * `--text-color` settes i ALLE tilfeller, også uten kategorifyll — ikke fordi
+ * en `:where()`-variant ellers ville forkastet av Tizen (den ville ikke
+ * matchet i det hele tatt: `:where(.eds-contrast) .eds-travel-tag` krever
+ * klassen `eds-contrast`, og vi setter bare React-konteksten, ikke
+ * `<Contrast>`). Den ekte grunnen er at `TravelTag` selv bare setter
+ * `--text-color` når `alert === 'error'` eller `transport === 'walk'`. Uten
+ * vår verdi ville fargen kommet fra `.eds-travel-tag{--text-color:var(
+ * --components-travel-traveltag-standard-text-default)}` = `#ffffff` — og
+ * mørkt tema ville fått hvit tekst i stedet for navy. Se `badgeText` i
+ * `categoryFill.js` for tallene.
+ */
 function LineBadge({ lineCode, transportMode, theme }) {
-    const { fill, text, border } = lineAppearance(lineCode, transportMode, theme);
+    const dark = theme === 'dark';
+    const fill = categoryFill(lineCode, theme);
     return (
-        <span style={{
-            display: 'inline-block', minWidth: '3.5rem', textAlign: 'center',
-            backgroundColor: fill, color: text, border,
-            borderRadius: '8px', padding: '0.25rem 0.6rem',
-            fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.1,
-        }}>
-            {lineCode || '–'}
-        </span>
+        <ContrastContext.Provider value={dark}>
+            <TravelTag
+                className="avgangstavle-traveltag"
+                transport={travelTagTransport(transportMode)}
+                style={{
+                    '--text-color': badgeText(theme),
+                    ...(fill && {
+                        '--background-color': fill.background,
+                        border: fill.border,
+                    }),
+                }}
+            >
+                {lineCode || '–'}
+            </TravelTag>
+        </ContrastContext.Provider>
     );
 }
 
@@ -56,6 +98,58 @@ function Chip({ label, tone, theme }) {
             fontSize: '1.375rem', fontWeight: 600, whiteSpace: 'nowrap',
         }}>
             {label}
+        </span>
+    );
+}
+
+/**
+ * Avvikstekst fra Journey Planner, med varselikon.
+ *
+ * Formen følger `warningStyle`: gul tekst uten fyll på mørke flater, gul boks
+ * med mørkeblå tekst på lyse. Ikonet arver `color`, så det bytter med teksten.
+ *
+ * Ingen `opacity` her, i motsetning til den gamle `↳`-linja: kontrasten er målt
+ * til 10.25, og 6.48 på morkebla-lys, og en gjennomsiktighet på 0.85 ville
+ * spist av den uten å gi noe.
+ */
+function Avviksmelding({ text, theme }) {
+    return (
+        <span style={{ display: 'block', marginTop: '0.35rem' }}>
+            <span style={{
+                ...warningStyle(theme),
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                borderRadius: '8px', padding: '0.1rem 0.6rem',
+                fontSize: '1.25rem', lineHeight: 1.4,
+            }}>
+                {/* I en flex-container blir 1em tolket som flex-basis, ikke en låst
+                    størrelse — uten flexShrink: 0 klemmer teksten sirkelen til en oval. */}
+                <ValidationExclamationCircleFilledIcon aria-hidden="true" style={{ flexShrink: 0 }} />
+                {text}
+            </span>
+        </span>
+    );
+}
+
+/**
+ * Spornummeret. Uthevet når toget er flyttet fra planlagt spor.
+ *
+ * Pilleformen er den samme `Chip` bruker, slik at et endret spor leses som en
+ * markering og ikke som en annen skrifttype.
+ */
+function Spor({ platform, changed, theme }) {
+    if (!platform) {
+        return <span />;
+    }
+    if (!changed) {
+        return <span style={{ whiteSpace: 'nowrap' }}>Spor {platform}</span>;
+    }
+    return (
+        <span style={{
+            ...warningStyle(theme),
+            whiteSpace: 'nowrap', borderRadius: '999px',
+            padding: '0.15rem 0.75rem', fontWeight: 700,
+        }}>
+            Spor {platform}
         </span>
     );
 }
@@ -103,14 +197,14 @@ function Departures({ departures, stopPlaceName, palette }) {
                             <span>
                                 {departure.destination}
                                 {departure.situation && (
-                                    <span style={{ display: 'block', fontSize: '1.25rem', opacity: 0.85 }}>
-                                        ↳ {departure.situation}
-                                    </span>
+                                    <Avviksmelding text={departure.situation} theme={palette.mode} />
                                 )}
                             </span>
-                            <span style={{ whiteSpace: 'nowrap' }}>
-                                {departure.platform ? `Spor ${departure.platform}` : ''}
-                            </span>
+                            <Spor
+                                platform={departure.platform}
+                                changed={departure.platformChanged}
+                                theme={palette.mode}
+                            />
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
                                 {departure.cancelled && <Chip label="Innstilt" tone="cancelled" theme={palette.mode} />}
                                 {!departure.cancelled && nedtelling && <Chip label={nedtelling} tone="delayed" theme={palette.mode} />}

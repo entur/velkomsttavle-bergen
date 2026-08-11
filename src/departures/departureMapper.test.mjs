@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { isDelayed, situationText, toDeparture, toDepartures } from './departureMapper.js';
+import { isDelayed, isPlatformChanged, situationText, toDeparture, toDepartures } from './departureMapper.js';
 
 /** En EstimatedCall slik Journey Planner v3 faktisk svarer. */
 function call(overrides = {}) {
@@ -121,5 +121,57 @@ describe('isDelayed', () => {
 
     it('tåler manglende tider', () => {
         assert.equal(isDelayed(toDeparture({})), false);
+    });
+});
+
+/** En EstimatedCall der planlagt og faktisk kvai kan settes hver for seg. */
+function medKvai({ planlagt, faktisk, posisjon = 1 }) {
+    return call({
+        stopPositionInPattern: posisjon,
+        quay: { id: faktisk, publicCode: '1' },
+        serviceJourney: {
+            line: { publicCode: 'L4', transportMode: 'rail' },
+            quays: [{ id: 'NSR:Quay:100' }, { id: planlagt }, { id: 'NSR:Quay:102' }],
+        },
+    });
+}
+
+describe('isPlatformChanged', () => {
+    it('er sann når sanntid gir en annen kvai enn rutemønsteret', () => {
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:9' })), true);
+    });
+
+    it('er usann når kvaiene er like', () => {
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:5' })), false);
+    });
+
+    it('er usann når rutemønsteret mangler', () => {
+        // En tavle som ikke vet, skal ikke rope.
+        assert.equal(isPlatformChanged(call()), false);
+        assert.equal(isPlatformChanged({}), false);
+        assert.equal(isPlatformChanged(null), false);
+    });
+
+    it('er usann når posisjonen peker utenfor lista', () => {
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:9', posisjon: 7 })), false);
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:9', posisjon: -1 })), false);
+    });
+
+    it('er usann når posisjonen ikke er et heltall', () => {
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:9', posisjon: null })), false);
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:9', posisjon: 1.5 })), false);
+    });
+
+    it('er usann når en av kvai-id-ene er tom', () => {
+        assert.equal(isPlatformChanged(medKvai({ planlagt: '', faktisk: 'NSR:Quay:9' })), false);
+        assert.equal(isPlatformChanged(medKvai({ planlagt: 'NSR:Quay:5', faktisk: '' })), false);
+    });
+});
+
+describe('toDeparture — sporendring', () => {
+    it('legger platformChanged på avgangen', () => {
+        assert.equal(toDeparture(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:9' })).platformChanged, true);
+        assert.equal(toDeparture(medKvai({ planlagt: 'NSR:Quay:5', faktisk: 'NSR:Quay:5' })).platformChanged, false);
+        assert.equal(toDeparture({}).platformChanged, false);
     });
 });
