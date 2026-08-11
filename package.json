@@ -31,7 +31,7 @@
 		"@entur/table": "4.10.16",
 		"@entur/tokens": "^3.21.1",
 		"@entur/tooltip": "^5.3.1",
-		"@entur/travel": "^7.0.4",
+		"@entur/travel": "^8.0.1",
 		"@entur/typography": "^2.1.1",
 		"@tailwindcss/vite": "^4.1.18",
 		"date-fns": "^4.1.0",
