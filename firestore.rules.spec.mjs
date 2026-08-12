@@ -128,9 +128,15 @@ describe('boards', () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ theme: 'lilla' })));
     });
 
-    it('avviser en tavle uten tema', async () => {
+    // theme er erstattet av topSurface/middleSurface. Feltet må være valgfritt:
+    // createBoard skriver uten merge, så en ny tavle har det ikke.
+    it('godtar en tavle uten tema', async () => {
         const { theme, ...utenTema } = board();
-        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), utenTema));
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/ny-tavle'), {
+            ...utenTema,
+            topSurface: 'morkebla',
+            middleSurface: 'morkebla',
+        }));
     });
 
     it('avviser en tavle der ansatt-illustrasjonen ikke er en boolean', async () => {
@@ -187,6 +193,32 @@ describe('boards', () => {
         }), { merge: true }));
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
             bottomSurface: 'lilla',
+        }), { merge: true }));
+    });
+
+    it('godtar de to nye flatefeltene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            topSurface: 'fersken',
+            middleSurface: 'lys-lavendel',
+        }), { merge: true }));
+    });
+
+    it('avviser ukjent flatenavn på toppen og i midten', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            topSurface: 'lilla',
+        }), { merge: true }));
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            middleSurface: 'lilla',
+        }), { merge: true }));
+    });
+
+    // Gamle dokumenter beholder theme fordi saveBoardConfig skriver med merge.
+    // Klausulen for feltet må bli stående — men valgfri.
+    it('godtar en tavle som har både theme og de nye flatene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            theme: 'dark',
+            topSurface: 'fersken',
+            middleSurface: 'fersken',
         }), { merge: true }));
     });
 

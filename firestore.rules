@@ -49,21 +49,29 @@ service cloud.firestore {
         : [];
     }
 
+    // Flatenavnene står også i src/boards/surfaces.js. Regler kan ikke
+    // importere, så lista finnes to steder — her og der — og må endres på
+    // begge samtidig. Samme duplisering som top.kind allerede har. Uten denne
+    // funksjonen sto lista fire ganger i isValidBoard.
+    function isSurface(v) {
+      return v in ['morkebla', 'morkebla-lys', 'lavendel', 'lys-lavendel', 'hvit', 'fersken'];
+    }
+
     function isValidBoard(d) {
       return d.name is string && d.name.size() > 0 && d.name.size() <= 60
         && d.placeName is string && d.placeName.size() > 0 && d.placeName.size() <= 40
-        && d.theme in ['dark', 'light']
+        // theme er erstattet av topSurface/middleSurface. Klausulen må være
+        // valgfri, ellers avvises hver ny tavle — createBoard skriver uten
+        // merge, så feltet er ikke der. Og den må bli stående, ellers avvises
+        // hver lagring på en tavle som har feltet fra før.
+        && (!d.keys().hasAny(['theme']) || d.theme in ['dark', 'light'])
         && d.staffImage is bool
         && d.top is map && d.top.kind in ['video', 'logo']
         && (!d.keys().hasAny(['carouselTheme']) || d.carouselTheme in ['light', 'dark'])
-        // Flatenavnene står også i src/boards/surfaces.js, og gjentas her for
-        // både carouselSurface og bottomSurface — tre steder i alt, ikke to.
-        // Regler kan ikke importere, så alle tre må endres sammen. Samme
-        // duplisering som theme og top.kind allerede har.
-        && (!d.keys().hasAny(['carouselSurface'])
-            || d.carouselSurface in ['morkebla', 'morkebla-lys', 'lavendel', 'lys-lavendel', 'hvit', 'fersken'])
-        && (!d.keys().hasAny(['bottomSurface'])
-            || d.bottomSurface in ['morkebla', 'morkebla-lys', 'lavendel', 'lys-lavendel', 'hvit', 'fersken'])
+        && (!d.keys().hasAny(['topSurface']) || isSurface(d.topSurface))
+        && (!d.keys().hasAny(['middleSurface']) || isSurface(d.middleSurface))
+        && (!d.keys().hasAny(['carouselSurface']) || isSurface(d.carouselSurface))
+        && (!d.keys().hasAny(['bottomSurface']) || isSurface(d.bottomSurface))
         && (!d.keys().hasAny(['bottom']) || (d.bottom is list && d.bottom.size() <= 5))
         && d.middle is list && d.middle.size() <= 5
         && d.carousel is list && d.carousel.size() <= 5
