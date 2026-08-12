@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 
 import {
     BOTTOM_TYPES,
-    THEMES,
+    MODULE_LABELS,
     boardHeading,
     findModule,
     normalizeBoardConfig,
@@ -93,16 +93,6 @@ describe('normalizeBoardConfig', () => {
 
     it('godtar logo som topp', () => {
         assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), top: { kind: 'logo' } }).top.kind, 'logo');
-    });
-
-    it('faller på det mørke temaet når theme mangler eller er ukjent', () => {
-        assert.equal(normalizeBoardConfig('x', bergenDocument()).theme, 'dark');
-        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), theme: 'lilla' }).theme, 'dark');
-        assert.equal(normalizeBoardConfig('x', {}).theme, 'dark');
-    });
-
-    it('godtar det lyse temaet', () => {
-        assert.equal(normalizeBoardConfig('x', { ...bergenDocument(), theme: 'light' }).theme, 'light');
     });
 
     it('leser ansatt-illustrasjonen fra toppnivå', () => {
@@ -231,15 +221,9 @@ describe('toFirestoreBoard', () => {
         assert.equal(data.updatedBy, 'ola@entur.org');
         assert.deepEqual(data.top, { kind: 'video' });
         assert.equal(data.carousel.length, 2);
-        assert.equal(data.theme, 'dark');
+        assert.equal(data.topSurface, 'morkebla');
         assert.equal(data.staffImage, true);
         assert.equal('id' in data, false);
-    });
-});
-
-describe('THEMES', () => {
-    it('har nøyaktig de to temaene', () => {
-        assert.deepEqual(THEMES, ['dark', 'light']);
     });
 });
 
@@ -356,5 +340,68 @@ describe('toFirestoreBoard', () => {
         assert.equal(document.bottomSurface, 'morkebla');
         assert.equal(document.bottom.length, 1);
         assert.equal('carouselTheme' in document, false);
+    });
+});
+
+describe('flatene på toppen og i midten', () => {
+    it('migrerer fra theme begge veier', () => {
+        const mork = normalizeBoardConfig('x', { theme: 'dark' });
+        assert.equal(mork.topSurface, 'morkebla');
+        assert.equal(mork.middleSurface, 'morkebla');
+
+        const lys = normalizeBoardConfig('x', { theme: 'light' });
+        assert.equal(lys.topSurface, 'lavendel');
+        assert.equal(lys.middleSurface, 'lavendel');
+    });
+
+    it('leser flatenavnene når de finnes', () => {
+        const config = normalizeBoardConfig('x', {
+            topSurface: 'fersken',
+            middleSurface: 'hvit',
+        });
+        assert.equal(config.topSurface, 'fersken');
+        assert.equal(config.middleSurface, 'hvit');
+    });
+
+    it('lar de nye feltene vinne over theme, hvert for seg', () => {
+        const config = normalizeBoardConfig('x', {
+            theme: 'light',
+            topSurface: 'fersken',
+        });
+        assert.equal(config.topSurface, 'fersken');
+        // middleSurface har ikke noe eget felt og skal fortsatt følge theme.
+        assert.equal(config.middleSurface, 'lavendel');
+    });
+
+    it('faller på mørkeblå uten felt og for ukjente navn', () => {
+        assert.equal(normalizeBoardConfig('x', {}).topSurface, 'morkebla');
+        assert.equal(normalizeBoardConfig('x', {}).middleSurface, 'morkebla');
+        assert.equal(normalizeBoardConfig('x', { topSurface: 'lilla' }).topSurface, 'morkebla');
+        // Et theme-navn som aldri fantes i den to-verdis lista skal falle til
+        // standarden, ikke lekke gjennom.
+        assert.equal(normalizeBoardConfig('x', { theme: 'sunset' }).topSurface, 'morkebla');
+    });
+
+    it('slutter å eksponere theme', () => {
+        assert.equal(normalizeBoardConfig('x', { theme: 'dark' }).theme, undefined);
+    });
+
+    it('skriver de nye feltene og ikke det gamle', () => {
+        const config = normalizeBoardConfig('x', {
+            name: 'Tavla', placeName: 'Bergen', theme: 'light',
+        });
+        const document = toFirestoreBoard(config, 'ola@entur.org');
+        assert.equal(document.topSurface, 'lavendel');
+        assert.equal(document.middleSurface, 'lavendel');
+        assert.equal('theme' in document, false);
+    });
+});
+
+describe('MODULE_LABELS', () => {
+    it('har en etikett for hver modultype i alle tre katalogene', () => {
+        for (const type of ['greeting', 'openingHours', 'weather', 'floorplan', 'departures']) {
+            assert.equal(typeof MODULE_LABELS[type], 'string', type);
+            assert.ok(MODULE_LABELS[type].length > 0, type);
+        }
     });
 });

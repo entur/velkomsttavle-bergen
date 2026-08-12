@@ -19,8 +19,14 @@ import {
 
 export const TOP_KINDS = ['video', 'logo'];
 
-/** Fargen på toppfeltet og midtfeltet. Fargeverdiene ligger i boardTheme.js. */
-export const THEMES = ['dark', 'light'];
+/** Navnene modulene har i admin. Katalogen og etikettene hører sammen. */
+export const MODULE_LABELS = {
+    greeting: 'Hilsen',
+    openingHours: 'Åpningstider',
+    weather: 'Været',
+    floorplan: 'Plantegning',
+    departures: 'Avgangstider',
+};
 
 /**
  * Midtfeltet rendrer disse typene eksplisitt i `MiddleBand.jsx`, ikke ved å
@@ -55,7 +61,6 @@ export const NAME_MAX_LENGTH = 60;
 export const PLACE_NAME_MAX_LENGTH = 40;
 
 const DEFAULT_TOP_KIND = 'video';
-const DEFAULT_THEME = 'dark';
 
 export function normalizeBoardConfig(id, data = {}) {
     const source = data ?? {};
@@ -63,7 +68,8 @@ export function normalizeBoardConfig(id, data = {}) {
         id,
         name: asText(source.name, NAME_MAX_LENGTH),
         placeName: asText(source.placeName, PLACE_NAME_MAX_LENGTH),
-        theme: THEMES.includes(source.theme) ? source.theme : DEFAULT_THEME,
+        topSurface: bandSurfaceFrom(source, 'topSurface'),
+        middleSurface: bandSurfaceFrom(source, 'middleSurface'),
         staffImage: staffImageFrom(source),
         top: { kind: TOP_KINDS.includes(source.top?.kind) ? source.top.kind : DEFAULT_TOP_KIND },
         carouselSurface: carouselSurfaceFrom(source),
@@ -107,6 +113,27 @@ function carouselSurfaceFrom(source) {
 }
 
 /**
+ * Flaten toppen eller midten står på.
+ *
+ * Samme mønster som `carouselSurfaceFrom`: nytt felt først, gammel plassering
+ * som fallback. Dokumenter skrevet før flatetabellen har `theme` med to
+ * verdier, og de to verdiene ER to av de seks flatene — samme token, ikke en
+ * tilnærming — så en tavle ser identisk ut etter oppgraderingen.
+ *
+ * De to feltene leses hver for seg, ikke som ett valg: to seksjoner med egen
+ * fargevelger er hele poenget med endringen.
+ */
+const THEME_TO_SURFACE = { dark: 'morkebla', light: 'lavendel' };
+const DEFAULT_BAND_SURFACE = 'morkebla';
+
+function bandSurfaceFrom(source, field) {
+    if (SURFACES.includes(source[field])) {
+        return source[field];
+    }
+    return THEME_TO_SURFACE[source.theme] ?? DEFAULT_BAND_SURFACE;
+}
+
+/**
  * Karusellen og bunnstripa normaliseres sammen fordi de deler modulkatalog, og
  * fordi regelen «en modul bor ett sted» krever begge listene på én gang.
  *
@@ -134,7 +161,8 @@ export function toFirestoreBoard(config, userEmail) {
     return {
         name: config.name.trim(),
         placeName: config.placeName.trim(),
-        theme: config.theme,
+        topSurface: config.topSurface,
+        middleSurface: config.middleSurface,
         staffImage: config.staffImage,
         top: { kind: config.top.kind },
         carouselSurface: config.carouselSurface,
