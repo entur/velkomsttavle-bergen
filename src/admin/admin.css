@@ -4,9 +4,10 @@
 @import '@entur/datepicker/dist/styles.css';
 @import '@entur/table/dist/styles.css';
 
-/* Radioen inne i nivåkortene er visuelt skjult, så fokusringen må flyttes
-   til kortet for at tastaturnavigasjon skal være synlig. */
-.level-option:focus-within {
+/* Nivåkortene og fargeprøvene har visuelt skjulte radioer, så fokusringen må
+   flyttes til kortet for at tastaturnavigasjon skal være synlig. */
+.level-option:focus-within,
+.surface-option:focus-within {
     outline: 2px solid #181c56;
     outline-offset: 2px;
 }
