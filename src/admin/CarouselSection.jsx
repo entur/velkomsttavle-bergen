@@ -27,7 +27,7 @@ function CarouselSection({ draft, errors, update, onAdd, onRemove, onStopPlaceCh
     return (
         <FormSection
             title="Karusellen"
-            help="Feltet i midten som bytter mellom modulene. Rekkefølgen på skjermen er fast, ikke kortenes rekkefølge her."
+            help="Feltet i midten som bytter mellom modulene. Kortene står i samme faste rekkefølge som skjermen viser dem i."
         >
             {cards.length === 0 && (
                 <Paragraph>
