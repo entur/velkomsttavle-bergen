@@ -1598,12 +1598,14 @@ det lager faktisk står."
 
 **Files:**
 - Create: `src/admin/ModuleCard.jsx`
+- Create: `src/admin/WeatherFields.jsx`
 - Create: `src/admin/CarouselSection.jsx`
 
 **Interfaces:**
 - Consumes: `carouselCards`, `availableCarouselTypes` fra Task 7; `MODULE_LABELS` fra Task 1; `FormSection`, `SurfacePicker` fra Task 8; `StopPlaceField` (finnes fra før)
 - Produces:
   - `<ModuleCard title onRemove>{children}</ModuleCard>`
+  - `<WeatherFields draft errors update />` — default export, egen fil fordi både karusellkortet og bunnstripa bruker den. Ingen av de to seksjonene skal importere fra den andre.
   - `<CarouselSection draft errors update onAdd onRemove onStopPlaceChange />` — `onAdd(type)`, `onRemove(type)`, `onStopPlaceChange({ id, name })`
 
 - [ ] **Step 1: Lag `src/admin/ModuleCard.jsx`**
@@ -1642,18 +1644,69 @@ function ModuleCard({ title, onRemove, children }) {
 export default ModuleCard;
 ```
 
-- [ ] **Step 2: Lag `src/admin/CarouselSection.jsx`**
+- [ ] **Step 2: Lag `src/admin/WeatherFields.jsx`**
+
+Egen fil, ikke en named export fra en av seksjonene: både karusellkortet og bunnstripa bruker den, og ingen av de to seksjonene skal avhenge av den andre.
+
+```jsx
+import { TextField } from '@entur/form';
+
+/**
+ * Feltene værmodulen trenger.
+ *
+ * Egen fil fordi været kan stå både i karusellen og i bunnstripa, og feltene er
+ * identiske uansett hvor — det er de samme koordinatene som sendes til
+ * api.met.no.
+ */
+function WeatherFields({ draft, errors, update }) {
+    return (
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 12rem' }}>
+                <TextField
+                    label="Sted"
+                    value={draft.weatherName}
+                    onChange={(event) => update('weatherName', event.target.value)}
+                    variant={errors.weatherName ? 'negative' : undefined}
+                    feedback={errors.weatherName}
+                />
+            </div>
+            <div style={{ flex: '1 1 10rem' }}>
+                <TextField
+                    label="Breddegrad"
+                    value={draft.weatherLat}
+                    onChange={(event) => update('weatherLat', event.target.value)}
+                    variant={errors.weatherLat ? 'negative' : undefined}
+                    feedback={errors.weatherLat}
+                />
+            </div>
+            <div style={{ flex: '1 1 10rem' }}>
+                <TextField
+                    label="Lengdegrad"
+                    value={draft.weatherLng}
+                    onChange={(event) => update('weatherLng', event.target.value)}
+                    variant={errors.weatherLng ? 'negative' : undefined}
+                    feedback={errors.weatherLng}
+                />
+            </div>
+        </div>
+    );
+}
+
+export default WeatherFields;
+```
+
+- [ ] **Step 3: Lag `src/admin/CarouselSection.jsx`**
 
 ```jsx
 import { SmallAlertBox } from '@entur/alert';
 import { SecondaryButton } from '@entur/button';
-import { TextField } from '@entur/form';
 import { Paragraph } from '@entur/typography';
 
 import FormSection from './FormSection';
 import ModuleCard from './ModuleCard';
 import StopPlaceField from './StopPlaceField';
 import SurfacePicker from './SurfacePicker';
+import WeatherFields from './WeatherFields';
 import { MODULE_LABELS } from '../boards/boardConfig';
 import { availableCarouselTypes, carouselCards } from '../boards/boardDraft';
 
@@ -1735,57 +1788,18 @@ function CarouselSection({ draft, errors, update, onAdd, onRemove, onStopPlaceCh
     );
 }
 
-/**
- * Værfeltene. Bor her og ikke i BottomSection fordi de er identiske uansett
- * hvilket felt været står i — det er de samme koordinatene som sendes til
- * api.met.no.
- */
-export function WeatherFields({ draft, errors, update }) {
-    return (
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 12rem' }}>
-                <TextField
-                    label="Sted"
-                    value={draft.weatherName}
-                    onChange={(event) => update('weatherName', event.target.value)}
-                    variant={errors.weatherName ? 'negative' : undefined}
-                    feedback={errors.weatherName}
-                />
-            </div>
-            <div style={{ flex: '1 1 10rem' }}>
-                <TextField
-                    label="Breddegrad"
-                    value={draft.weatherLat}
-                    onChange={(event) => update('weatherLat', event.target.value)}
-                    variant={errors.weatherLat ? 'negative' : undefined}
-                    feedback={errors.weatherLat}
-                />
-            </div>
-            <div style={{ flex: '1 1 10rem' }}>
-                <TextField
-                    label="Lengdegrad"
-                    value={draft.weatherLng}
-                    onChange={(event) => update('weatherLng', event.target.value)}
-                    variant={errors.weatherLng ? 'negative' : undefined}
-                    feedback={errors.weatherLng}
-                />
-            </div>
-        </div>
-    );
-}
-
 export default CarouselSection;
 ```
 
-- [ ] **Step 3: Kjør bygget**
+- [ ] **Step 4: Kjør bygget**
 
 Run: `npm run build`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add src/admin/ModuleCard.jsx src/admin/CarouselSection.jsx
+git add src/admin/ModuleCard.jsx src/admin/WeatherFields.jsx src/admin/CarouselSection.jsx
 git commit -m "Karusellen som kort med legg til og fjern
 
 Været mangler i «Legg til» når det står i bunnstripa — ikke som en
@@ -1800,7 +1814,7 @@ sperre, men fordi availableCarouselTypes ikke tilbyr det."
 - Create: `src/admin/BottomSection.jsx`
 
 **Interfaces:**
-- Consumes: `bottomModule` fra Task 7; `BOTTOM_TYPES`, `MODULE_LABELS` fra `boardConfig`; `WeatherFields` (named export) fra Task 10; `FormSection`, `SurfacePicker` fra Task 8
+- Consumes: `bottomModule` fra Task 7; `BOTTOM_TYPES`, `MODULE_LABELS` fra `boardConfig`; `WeatherFields` (default export fra `./WeatherFields`) fra Task 10; `FormSection`, `SurfacePicker` fra Task 8
 - Produces: `<BottomSection draft errors update onModuleChange />` — `onModuleChange(type | null)`
 
 - [ ] **Step 1: Lag `src/admin/BottomSection.jsx`**
@@ -1810,7 +1824,7 @@ import { base } from '@entur/tokens';
 
 import FormSection from './FormSection';
 import SurfacePicker from './SurfacePicker';
-import { WeatherFields } from './CarouselSection';
+import WeatherFields from './WeatherFields';
 import { BOTTOM_TYPES, MODULE_LABELS } from '../boards/boardConfig';
 import { bottomModule } from '../boards/boardDraft';
 
@@ -2142,4 +2156,4 @@ Verifiseringen endrer ingen filer. Går noe galt, er det en feil å rette i task
 
 **Utenfor omfanget, som i spec-en:** rekkefølge-styring, nye modultyper, egne koordinater per plassering, `@entur/dropdown`, og `BoardAccess`/`BoardAlerts`/sletting.
 
-**Navnekonsistens:** `logoSrcFor(mode)` brukes med samme navn i Task 2 og 3. `carouselCards`, `availableCarouselTypes`, `addCarouselModule`, `removeCarouselModule`, `bottomModule`, `setBottomModule` defineres i Task 7 og konsumeres med samme navn i Task 10, 11 og 12. `WeatherFields` er en *named* export fra `CarouselSection.jsx` (Task 10) og importeres slik i `BottomSection.jsx` (Task 11). `MODULE_LABELS` defineres i Task 1. `SURFACE_FIELDS` er lokal i `boardValidation.js`. `bandSurfaceFrom(source, field)` er lokal i `boardConfig.js`.
+**Navnekonsistens:** `logoSrcFor(mode)` brukes med samme navn i Task 2 og 3. `carouselCards`, `availableCarouselTypes`, `addCarouselModule`, `removeCarouselModule`, `bottomModule`, `setBottomModule` defineres i Task 7 og konsumeres med samme navn i Task 10, 11 og 12. `WeatherFields` er en default export fra sin egen fil `src/admin/WeatherFields.jsx` (Task 10), importert av både `CarouselSection.jsx` og `BottomSection.jsx` (Task 11) — ingen av seksjonene importerer fra den andre. `MODULE_LABELS` defineres i Task 1. `SURFACE_FIELDS` er lokal i `boardValidation.js`. `bandSurfaceFrom(source, field)` er lokal i `boardConfig.js`.
