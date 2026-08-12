@@ -33,6 +33,8 @@ function validDraft(overrides = {}) {
         departuresEnabled: false,
         stopPlaceId: '',
         stopPlaceName: '',
+        topSurface: 'morkebla',
+        middleSurface: 'morkebla',
         carouselSurface: 'lys-lavendel',
         bottomSurface: 'morkebla',
         ...overrides,
@@ -180,6 +182,8 @@ describe('flater og plassering av været', () => {
             name: 'Tavla',
             placeName: 'Bergen',
             weatherPlacement: 'av',
+            topSurface: 'morkebla',
+            middleSurface: 'morkebla',
             carouselSurface: 'lys-lavendel',
             bottomSurface: 'morkebla',
             ...overrides,
@@ -218,15 +222,19 @@ describe('flater og plassering av været', () => {
         }
     });
 
-    it('avviser ukjente flatenavn i begge feltene', () => {
+    it('avviser ukjente flatenavn i alle fire feltene', () => {
+        assert.ok(validateBoardInput(draft({ topSurface: 'lilla' })).topSurface);
+        assert.ok(validateBoardInput(draft({ middleSurface: 'lilla' })).middleSurface);
         assert.ok(validateBoardInput(draft({ carouselSurface: 'lilla' })).carouselSurface);
         assert.ok(validateBoardInput(draft({ bottomSurface: 'lilla' })).bottomSurface);
     });
 
     // Listemedlemskap, ikke likhet mot standardverdien: hver av de seks
     // flatene skal godtas, ikke bare 'lys-lavendel'/'morkebla'.
-    it('godtar alle definerte flatenavn i begge feltene', () => {
+    it('godtar alle definerte flatenavn i alle fire feltene', () => {
         for (const surface of SURFACES) {
+            assert.deepEqual(validateBoardInput(draft({ topSurface: surface })), {}, surface);
+            assert.deepEqual(validateBoardInput(draft({ middleSurface: surface })), {}, surface);
             assert.deepEqual(validateBoardInput(draft({ carouselSurface: surface })), {}, surface);
             assert.deepEqual(validateBoardInput(draft({ bottomSurface: surface })), {}, surface);
         }
