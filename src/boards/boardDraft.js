@@ -7,6 +7,7 @@
  * --test` globber ikke `.jsx`.
  */
 import {
+    CAROUSEL_TYPES,
     FLOORPLAN_PLANS,
     GREETING_AUTO,
     findModule,
@@ -108,4 +109,78 @@ export function configFrom(draft) {
         carousel,
         bottom,
     };
+}
+
+/**
+ * Kortene karusellen viser i skjemaet, i katalogens rekkefølge.
+ *
+ * Rekkefølgen er katalogens og ikke draftens fordi det er rekkefølgen på
+ * skjermen: `normalizeModules` i boardConfig itererer katalogen, ikke
+ * dokumentet. Skjemaet skal vise den samme rekkefølgen tavla bruker.
+ */
+export function carouselCards(draft) {
+    return CAROUSEL_TYPES.filter((type) => hasCarouselModule(draft, type));
+}
+
+/**
+ * Typene «Legg til»-raden skal tilby.
+ *
+ * Været faller bort når det står i bunnstripa: været bor ett sted, ellers
+ * poller tavla api.met.no to ganger. Regelen håndheves ikke som en validering
+ * — modulen er rett og slett ikke tilgjengelig.
+ */
+export function availableCarouselTypes(draft) {
+    return CAROUSEL_TYPES.filter((type) => (
+        !hasCarouselModule(draft, type) && !(type === 'weather' && draft.weatherPlacement === 'stripe')
+    ));
+}
+
+export function addCarouselModule(draft, type) {
+    if (type === 'weather') {
+        return { ...draft, weatherPlacement: 'karusell' };
+    }
+    if (type === 'floorplan') {
+        // Repoet har nøyaktig én plantegning, og synken i
+        // scripts/sync-floorplan.mjs er hardkodet mot den.
+        return { ...draft, floorplanEnabled: true, floorplanPlan: FLOORPLAN_PLANS[0] };
+    }
+    return { ...draft, departuresEnabled: true };
+}
+
+/**
+ * Fjerner kortet, men beholder feltene det fylte ut. Legger du kortet til
+ * igjen, skal stedet og koordinatene stå der fortsatt.
+ */
+export function removeCarouselModule(draft, type) {
+    if (type === 'weather') {
+        return { ...draft, weatherPlacement: 'av' };
+    }
+    if (type === 'floorplan') {
+        return { ...draft, floorplanEnabled: false };
+    }
+    return { ...draft, departuresEnabled: false };
+}
+
+/** Modulen bunnstripa viser permanent, eller null for «Ingen». */
+export function bottomModule(draft) {
+    return draft.weatherPlacement === 'stripe' ? 'weather' : null;
+}
+
+export function setBottomModule(draft, type) {
+    if (type === 'weather') {
+        return { ...draft, weatherPlacement: 'stripe' };
+    }
+    // «Ingen» skal bare rive ned stripa. Står været i karusellen, har det
+    // ingenting med dette valget å gjøre.
+    return draft.weatherPlacement === 'stripe' ? { ...draft, weatherPlacement: 'av' } : draft;
+}
+
+function hasCarouselModule(draft, type) {
+    if (type === 'weather') {
+        return draft.weatherPlacement === 'karusell';
+    }
+    if (type === 'floorplan') {
+        return draft.floorplanEnabled;
+    }
+    return draft.departuresEnabled;
 }

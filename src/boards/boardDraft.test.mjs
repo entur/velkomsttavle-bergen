@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { configFrom, draftFrom } from './boardDraft.js';
+import {
+    addCarouselModule,
+    availableCarouselTypes,
+    bottomModule,
+    carouselCards,
+    configFrom,
+    draftFrom,
+    removeCarouselModule,
+    setBottomModule,
+} from './boardDraft.js';
 import { normalizeBoardConfig } from './boardConfig.js';
 
 /** En tavle med alt påskrudd, så rundturen treffer alle grenene. */
@@ -137,5 +146,109 @@ describe('configFrom', () => {
         const draft = { ...draftFrom(fullBoard()), greetingAuto: true };
         const greeting = configFrom(draft).middle.find((m) => m.type === 'greeting');
         assert.equal(greeting.text, 'auto');
+    });
+});
+
+/** En tom draft: ingen moduler noe sted. */
+function tomDraft() {
+    return draftFrom(normalizeBoardConfig('x', { name: 'Tavla', placeName: 'Bergen' }));
+}
+
+describe('carouselCards', () => {
+    it('gir kortene i katalogens rekkefølge, ikke i draftens', () => {
+        assert.deepEqual(carouselCards(draftFrom(fullBoard())), ['weather', 'floorplan', 'departures']);
+    });
+
+    it('gir tom liste når karusellen er tom', () => {
+        assert.deepEqual(carouselCards(tomDraft()), []);
+    });
+
+    it('gir ikke vær-kort når været står i bunnstripa', () => {
+        const draft = { ...draftFrom(fullBoard()), weatherPlacement: 'stripe' };
+        assert.deepEqual(carouselCards(draft), ['floorplan', 'departures']);
+    });
+});
+
+describe('availableCarouselTypes', () => {
+    it('tilbyr alt på en tom karusell', () => {
+        assert.deepEqual(availableCarouselTypes(tomDraft()), ['weather', 'floorplan', 'departures']);
+    });
+
+    it('tilbyr ingenting når alt er lagt til', () => {
+        assert.deepEqual(availableCarouselTypes(draftFrom(fullBoard())), []);
+    });
+
+    // Været bor ett sted: står det i bunnstripa, skal det ikke kunne legges
+    // til i karusellen også. Ellers ville tavla pollet api.met.no to ganger.
+    it('tilbyr ikke været når det står i bunnstripa', () => {
+        const draft = { ...tomDraft(), weatherPlacement: 'stripe' };
+        assert.deepEqual(availableCarouselTypes(draft), ['floorplan', 'departures']);
+    });
+});
+
+describe('addCarouselModule og removeCarouselModule', () => {
+    it('legger til og fjerner været', () => {
+        const lagtTil = addCarouselModule(tomDraft(), 'weather');
+        assert.equal(lagtTil.weatherPlacement, 'karusell');
+        assert.equal(removeCarouselModule(lagtTil, 'weather').weatherPlacement, 'av');
+    });
+
+    it('legger til plantegningen med den eneste planen som finnes', () => {
+        const lagtTil = addCarouselModule(tomDraft(), 'floorplan');
+        assert.equal(lagtTil.floorplanEnabled, true);
+        assert.equal(lagtTil.floorplanPlan, 'bergen-3');
+        assert.equal(removeCarouselModule(lagtTil, 'floorplan').floorplanEnabled, false);
+    });
+
+    it('legger til og fjerner avgangstidene', () => {
+        const lagtTil = addCarouselModule(tomDraft(), 'departures');
+        assert.equal(lagtTil.departuresEnabled, true);
+        assert.equal(removeCarouselModule(lagtTil, 'departures').departuresEnabled, false);
+    });
+
+    it('rører ikke draften den fikk inn', () => {
+        const draft = tomDraft();
+        addCarouselModule(draft, 'weather');
+        assert.equal(draft.weatherPlacement, 'av');
+    });
+
+    // Koordinatene skal ikke forsvinne av å fjerne kortet: legger du det til
+    // igjen, skal stedet stå der fortsatt.
+    it('beholder koordinatene når vær-kortet fjernes', () => {
+        const draft = removeCarouselModule(draftFrom(fullBoard()), 'weather');
+        assert.equal(draft.weatherName, 'Bergen');
+        assert.equal(draft.weatherLat, '60.39299');
+    });
+});
+
+describe('bottomModule og setBottomModule', () => {
+    it('gir null når bunnstripa er tom', () => {
+        assert.equal(bottomModule(tomDraft()), null);
+        assert.equal(bottomModule(draftFrom(fullBoard())), null);
+    });
+
+    it('gir weather når været står i stripa', () => {
+        assert.equal(bottomModule({ ...tomDraft(), weatherPlacement: 'stripe' }), 'weather');
+    });
+
+    it('tar været fra karusellen når stripa velger det', () => {
+        const draft = setBottomModule(draftFrom(fullBoard()), 'weather');
+        assert.equal(draft.weatherPlacement, 'stripe');
+        assert.deepEqual(carouselCards(draft), ['floorplan', 'departures']);
+    });
+
+    it('gjør været tilgjengelig i karusellen igjen når stripa settes til ingen', () => {
+        const stripe = setBottomModule(tomDraft(), 'weather');
+        const ingen = setBottomModule(stripe, null);
+        assert.equal(ingen.weatherPlacement, 'av');
+        assert.ok(availableCarouselTypes(ingen).includes('weather'));
+    });
+
+    // «Ingen» i stripa skal bare rive ned stripa. Et vær-kort som står i
+    // karusellen har ingenting med det valget å gjøre.
+    it('rører ikke et vær-kort i karusellen når stripa settes til ingen', () => {
+        const draft = setBottomModule(draftFrom(fullBoard()), null);
+        assert.equal(draft.weatherPlacement, 'karusell');
+        assert.deepEqual(carouselCards(draft), ['weather', 'floorplan', 'departures']);
     });
 });
