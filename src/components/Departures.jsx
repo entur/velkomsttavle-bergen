@@ -9,6 +9,7 @@ import { badgeText, categoryFill } from '../departures/categoryFill';
 import { travelTagTransport } from '../departures/travelTagTransport';
 import { countdownLabel } from '../departures/departureCountdown';
 import { isDelayed } from '../departures/departureMapper';
+import { networkNow } from '../time/networkClock';
 import { warningStyle } from '../departures/warningStyle';
 
 /**
@@ -163,10 +164,10 @@ function Melding({ palette, children }) {
 }
 
 function Departures({ departures, stopPlaceName, palette }) {
-    const [now, setNow] = useState(() => new Date());
+    const [now, setNow] = useState(() => networkNow());
 
     useEffect(() => {
-        const id = setInterval(() => setNow(new Date()), TICK_MS);
+        const id = setInterval(() => setNow(networkNow()), TICK_MS);
         return () => clearInterval(id);
     }, []);
 
