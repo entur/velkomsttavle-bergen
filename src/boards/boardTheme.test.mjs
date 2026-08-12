@@ -1,33 +1,22 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { bandTheme } from './boardTheme.js';
+import { logoSrcFor } from './boardTheme.js';
 
-describe('bandTheme', () => {
-    it('gir mørkeblått felt med hvit logo', () => {
-        assert.deepEqual(bandTheme('dark'), {
-            background: '#181c56',
-            color: '#ffffff',
-            logoSrc: '/logo.svg',
-            contrast: true,
-        });
+describe('logoSrcFor', () => {
+    it('gir den hvite og korale logoen på mørke flater', () => {
+        assert.equal(logoSrcFor('dark'), '/logo.svg');
     });
 
-    it('gir lavendel felt med farget logo og Entur-blå tekst', () => {
-        assert.deepEqual(bandTheme('light'), {
-            background: '#aeb7e2',
-            color: '#181c56',
-            logoSrc: '/logo-on-light.svg',
-            contrast: false,
-        });
+    it('gir den fargede logoen på lyse flater', () => {
+        assert.equal(logoSrcFor('light'), '/logo-on-light.svg');
     });
 
-    it('faller på det mørke temaet når verdien er ukjent eller mangler', () => {
-        assert.deepEqual(bandTheme('lilla'), bandTheme('dark'));
-        assert.deepEqual(bandTheme(undefined), bandTheme('dark'));
-    });
-
-    it('bruker ikke karusellens lysere lavendel', () => {
-        assert.notEqual(bandTheme('light').background, '#d9dae8');
+    // surfacePalette gir alltid 'dark' eller 'light', så dette skjer ikke i
+    // praksis. Standarden er likevel den mørke, slik tavlene så ut før valget
+    // fantes.
+    it('faller på den mørke logoen for en ukjent modus', () => {
+        assert.equal(logoSrcFor(undefined), '/logo.svg');
+        assert.equal(logoSrcFor('lilla'), '/logo.svg');
     });
 });

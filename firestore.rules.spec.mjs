@@ -18,6 +18,8 @@ import {
     initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { normalizeBoardConfig, toFirestoreBoard } from './src/boards/boardConfig.js';
+import { configFrom, draftFrom } from './src/boards/boardDraft.js';
 
 let testEnv;
 
@@ -128,9 +130,15 @@ describe('boards', () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({ theme: 'lilla' })));
     });
 
-    it('avviser en tavle uten tema', async () => {
+    // theme er erstattet av topSurface/middleSurface. Feltet må være valgfritt:
+    // createBoard skriver uten merge, så en ny tavle har det ikke.
+    it('godtar en tavle uten tema', async () => {
         const { theme, ...utenTema } = board();
-        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), utenTema));
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/ny-tavle'), {
+            ...utenTema,
+            topSurface: 'morkebla',
+            middleSurface: 'morkebla',
+        }));
     });
 
     it('avviser en tavle der ansatt-illustrasjonen ikke er en boolean', async () => {
@@ -190,6 +198,32 @@ describe('boards', () => {
         }), { merge: true }));
     });
 
+    it('godtar de to nye flatefeltene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            topSurface: 'fersken',
+            middleSurface: 'lys-lavendel',
+        }), { merge: true }));
+    });
+
+    it('avviser ukjent flatenavn på toppen og i midten', async () => {
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            topSurface: 'lilla',
+        }), { merge: true }));
+        await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            middleSurface: 'lilla',
+        }), { merge: true }));
+    });
+
+    // Gamle dokumenter beholder theme fordi saveBoardConfig skriver med merge.
+    // Klausulen for feltet må bli stående — men valgfri.
+    it('godtar en tavle som har både theme og de nye flatene', async () => {
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
+            theme: 'dark',
+            topSurface: 'fersken',
+            middleSurface: 'fersken',
+        }), { merge: true }));
+    });
+
     it('avviser bottom som ikke er en liste', async () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
             bottom: 'vær',
@@ -200,6 +234,40 @@ describe('boards', () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
             bottom: [1, 2, 3, 4, 5, 6],
         }), { merge: true }));
+    });
+});
+
+// De to sidene av skjemaet er hver for seg testet — configFrom/draftFrom har
+// rundturtester i boardDraft.test.mjs, og reglene ovenfor skriver
+// topSurface/middleSurface direkte. Ingen test har til nå kjørt dem i
+// rekkefølge: en nyttelast admin-skjemaet faktisk kan produsere, godtatt av de
+// faktiske reglene. Det er bare det at to filer endres sammen (skjemaet og
+// firestore.rules) som har holdt dem enige — denne testen fester det, ikke
+// vanen.
+describe('skjemaets nyttelast og reglene er enige', () => {
+    it('en tavle normalisert, rundtrippet gjennom skjemaets draft og skrevet med de ekte funksjonene, godtas', async () => {
+        // Alle fire flatene satt til noe annet enn standarden, og moduler i
+        // både karusellen og bunnstripa, slik at rundturen faktisk beveger noe.
+        const config = normalizeBoardConfig('bergen-3', {
+            name: 'Bergen 3. etasje',
+            placeName: 'Bergen',
+            topSurface: 'fersken',
+            middleSurface: 'hvit',
+            staffImage: true,
+            top: { kind: 'logo' },
+            carouselSurface: 'morkebla-lys',
+            bottomSurface: 'lavendel',
+            middle: [{ type: 'greeting', text: 'auto' }],
+            carousel: [
+                { type: 'floorplan', plan: 'bergen-3' },
+                { type: 'departures', stopPlaceId: 'NSR:StopPlace:548', stopPlaceName: 'Bergen stasjon' },
+            ],
+            bottom: [{ type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 }],
+        });
+        const draft = draftFrom(config);
+        const payload = toFirestoreBoard(configFrom(draft), 'ola@entur.org');
+
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), payload, { merge: true }));
     });
 });
 

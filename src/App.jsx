@@ -52,6 +52,8 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     }, []);
 
     const config = board.status === 'ready' ? board.config : null;
+    const topPalette = config ? surfacePalette(config.topSurface) : null;
+    const middlePalette = config ? surfacePalette(config.middleSurface) : null;
     const carouselPalette = config ? surfacePalette(config.carouselSurface) : null;
     const bottomPalette = config ? surfacePalette(config.bottomSurface) : null;
     // Været kan stå i karusellen eller i stripa, aldri begge: normaliseringen
@@ -135,9 +137,9 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
 
     return (
         <div className="app" style={{ minHeight: '100vh', minWidth: '100vw', width: '100vw', height: '100vh', boxSizing: 'border-box', margin: 0, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <TopBand kind={config.top.kind} theme={config.theme} />
+            <TopBand kind={config.top.kind} palette={topPalette} />
             <MiddleBand
-                theme={config.theme}
+                palette={middlePalette}
                 boardId={boardId}
                 heading={boardHeading(config.placeName)}
                 greetingText={greetingTextFrom(greeting, autoGreeting)}

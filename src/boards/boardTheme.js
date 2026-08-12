@@ -1,36 +1,14 @@
 /**
- * Fargene de to øverste feltene kan ha.
+ * Logofila et felt skal bruke, gitt modusen flaten har.
  *
- * Uten Firebase-importer og uten JSX, slik at tabellen kan testes med
- * `node --test`.
+ * public/logo.svg er hvit og koral og hører til mørke flater;
+ * public/logo-on-light.svg har mørkeblått ordmerke og hører til lyse. Den siste
+ * lå der fra før, for admin-sidene.
  *
- * Det lyse temaet dropper <Contrast>-wrapperen framfor å overstyre farger inni
- * den: uten wrapperen faller @entur/typography tilbake på --primary-text-color,
- * som allerede er Entur-blå. `color` settes likevel på feltet, slik at vanlig
- * tekst uten typografi-komponent — åpningstidene — arver den samme fargen.
+ * Bakgrunn, tekstfarge og Contrast-valget kom tidligere herfra også. De kommer
+ * nå fra `surfacePalette()`, som bærer `mode` for hver av de seks flatene.
+ * Logoen er det eneste et felt trenger som ikke kan leses ut av paletten.
  */
-import { base, colors } from '@entur/tokens';
-
-const DARK = {
-    background: base.light.baseColors.frame.contrast,
-    color: colors.brand.white,
-    logoSrc: '/logo.svg',
-    contrast: true,
-};
-
-// Lavendel fra merkevaren, ikke den lysere lavendelen karusellen bruker
-// (#d9dae8). De tre feltene skal fortsatt leses som tre felt.
-//
-// logo-on-light.svg har mørkeblått ordmerke og hører til lyse flater; den lå
-// der fra før for admin-sidene.
-const LIGHT = {
-    background: colors.brand.lavender,
-    color: colors.brand.blue,
-    logoSrc: '/logo-on-light.svg',
-    contrast: false,
-};
-
-/** Ukjent verdi gir det mørke temaet, som er slik tavlene så ut før valget fantes. */
-export function bandTheme(theme) {
-    return theme === 'light' ? LIGHT : DARK;
+export function logoSrcFor(mode) {
+    return mode === 'light' ? '/logo-on-light.svg' : '/logo.svg';
 }

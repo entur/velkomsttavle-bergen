@@ -16,7 +16,7 @@ i hvert felt velges per tavle:
 
 | Felt | Moduler |
 |---|---|
-| Farger | `theme`: `dark` (mørkeblått) eller `light` (lavendel) — gjelder toppen og midten samlet. Karusellen og bunnstripa velger hver sin flate fra en tabell med seks navngitte farger, se under |
+| Farger | `topSurface`, `middleSurface`, `carouselSurface` og `bottomSurface` — hvert av de fire feltene velger sin egen flate fra en tabell med seks navngitte farger, se under |
 | Toppen | `video` (intro-videoen) eller `logo` (Entur-logoen) |
 | Midten | `greeting` (hilsen, automatisk eller fast tekst) og `openingHours` (åpningstider lagt inn dag for dag). Ansatt-illustrasjonen (`staffImage`) er et eget valg, uavhengig av begge |
 | Karusellen | `weather` (værmelding for valgte koordinater), `floorplan` (plantegning) og `departures` (avgangstider fra ett stoppested) |
@@ -28,19 +28,27 @@ over, så en skjerm som ikke er lastet på nytt svartner ikke av at noen legger
 til en modul den ikke kjenner. Er karusellen tom, faller feltet bort og
 midtfeltet får plassen; er bunnstripa tom, faller den bort på samme måte.
 
-Karusellen og bunnstripa velger hver sin **flate** fra en lukket liste med seks
-navngitte farger (`carouselSurface` og `bottomSurface`) — ikke en fri
-fargevelger, slik at kontrasten kan måles for alle seks på én gang. Flaten
-gjelder hele feltet, ikke enkeltmoduler — et felt som skifter bakgrunn mellom
-slides er en feil, ikke et design. Tabellen ligger i
+Alle fire feltene velger hver sin **flate** fra en lukket liste med seks
+navngitte farger (`topSurface`, `middleSurface`, `carouselSurface` og
+`bottomSurface`) — ikke en fri fargevelger, slik at kontrasten kan måles for
+alle seks på én gang. Flaten gjelder hele feltet, ikke enkeltmoduler — et felt
+som skifter bakgrunn mellom slides er en feil, ikke et design. Tabellen ligger i
 [`src/boards/surfaces.js`](src/boards/surfaces.js), som har en test som
 kontrastmåler seg selv.
 
-Tavla har altså **tre uavhengige fargevalg**: `theme` for toppen og midten
-([`src/boards/boardTheme.js`](src/boards/boardTheme.js)), og `carouselSurface`
-og `bottomSurface` for karusellen og bunnstripa. De kom fra hver sin endring og
-er ikke koblet — en tavle kan settes mørk øverst og lys i stripa. Om de bør
-slås sammen til ett valg er ikke avgjort.
+Tavla har altså **fire uavhengige fargevalg**, ett per felt. De kom fra hver
+sin endring og er ikke koblet — en tavle kan settes mørk øverst og lys i
+stripa. Om de bør slås sammen er ikke avgjort.
+
+Feltet `theme` (`dark`/`light`) styrte tidligere toppen og midten samlet, og
+`carouselTheme` styrte karusellen på samme vis. Begge er utgått til fordel for
+`topSurface`/`middleSurface`/`carouselSurface`, men koden leser dem fortsatt
+som fallback (se `bandSurfaceFrom` og `carouselSurfaceFrom` i
+[`src/boards/boardConfig.js`](src/boards/boardConfig.js)) — et gammelt
+dokument skal se identisk ut helt til det lagres på nytt. Lagringen bruker
+`merge: true`, så et gammelt `theme`-felt blir liggende i dokumentet selv etter
+en lagring fra det nye skjemaet; det er utgått, ikke lest, men fjernes ikke av
+seg selv.
 
 Modulkatalogen ligger i [`src/boards/boardConfig.js`](src/boards/boardConfig.js).
 Der ligger også normaliseringen som gjør et dokument om til noe kiosken trygt
@@ -342,9 +350,10 @@ værpollingen (`src/weather/metForecast.test.js`) og floorplan-transformen.
 
 For tavler dekkes ruteparsingen (`src/routing/parseRoute.test.mjs`),
 åpningstidene (`src/boards/openingHours.test.mjs`), modulkatalogen og
-normaliseringen (`src/boards/boardConfig.test.mjs`), valideringen av
-oppsettskjemaet (`src/boards/boardValidation.test.mjs`), tavle-id-er
-(`src/boards/boardId.test.mjs`) og tilgangslistene
+normaliseringen (`src/boards/boardConfig.test.mjs`), oversettelsen mellom
+config og skjemaets flate draft (`src/boards/boardDraft.test.mjs`),
+valideringen av oppsettskjemaet (`src/boards/boardValidation.test.mjs`),
+tavle-id-er (`src/boards/boardId.test.mjs`) og tilgangslistene
 (`src/access/memberships.test.mjs`).
 
 For avganger dekkes mapping fra GraphQL-svaret

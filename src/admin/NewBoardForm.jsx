@@ -13,7 +13,8 @@ function startConfig(id, name, placeName) {
     return normalizeBoardConfig(id, {
         name,
         placeName,
-        theme: 'dark',
+        topSurface: 'morkebla',
+        middleSurface: 'morkebla',
         staffImage: true,
         top: { kind: 'video' },
         middle: [{ type: 'greeting', text: 'auto' }],

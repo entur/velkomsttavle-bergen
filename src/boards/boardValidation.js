@@ -17,6 +17,21 @@ import {
 import { SURFACES } from './surfaces.js';
 import { DAY_LABELS, isTimeOfDay } from './openingHours.js';
 
+/**
+ * Flatefeltene og meldingen hvert av dem får. Fire felt med samme sjekk, så
+ * sjekken skrives én gang.
+ *
+ * Feilene er i praksis uoppnåelige gjennom skjemaet, siden fargevelgeren bare
+ * tilbyr gyldige verdier. De står her som speiling av firestore.rules, slik
+ * resten av denne fila gjør.
+ */
+const SURFACE_FIELDS = [
+    ['topSurface', 'Velg en farge for toppen'],
+    ['middleSurface', 'Velg en farge for velkomstmeldingen'],
+    ['carouselSurface', 'Velg en farge for karusellen'],
+    ['bottomSurface', 'Velg en farge for bunnstripa'],
+];
+
 export function validateBoardInput(draft) {
     const errors = {};
 
@@ -72,12 +87,10 @@ export function validateBoardInput(draft) {
         errors.stopPlace = 'Søk opp og velg et stoppested';
     }
 
-    if (!SURFACES.includes(draft.carouselSurface)) {
-        errors.carouselSurface = 'Velg en farge for karusellen';
-    }
-
-    if (!SURFACES.includes(draft.bottomSurface)) {
-        errors.bottomSurface = 'Velg en farge for bunnstripa';
+    for (const [field, message] of SURFACE_FIELDS) {
+        if (!SURFACES.includes(draft[field])) {
+            errors[field] = message;
+        }
     }
 
     return errors;

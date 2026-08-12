@@ -4,7 +4,6 @@ import { Heading2, LeadParagraph } from '@entur/typography';
 import AlertBanner from './AlertBanner';
 import ErrorBoundary from './ErrorBoundary';
 import OpeningHours from './OpeningHours';
-import { bandTheme } from '../boards/boardTheme';
 
 /**
  * Feltet under toppen: varsler øverst i full bredde, og under dem
@@ -13,8 +12,8 @@ import { bandTheme } from '../boards/boardTheme';
  * Illustrasjonen er et selvstendig valg på tavla, ikke en del av hilsenen: en
  * tavle med bare åpningstider kan ha den, og en tavle med hilsen kan la være.
  *
- * Det lyse temaet dropper <Contrast>-wrapperen. Den setter både bakgrunn og
- * hvit tekstfarge, og uten den finner typografien Entur-blå selv.
+ * Lyse flater dropper <Contrast>-wrapperen. Den setter både bakgrunn og hvit
+ * tekstfarge, og uten den finner typografien Entur-blå selv.
  *
  * justifyContent: 'flex-start' er bevisst, ikke 'center'. Feltet har
  * maxHeight + overflow: hidden, så noe MÅ klippes bort når stacken
@@ -30,15 +29,14 @@ import { bandTheme } from '../boards/boardTheme';
  * Uten karusell-moduler får feltet plassen karusellen ellers hadde
  * hatt (flex: 1 i stedet for maxHeight), men klippes fortsatt nedenfra.
  */
-function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, staffImageSrc, hasCarousel, hasBottom }) {
-    const { background, color, contrast } = bandTheme(theme);
+function MiddleBand({ palette, boardId, heading, greetingText, openingHoursDays, staffImageSrc, hasCarousel, hasBottom }) {
     const style = {
         width: '100vw',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        backgroundColor: background,
-        color,
+        backgroundColor: palette.background,
+        color: palette.text,
         flexDirection: 'column',
         padding: '1.5rem 0',
         overflow: 'hidden',
@@ -72,7 +70,9 @@ function MiddleBand({ theme, boardId, heading, greetingText, openingHoursDays, s
         </>
     );
 
-    return contrast ? <Contrast style={style}>{content}</Contrast> : <div style={style}>{content}</div>;
+    return palette.mode === 'dark'
+        ? <Contrast style={style}>{content}</Contrast>
+        : <div style={style}>{content}</div>;
 }
 
 /**
