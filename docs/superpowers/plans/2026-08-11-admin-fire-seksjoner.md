@@ -18,7 +18,8 @@ Spec: [docs/superpowers/specs/2026-08-11-admin-fire-seksjoner-design.md](../spec
 - **Flatenavnene er ASCII-slugs uten æøå:** `morkebla`, `morkebla-lys`, `lavendel`, `lys-lavendel`, `hvit`, `fersken`. De lagres som verdier i Firestore og gjentas i `firestore.rules`, som ikke kan importere.
 - **`node_modules` er tom i denne worktreen.** Kjør `yarn install --ignore-engines` før første test — uten `--ignore-engines` feiler installasjonen på Node-versjonen i dette repoet. Uten install feiler `test:rules` misvisende på alt.
 - **Firestore-regler avgjøres mot emulatoren, ikke ved øyemål.** Hver regelendring verifiseres med `yarn test:rules`.
-- **`npm run build` er en del av gaten.** Ingen av JSX-filene har enhetstester — repoet har ingen komponent-rendering i testene — så bygget og en manuell sjekk er det som dekker dem.
+- **`npm run build` er en del av gaten** der planen ber om det. Ingen av JSX-filene har enhetstester — repoet har ingen komponent-rendering i testene — så bygget og en manuell sjekk er det som dekker dem.
+- **Bygget feiler mellom Task 2 og Task 3, og det er forventet.** Task 2 fjerner den navngitte eksporten `bandTheme`, som `TopBand` og `MiddleBand` fortsatt importerer, og rolldown løser navngitte eksporter statisk — bygget feiler med `Export 'bandTheme' not found`. Task 3 retter begge importene og lukker vinduet. Ikke kjør `npm run build` som gate i Task 2; `npm test` er gaten der.
 - **Grenen er ikke deploybar mellom Task 1 og Task 12.** Task 1 fjerner `config.theme`, og admin-skjemaet får den tilbake først i Task 12. Det er greit på en refaktoreringsgren, men ikke deploy fra midten.
 
 ### Fargeverdiene, hentet fra `@entur/tokens`
