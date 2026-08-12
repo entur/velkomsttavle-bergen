@@ -97,3 +97,34 @@ describe('surfacePalette', () => {
         }
     });
 });
+
+// Resten av testene i denne fila sjekker egenskaper (gyldig hex, unike
+// bakgrunner, kontrast) — ingen av dem fester en konkret verdi. Det holder for
+// fire av de seks flatene, men ikke for disse to: `morkebla` og `lavendel` er
+// nettopp det gamle `theme`-feltet («dark» og «light») ble migrert til, og
+// migreringen er lovet fargeidentisk. Et gammelt dokument som bare har
+// `theme: 'light'` skal se nøyaktig ut som før oppgraderingen til `topSurface`/
+// `middleSurface` — og det kravet kan bare festes med de faktiske fargene, ikke
+// med en egenskap. Verdiene er de samme som `boardTheme.test.mjs` hadde før
+// den fila ble erstattet.
+describe('de to migrerte flatene holder fargen theme-feltet hadde', () => {
+    it('morkebla er theme: dark sin gamle farge, mørkeblå bakgrunn med hvit tekst', () => {
+        const p = surfacePalette('morkebla');
+        assert.equal(p.background, '#181c56');
+        assert.equal(p.text, '#ffffff');
+    });
+
+    it('lavendel er theme: light sin gamle farge, lavendel bakgrunn med Entur-blå tekst', () => {
+        const p = surfacePalette('lavendel');
+        assert.equal(p.background, '#aeb7e2');
+        assert.equal(p.text, '#181c56');
+    });
+
+    it('lavendel er ikke karusellens lysere lys-lavendel', () => {
+        // #d9dae8 er nøyaktig tokenet lys-lavendel bruker. Ville lavendel
+        // pekt dit i stedet, ville hver tavle med bare theme: 'light' skiftet
+        // farge — testen ovenfor fanger den konkrete verdien, denne fanger
+        // forveksling med den nærliggende, feil flaten.
+        assert.notEqual(surfacePalette('lavendel').background, '#d9dae8');
+    });
+});

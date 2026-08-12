@@ -7,7 +7,7 @@ const BORDER = base.light.baseColors.stroke.subduedalt;
  * Rammen rundt én av de fire seksjonene i oppsettskjemaet.
  *
  * Seksjonene speiler de fire feltene på tavla og skal leses som fire ting, ikke
- * som én lang liste. Rammen er hele poenget: uten den fløt fargevelkerne og
+ * som én lang liste. Rammen er hele poenget: uten den fløt fargevelgerne og
  * modulvalgene over i hverandre.
  */
 function FormSection({ title, help, children }) {

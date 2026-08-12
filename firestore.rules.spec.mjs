@@ -18,6 +18,8 @@ import {
     initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { normalizeBoardConfig, toFirestoreBoard } from './src/boards/boardConfig.js';
+import { configFrom, draftFrom } from './src/boards/boardDraft.js';
 
 let testEnv;
 
@@ -232,6 +234,40 @@ describe('boards', () => {
         await assertFails(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), board({
             bottom: [1, 2, 3, 4, 5, 6],
         }), { merge: true }));
+    });
+});
+
+// De to sidene av skjemaet er hver for seg testet — configFrom/draftFrom har
+// rundturtester i boardDraft.test.mjs, og reglene ovenfor skriver
+// topSurface/middleSurface direkte. Ingen test har til nå kjørt dem i
+// rekkefølge: en nyttelast admin-skjemaet faktisk kan produsere, godtatt av de
+// faktiske reglene. Det er bare det at to filer endres sammen (skjemaet og
+// firestore.rules) som har holdt dem enige — denne testen fester det, ikke
+// vanen.
+describe('skjemaets nyttelast og reglene er enige', () => {
+    it('en tavle normalisert, rundtrippet gjennom skjemaets draft og skrevet med de ekte funksjonene, godtas', async () => {
+        // Alle fire flatene satt til noe annet enn standarden, og moduler i
+        // både karusellen og bunnstripa, slik at rundturen faktisk beveger noe.
+        const config = normalizeBoardConfig('bergen-3', {
+            name: 'Bergen 3. etasje',
+            placeName: 'Bergen',
+            topSurface: 'fersken',
+            middleSurface: 'hvit',
+            staffImage: true,
+            top: { kind: 'logo' },
+            carouselSurface: 'morkebla-lys',
+            bottomSurface: 'lavendel',
+            middle: [{ type: 'greeting', text: 'auto' }],
+            carousel: [
+                { type: 'floorplan', plan: 'bergen-3' },
+                { type: 'departures', stopPlaceId: 'NSR:StopPlace:548', stopPlaceName: 'Bergen stasjon' },
+            ],
+            bottom: [{ type: 'weather', name: 'Bergen', lat: 60.4, lng: 5.3 }],
+        });
+        const draft = draftFrom(config);
+        const payload = toFirestoreBoard(configFrom(draft), 'ola@entur.org');
+
+        await assertSucceeds(setDoc(doc(as('ola@entur.org'), 'boards/bergen-3'), payload, { merge: true }));
     });
 });
 

@@ -3,7 +3,6 @@ import { base } from '@entur/tokens';
 
 import { SURFACES, SURFACE_LABELS, surfacePalette } from '../boards/surfaces';
 
-const SELECTED_BORDER = base.light.baseColors.stroke.default;
 const UNSELECTED_BORDER = base.light.baseColors.stroke.subdued;
 
 /**
@@ -21,6 +20,12 @@ const UNSELECTED_BORDER = base.light.baseColors.stroke.subdued;
  *
  * Kantlinja er der i begge tilstandene, ikke bare den valgte: uten den
  * forsvinner den hvite flaten i admin-sidens hvite bakgrunn.
+ *
+ * Valgt kant bruker flatens egen tekstfarge, ikke en fast farge: en fast
+ * mørkeblå kant er usynlig på nettopp den mørkeblå flaten, siden det er samme
+ * verdi som bakgrunnen. Tekstfargen har alltid minst 4.5 i kontrast mot sin
+ * egen bakgrunn — det garanterer surfaces.test.mjs for alle seks flatene — så
+ * kanten er alltid synlig, uansett hvilken flate som er valgt.
  */
 function SurfacePicker({ name, label, value, onChange, error }) {
     return (
@@ -42,7 +47,7 @@ function SurfacePicker({ name, label, value, onChange, error }) {
                                 textAlign: 'center',
                                 backgroundColor: palette.background,
                                 color: palette.text,
-                                border: `2px solid ${selected ? SELECTED_BORDER : UNSELECTED_BORDER}`,
+                                border: `2px solid ${selected ? palette.text : UNSELECTED_BORDER}`,
                                 fontWeight: selected ? 700 : 400,
                             }}
                         >
