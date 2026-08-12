@@ -3,6 +3,7 @@ import { BannerAlertBox } from '@entur/alert';
 
 import { subscribeToBoardAlerts } from '../alerts/alertsRepository';
 import { selectVisibleAlerts } from '../alerts/alertSchedule';
+import { networkNow } from '../time/networkClock';
 
 /** Hvor ofte vi sjekker om et tidsvindu har åpnet eller lukket seg. */
 const REEVALUATE_MS = 30 * 1000;
@@ -17,7 +18,7 @@ const REEVALUATE_MS = 30 * 1000;
  */
 function AlertBanner({ boardId }) {
     const [alerts, setAlerts] = useState([]);
-    const [now, setNow] = useState(() => new Date());
+    const [now, setNow] = useState(() => networkNow());
 
     useEffect(() => subscribeToBoardAlerts(boardId, setAlerts, (error) => {
         console.error('Kunne ikke hente varsler', error);
@@ -25,7 +26,7 @@ function AlertBanner({ boardId }) {
     }), [boardId]);
 
     useEffect(() => {
-        const interval = setInterval(() => setNow(new Date()), REEVALUATE_MS);
+        const interval = setInterval(() => setNow(networkNow()), REEVALUATE_MS);
         return () => clearInterval(interval);
     }, []);
 
