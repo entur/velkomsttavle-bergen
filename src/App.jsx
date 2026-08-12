@@ -10,6 +10,7 @@ import BoardMissing from './components/BoardMissing';
 import Departures from './components/Departures';
 import { startWeatherPolling } from './weather/metForecast';
 import { startDeparturePolling } from './departures/enturDepartures';
+import { startClockSync } from './time/networkClock';
 import { subscribeToBoard } from './boards/boardsRepository';
 import { GREETING_AUTO, boardHeading, findModule } from './boards/boardConfig';
 import { DEFAULT_BOARD_ID } from './routing/parseRoute';
@@ -24,6 +25,11 @@ function App({ boardId = DEFAULT_BOARD_ID }) {
     const [departures, setDepartures] = useState(null);
     const [staffImage, setStaffImage] = useState(STAFF_IMAGES[0]);
     const [autoGreeting, setAutoGreeting] = useState(() => getGreetingText(new Date()));
+
+    // Klokka på skjermen går ikke riktig, og nedtellinga i avgangsvisninga
+    // regner mot den. Synkroniseringa eies av App, som står montert hele tida
+    // — samme grunn som for været og avgangene lenger nede.
+    useEffect(() => startClockSync(), []);
 
     useEffect(() => subscribeToBoard(
         boardId,
