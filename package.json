@@ -21,7 +21,7 @@
 		"vite": "^8.1.5"
 	},
 	"dependencies": {
-		"@entur/alert": "0.19.4",
+		"@entur/alert": "0.20.1",
 		"@entur/button": "4.0.11",
 		"@entur/datepicker": "11.8.1",
 		"@entur/form": "9.3.8",
