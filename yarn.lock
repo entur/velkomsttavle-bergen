@@ -118,17 +118,7 @@
     classnames "^2.5.1"
     copy-text-to-clipboard "^2.2.0"
 
-"@entur/button@4.0.11", "@entur/button@^4.0.11":
-  version "4.0.11"
-  resolved "https://registry.npmjs.org/@entur/button/-/button-4.0.11.tgz"
-  integrity sha512-2aG5grK677yOtyaaLO7hxcm/bQR/Qw8mwoxOn5hFDf0CcWIniV1Vi1SzZHvTDtNpEnZHEcji3r0myGLd+4Iojg==
-  dependencies:
-    "@entur/loader" "^0.7.4"
-    "@entur/tokens" "^3.24.0"
-    "@entur/utils" "^0.13.6"
-    classnames "^2.5.1"
-
-"@entur/button@^5.0.1":
+"@entur/button@5.0.1", "@entur/button@^5.0.1":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@entur/button/-/button-5.0.1.tgz#fbe739e93106377af125f18b74a65e6143beca86"
   integrity sha512-VpETpQeFyAnuiq46oS+gWtpCS9rk80xmrzl+PB8Jyx2qx5QGMyt2kQRMYr0d3i6QdyMWJTLGMwrr/qJb3PB3Aw==
@@ -136,6 +126,16 @@
     "@entur/loader" "^0.8.1"
     "@entur/tokens" "^4.0.1"
     "@entur/utils" "^0.14.1"
+    classnames "^2.5.1"
+
+"@entur/button@^4.0.11":
+  version "4.0.11"
+  resolved "https://registry.npmjs.org/@entur/button/-/button-4.0.11.tgz"
+  integrity sha512-2aG5grK677yOtyaaLO7hxcm/bQR/Qw8mwoxOn5hFDf0CcWIniV1Vi1SzZHvTDtNpEnZHEcji3r0myGLd+4Iojg==
+  dependencies:
+    "@entur/loader" "^0.7.4"
+    "@entur/tokens" "^3.24.0"
+    "@entur/utils" "^0.13.6"
     classnames "^2.5.1"
 
 "@entur/datepicker@11.8.1":
