@@ -103,18 +103,18 @@
     "@entur/tokens" "^3.24.0"
     "@entur/utils" "^0.13.6"
 
-"@entur/alert@0.19.4":
-  version "0.19.4"
-  resolved "https://registry.npmjs.org/@entur/alert/-/alert-0.19.4.tgz"
-  integrity sha512-rgTeV7M5NmuD7UIAzFS8RByWzB/Bo09EmfpLMIxaph/Cgopk7P29sysdWHjFs59WliY+dIdQP5ZBF22Qo7UF1w==
+"@entur/alert@0.20.1":
+  version "0.20.1"
+  resolved "https://registry.yarnpkg.com/@entur/alert/-/alert-0.20.1.tgz#2c9cc9cbb290ebba6c2092c6acc7fa09b37fddc6"
+  integrity sha512-d2jDRQOxrhke4Bn+3VcxC4av80oUmzLUrvhZakI+acRQWw2eXGQwjSgz2A4JlVwbvuvqRnfWt41Zfmu13Nlyhg==
   dependencies:
-    "@entur/button" "^4.0.11"
-    "@entur/expand" "^3.7.12"
-    "@entur/icons" "^9.0.4"
-    "@entur/tokens" "^3.24.0"
-    "@entur/tooltip" "^5.3.16"
-    "@entur/typography" "^2.1.12"
-    "@entur/utils" "^0.13.6"
+    "@entur/button" "^5.0.1"
+    "@entur/expand" "^4.0.1"
+    "@entur/icons" "^10.0.1"
+    "@entur/tokens" "^4.0.1"
+    "@entur/tooltip" "^6.0.1"
+    "@entur/typography" "^3.0.1"
+    "@entur/utils" "^0.14.1"
     classnames "^2.5.1"
     copy-text-to-clipboard "^2.2.0"
 
@@ -174,6 +174,17 @@
     "@entur/utils" "^0.13.6"
     classnames "^2.5.1"
     react-collapse "^5.1.1"
+
+"@entur/expand@^4.0.1":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@entur/expand/-/expand-4.0.2.tgz#745634aa67a601ef85504b487cfe72a475ee9636"
+  integrity sha512-BinPOREKCPF67o9L5sW6soObKF4YXl1vCU0eWoZ3bFsWtC+kvjNuN4LCtErYiVy9kjsQ1ot8bw6d3+sxuTwNzg==
+  dependencies:
+    "@entur/icons" "^10.0.1"
+    "@entur/tokens" "^4.0.1"
+    "@entur/typography" "^3.0.2"
+    "@entur/utils" "^0.15.0"
+    classnames "^2.5.1"
 
 "@entur/form@9.3.8", "@entur/form@^9.3.8":
   version "9.3.8"
@@ -367,14 +378,14 @@
   optionalDependencies:
     glob "^13.0.4"
 
-"@entur/typography@^3.0.1":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@entur/typography/-/typography-3.0.1.tgz#7a24543918529350b6b0faceae7fdc567b0fbc39"
-  integrity sha512-spLeV6sRV4d6un5acQh4EkP9ceG9UaNDOO7UayUqA9g8qWZofwCbdA7I8zbu3QyppvtWkJdsvtFtSk5RIBzewg==
+"@entur/typography@^3.0.1", "@entur/typography@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/@entur/typography/-/typography-3.0.2.tgz#0dbb69f7d12531c834602190ae923baba6374629"
+  integrity sha512-zcWh04jEmEygJwu04+pWP+GJ4q7mkedvaB57Bg/fagXsqib5j2GRFVceJK8LHG1nsxrRzjNh+cvyY5D2RXZr4g==
   dependencies:
     "@entur/icons" "^10.0.1"
     "@entur/tokens" "^4.0.1"
-    "@entur/utils" "^0.14.1"
+    "@entur/utils" "^0.15.0"
     classnames "^2.5.1"
     modern-normalize "^3.0.1"
   optionalDependencies:
@@ -391,6 +402,13 @@
   version "0.14.1"
   resolved "https://registry.yarnpkg.com/@entur/utils/-/utils-0.14.1.tgz#3c93d24e4e3c3f699b9e7bcb7c8847f6235c1bce"
   integrity sha512-mhtC3Xb0EgL6egZCgdVpAnqaEgv97tsImhQUzy02ma5GcTIE4pFTHRl6vs7izOyBlJJNQsVCUj0/wOOvvNj63w==
+  dependencies:
+    tiny-warning "^1.0.3"
+
+"@entur/utils@^0.15.0":
+  version "0.15.0"
+  resolved "https://registry.yarnpkg.com/@entur/utils/-/utils-0.15.0.tgz#024416d8079e32be8b1b863cade508515abf2e7c"
+  integrity sha512-pbHPHRLXACwBGdAW4yqpuqYmNNRyV7ydh69Nlmxqd58PQa42vsIChhTioFT3RvgmQHJXbtgh+jTyaXKpPIC3RA==
   dependencies:
     tiny-warning "^1.0.3"
 
