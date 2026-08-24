@@ -68,6 +68,7 @@ const BergenThird = ({ labels }) => {
         fill={ROOM_TYPE_COLORS.landscape}
       />
       <path
+        id="landscape_49"
         d="M805 658.5H366V887.5H805V658.5Z"
         fill={ROOM_TYPE_COLORS.landscape}
       />
@@ -150,7 +151,9 @@ const BergenThird = ({ labels }) => {
                 fontFamily="Nationale"
                 fontSize={label.isMeetingRoom ? '18' : '14'}
                 letterSpacing="0em"
-                textAnchor={lines.length > 1 ? 'middle' : undefined}
+                textAnchor={
+                  lines.length > 1 || label.isWorkArea ? 'middle' : undefined
+                }
                 style={
                   {
                     '--label-x': `${labelX}px`,
@@ -169,6 +172,11 @@ const BergenThird = ({ labels }) => {
                 {lines.map((line, i) => (
                   <tspan
                     key={line}
+                    style={{
+                      fontWeight: label.boldLineIndexes?.includes(i)
+                        ? 600
+                        : 400,
+                    }}
                     x={labelX}
                     y={labelY + i * (label.isMeetingRoom ? 22 : 17)}
                   >
